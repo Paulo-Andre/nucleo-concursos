@@ -23,6 +23,8 @@ import AccessGate from "@/pages/AccessGate";
 import { trpc } from "@/lib/trpc";
 import { AccountPanel } from "@/components/AccountPanel";
 import { AdminPanel } from "@/components/AdminPanel";
+import { AdminLibraryPanel } from "@/components/AdminLibraryPanel";
+import { rootAdminAreas } from "@/lib/rootAdminNavigation";
 import { CourseAccessRequired } from "@/components/CourseAccessRequired";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -93,6 +95,7 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
   const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const accessQuery = trpc.study.access.useQuery(undefined, { refetchOnWindowFocus: false });
   const permittedContestIds = useMemo<ContestId[]>(() => {
     if (user.role === "admin") return contestCatalog.map((contest) => contest.id);
@@ -250,7 +253,7 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
       <main className="min-h-screen min-w-0 flex-1">
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-[#dcd6ca] bg-[#f5f1e8]/90 px-4 backdrop-blur-md sm:px-7 lg:px-10">
           <div className="flex items-center gap-3"><button className="grid h-10 w-10 place-items-center rounded-xl border border-[#d5cdbd] bg-[#fffdf8] lg:hidden" onClick={() => setMenuOpen(true)}><Menu className="h-5 w-5" /></button><div><p className="eyebrow">CONCURSO · {activeContest.name.toUpperCase()}</p><h1 className="font-display text-base font-bold text-[#183542]">{view}</h1></div></div>
-          <div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button>{user.role === "admin" && <button onClick={() => setAdminOpen(true)} className="hidden border border-[#8ab9b0] bg-[#e8f3f0] px-2.5 py-2 text-[10px] font-bold tracking-wide text-[#0e5a70] sm:block">ROOT</button>}<button onClick={() => void logout()} className="border border-[#d6cfc2] bg-[#fffdf8] px-2.5 py-2 text-[10px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3]">SAIR</button><button onClick={() => setAccountOpen(true)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white">{level.index}</button></div>
+          <div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button>{user.role === "admin" && <div className="hidden items-center gap-1 sm:flex"><button onClick={() => setAdminOpen(true)} className="border border-[#8ab9b0] bg-[#e8f3f0] px-2.5 py-2 text-[10px] font-bold tracking-wide text-[#0e5a70]">{rootAdminAreas.students.shortLabel}</button><button onClick={() => setLibraryOpen(true)} className="border border-[#a8c8d0] bg-[#edf7fa] px-2.5 py-2 text-[10px] font-bold tracking-wide text-[#0e5a70]">{rootAdminAreas.library.shortLabel}</button></div>}<button onClick={() => void logout()} className="border border-[#d6cfc2] bg-[#fffdf8] px-2.5 py-2 text-[10px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3]">SAIR</button><button onClick={() => setAccountOpen(true)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white">{level.index}</button></div>
         </header>
         <div className="mx-auto max-w-[1540px] p-4 sm:p-7 lg:p-10"><ContestSelector contestId={effectiveContestId} allowedContestIds={permittedContestIds} onChange={setContestId} />{simulation ? <SimulationScreen simulation={simulation} onAnswer={submitSimulationAnswer} onExit={() => setSimulation(null)} /> : simulationResult ? <SimulationResult result={simulationResult} onAgain={() => startSimulation(simulationResult.total)} onClose={() => { setSimulationResult(null); setView("Histórico"); }} /> : <>
           {view === "Painel" && <Dashboard state={state} modules={availableModules} contestName={activeContest.name} level={level} totalAnswers={totalAnswers} overallScore={overallScore} streak={streak} studiedPercent={studiedPercent} focus={focus} historyChart={historyChart} onStudy={() => setView("Conteúdo")} onSimulate={() => setView("Simulados")} />}
@@ -264,6 +267,7 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
       {openedModule && <ModulePanel module={openedModule} completed={state.completedModules.includes(openedModule.id)} onComplete={() => completeModule(openedModule)} onClose={() => setOpenedModule(null)} />}
       {accountOpen && <AccountPanel user={user} onClose={() => setAccountOpen(false)} />}
       {adminOpen && user.role === "admin" && <AdminPanel onClose={() => setAdminOpen(false)} />}
+      {libraryOpen && user.role === "admin" && <AdminLibraryPanel onClose={() => setLibraryOpen(false)} />}
     </div>
   );
 }

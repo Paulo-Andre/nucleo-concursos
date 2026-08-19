@@ -122,5 +122,11 @@
 - [x] Cobrir os novos fluxos com testes e validar visualmente a experiência de aluno e ROOT.
 - [x] Renomear no painel ROOT a aba de questões para “Todas as questões”, preservando busca, filtros, edição direta e estado vazio orientado.
 - [x] Distinguir no painel ROOT a revisão editorial da revisão pessoal do aluno, com rótulos “Revisar (ROOT)” e “Adicionar à revisão ROOT”.
+- [x] Separar no painel ROOT a área “Gestão de alunos” da área “Biblioteca de conteúdo”, com navegação principal inequívoca.
+- [x] Criar uma área administrativa exclusiva “Questões” com busca, filtros, resultado visível e edição direta da questão selecionada.
+- [x] Exibir orientações curtas de uso na área de questões, esclarecendo como localizar e editar uma questão já cadastrada.
+- [ ] Cobrir a navegação administrativa separada com testes e validação visual autenticada como ROOT.
+- [x] Executar validação autônoma da navegação ROOT por contrato, testes de permissões, build e inspeção da página pública, sem sessão interativa do usuário.
+- [ ] Publicar o checkpoint da separação administrativa após a validação autônoma e informar o acesso público atualizado.
 - [x] Renomear no painel ROOT a aba de questões para “Todas as questões”, preservando busca, filtros, edição direta e estado vazio orientado.
 - [x] Distinguir no painel ROOT a revisão editorial da revisão pessoal do aluno, com rótulos “Revisar (ROOT)” e “Adicionar à revisão ROOT”.
