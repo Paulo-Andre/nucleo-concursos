@@ -6,10 +6,26 @@ import { Input } from "@/components/ui/input";
 
 type AccessGateProps = { onAuthenticated: () => void };
 
+function formatCpfInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  return digits.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function hasValidCpfDigits(value: string) {
+  const cpf = value.replace(/\D/g, "");
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
+  const digit = (length: number) => {
+    const sum = cpf.slice(0, length).split("").reduce((total, item, index) => total + Number(item) * (length + 1 - index), 0);
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+  return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
+}
+
 export default function AccessGate({ onAuthenticated }: AccessGateProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [message, setMessage] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", username: "", email: "", identifier: "", password: "", confirmation: "" });
+  const [form, setForm] = useState({ name: "", username: "", email: "", cpf: "", identifier: "", password: "", confirmation: "" });
   const utils = trpc.useUtils();
   const login = trpc.auth.login.useMutation({ onSuccess: async user => { utils.auth.me.setData(undefined, user); await utils.auth.me.invalidate(); onAuthenticated(); } });
   const register = trpc.auth.register.useMutation({ onSuccess: async user => { utils.auth.me.setData(undefined, user); await utils.auth.me.invalidate(); onAuthenticated(); } });
@@ -21,7 +37,10 @@ export default function AccessGate({ onAuthenticated }: AccessGateProps) {
     setMessage(null);
     try {
       if (mode === "login") await login.mutateAsync({ identifier: form.identifier, password: form.password });
-      else await register.mutateAsync({ name: form.name, username: form.username, email: form.email, password: form.password, passwordConfirmation: form.confirmation });
+      else {
+        if (!hasValidCpfDigits(form.cpf)) { setMessage("Informe um CPF válido."); return; }
+        await register.mutateAsync({ name: form.name, username: form.username, email: form.email, cpf: form.cpf, password: form.password, passwordConfirmation: form.confirmation });
+      }
     } catch (error: any) {
       setMessage(error?.message || "Não foi possível concluir a operação.");
     }
@@ -40,7 +59,7 @@ export default function AccessGate({ onAuthenticated }: AccessGateProps) {
         <div className="flex border-b border-[#d8d0c1] text-sm font-bold"><button className={`-mb-px border-b-2 px-1 pb-3 ${mode === "login" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("login"); setMessage(null); }}>Entrar</button><button className={`-mb-px ml-7 border-b-2 px-1 pb-3 ${mode === "register" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("register"); setMessage(null); }}><UserPlus className="mr-1.5 inline h-4 w-4" />Criar conta</button></div>
         <div className="mt-8"><p className="text-[10px] font-bold tracking-[0.18em] text-[#5d777d]">{mode === "login" ? "IDENTIFIQUE-SE" : "NOVA CREDENCIAL"}</p><h2 className="font-display mt-2 text-3xl font-extrabold">{mode === "login" ? "Acesse seu dossiê." : "Comece seu registro."}</h2></div>
         <form onSubmit={submit} className="mt-7 space-y-4">
-          {mode === "register" && <><label className="block text-xs font-bold">Nome completo<Input value={form.name} onChange={event => update("name", event.target.value)} autoComplete="name" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">Nome de usuário<Input value={form.username} onChange={event => update("username", event.target.value.toLowerCase())} autoComplete="username" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">E-mail<Input type="email" value={form.email} onChange={event => update("email", event.target.value)} autoComplete="email" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label></>}
+          {mode === "register" && <><label className="block text-xs font-bold">Nome completo<Input value={form.name} onChange={event => update("name", event.target.value)} autoComplete="name" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">Nome de usuário<Input value={form.username} onChange={event => update("username", event.target.value.toLowerCase())} autoComplete="username" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">E-mail<Input type="email" value={form.email} onChange={event => update("email", event.target.value)} autoComplete="email" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">CPF<Input value={form.cpf} onChange={event => update("cpf", formatCpfInput(event.target.value))} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" aria-describedby="cpf-help" required /></label><p id="cpf-help" className="-mt-2 text-[11px] leading-4 text-[#6f7775]">Usamos somente números e confirmamos os dígitos verificadores.</p></>}
           {mode === "login" && <label className="block text-xs font-bold">Usuário ou e-mail<Input value={form.identifier} onChange={event => update("identifier", event.target.value)} autoComplete="username" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>}
           <label className="block text-xs font-bold">Senha<Input type="password" value={form.password} onChange={event => update("password", event.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>
           {mode === "register" && <label className="block text-xs font-bold">Confirme a senha<Input type="password" value={form.confirmation} onChange={event => update("confirmation", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>}

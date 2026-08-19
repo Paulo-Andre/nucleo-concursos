@@ -20,6 +20,9 @@ import {
   getReviewPendingCount,
   getStudyState,
   getUserCourseAccess,
+  getUserByCpf,
+  getDailyQuickCheck,
+  dismissDailyQuickCheck,
   grantCourseEnrollment,
   getUserByIdentifier,
   getUserByUsername,
@@ -53,6 +56,7 @@ import {
   submitForReview,
   decideReview,
 } from "./db";
+import { isValidCpf, normalizeCpf } from "./cpf";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
 import { storagePut } from "./storage";
@@ -64,6 +68,7 @@ const profileSchema = z.object({
   username: usernameSchema,
   email: z.string().trim().toLowerCase().email("Informe um e-mail válido.").max(320),
 });
+const cpfSchema = z.string().trim().transform(normalizeCpf).refine(isValidCpf, "Informe um CPF válido.");
 const metricSchema = z.record(z.string(), z.object({ correct: z.number().int().nonnegative(), total: z.number().int().nonnegative() }));
 const studyReviewSnapshotSchema = z.object({
   statement: z.string().trim().min(1).max(12000),
@@ -148,6 +153,7 @@ function safeUser(user: NonNullable<Parameters<typeof getStudyState>[0]> extends
     name: user.name,
     username: user.username,
     email: user.email,
+    cpf: user.cpf,
     role: user.role,
     isBlocked: user.isBlocked,
     createdAt: user.createdAt,
@@ -177,10 +183,10 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query(({ ctx }) => (ctx.user ? safeUser(ctx.user) : null)),
     bootstrapStatus: publicProcedure.query(() => ({ rootBootstrapReady: hasRootBootstrapSecret() })),
-    register: publicProcedure.input(profileSchema.extend({ password: passwordSchema, passwordConfirmation: passwordSchema })).mutation(async ({ input, ctx }) => {
+    register: publicProcedure.input(profileSchema.extend({ cpf: cpfSchema, password: passwordSchema, passwordConfirmation: passwordSchema })).mutation(async ({ input, ctx }) => {
       if (input.password !== input.passwordConfirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
-      const duplicate = await getUserByIdentifier(input.username) ?? await getUserByIdentifier(input.email);
-      if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "Usuário ou e-mail já está em uso." });
+      const duplicate = await getUserByIdentifier(input.username) ?? await getUserByIdentifier(input.email) ?? await getUserByCpf(input.cpf);
+      if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "Usuário, e-mail ou CPF já está em uso." });
       const user = await createLocalUser({ ...input, passwordHash: await hashPassword(input.password) });
       await startLocalSession(ctx, user.id);
       return safeUser(user);
@@ -214,6 +220,8 @@ export const appRouter = router({
     state: enrollmentRequiredProcedure.query(({ ctx }) => getStudyState(ctx.user.id)),
     access: protectedProcedure.query(({ ctx }) => getUserCourseAccess(ctx.user.id)),
     answer: enrollmentRequiredProcedure.input(z.object({ questionId: z.string().trim().min(1).max(80), correct: z.boolean() })).mutation(({ input, ctx }) => recordAnswer(ctx.user.id, input.questionId, input.correct)),
+    dailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getDailyQuickCheck(ctx.user.id, input.courseId)),
+    dismissDailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).mutation(({ input, ctx }) => dismissDailyQuickCheck(ctx.user.id, input.courseId)),
     completeModule: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => completeStudyModule(ctx.user.id, input.moduleId)),
     submitSimulation: enrollmentRequiredProcedure.input(z.object({
       id: z.string().min(1).max(64), total: z.number().int().positive(), correct: z.number().int().nonnegative(), errors: z.number().int().nonnegative(), elapsedSeconds: z.number().int().nonnegative(),

@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   adminAuditLogs,
@@ -32,6 +32,8 @@ import { completeStudyModules } from "../client/src/data/pfCompleteStudyData";
 import { contestCatalog, disciplineCatalog, getDisciplineIdForModule } from "../client/src/data/pfCurriculumCatalog";
 import { questionBank, type StudyQuestion } from "../client/src/data/pfStudyData";
 import { loadPF2018Questions } from "./importProvasPF";
+import { isValidCpf, normalizeCpf } from "./cpf";
+import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
 
 type UserUpsertInput = {
   openId: string;
@@ -49,6 +51,7 @@ type LocalUserInput = {
   name: string;
   username: string;
   email: string | null;
+  cpf?: string | null;
   passwordHash: string;
   role?: "user" | "admin";
 };
@@ -75,7 +78,7 @@ export type StudyReviewSnapshot = {
   source?: string;
 };
 
-const emptyProfile = { xp: 0, lastStudyDate: null as string | null, studyDatesJson: "[]", usedQuestionIdsJson: "[]" };
+const emptyProfile = { xp: 0, lastStudyDate: null as string | null, studyDatesJson: "[]", usedQuestionIdsJson: "[]", dailyQuickCheckDate: null as string | null, dailyQuickCheckCourseId: null as string | null, dailyQuickCheckQuestionId: null as string | null, dailyQuickCheckDismissed: false };
 let _db: ReturnType<typeof drizzle> | null = null;
 
 function parseStringArray(raw: string) {
@@ -170,16 +173,28 @@ export async function getUserByIdentifier(identifier: string) {
   return result[0];
 }
 
+export async function getUserByCpf(cpf: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const normalized = normalizeCpf(cpf);
+  if (!normalized) return undefined;
+  const result = await db.select().from(users).where(eq(users.cpf, normalized)).limit(1);
+  return result[0];
+}
+
 export async function createLocalUser(input: LocalUserInput) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const username = input.username.trim().toLowerCase();
   const email = input.email?.trim().toLowerCase() || null;
+  const cpf = input.cpf ? normalizeCpf(input.cpf) : null;
+  if (cpf && !isValidCpf(cpf)) throw new Error("CPF inválido.");
   await db.insert(users).values({
     openId: `local:${username}`,
     name: input.name.trim(),
     username,
     email,
+    cpf,
     passwordHash: input.passwordHash,
     loginMethod: "local",
     role: input.role ?? "user",
@@ -216,14 +231,17 @@ export async function convertUserToLocalRoot(userId: number, passwordHash: strin
   }).where(eq(users.id, userId));
 }
 
-export async function updateUserProfile(userId: number, input: { name: string; username: string; email: string }) {
+export async function updateUserProfile(userId: number, input: { name: string; username: string; email: string; cpf?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const username = input.username.trim().toLowerCase();
+  const cpf = input.cpf === undefined ? undefined : normalizeCpf(input.cpf);
+  if (cpf !== undefined && !isValidCpf(cpf)) throw new Error("CPF inválido.");
   await db.update(users).set({
     name: input.name.trim(),
     username,
     email: input.email.trim().toLowerCase(),
+    ...(cpf === undefined ? {} : { cpf }),
   }).where(eq(users.id, userId));
   return getUserById(userId);
 }
@@ -306,6 +324,50 @@ export async function getStudyState(userId: number) {
     studyDates: parseStringArray(profile.studyDatesJson),
     usedQuestionIds: parseStringArray(profile.usedQuestionIdsJson),
   };
+}
+
+async function getEligibleContentIdsForCourses(courseIds: string[]) {
+  const db = await getDb();
+  if (!db || !courseIds.length) return [];
+  const rows = await db.select({ contentId: disciplineContents.contentId }).from(courseDisciplines)
+    .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
+    .where(inArray(courseDisciplines.courseId, courseIds));
+  return Array.from(new Set(rows.map(row => row.contentId)));
+}
+
+export async function getDailyQuickCheck(userId: number, courseId: string) {
+  const access = await getUserCourseAccess(userId);
+  if (!access.some(enrollment => enrollment.courseId === courseId)) throw new Error("A checagem diária só está disponível para cursos com matrícula vigente.");
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const profile = await ensureStudyProfile(userId);
+  const day = currentStudyDay();
+  const allowedContentIds = await getEligibleContentIdsForCourses([courseId]);
+  const questionPool = (await listStudyQuestions()).questions.filter(question => question.contentIds.some(contentId => allowedContentIds.includes(contentId)));
+  const persistedQuestion = profile.dailyQuickCheckDate === day && profile.dailyQuickCheckCourseId === courseId
+    ? questionPool.find(question => String(question.id) === profile.dailyQuickCheckQuestionId)
+    : undefined;
+  const recentAnswers = await db.select({ questionId: studyAnswers.questionId }).from(studyAnswers).where(eq(studyAnswers.userId, userId)).orderBy(desc(studyAnswers.answeredAt)).limit(20);
+  const recentQuestionIds = [...recentAnswers.map(answer => answer.questionId), ...(profile.dailyQuickCheckQuestionId ? [profile.dailyQuickCheckQuestionId] : [])];
+  const question = persistedQuestion ?? selectDailyQuickCheckQuestion({ questions: questionPool, userId, courseId, day, recentQuestionIds });
+  if (!question) return { date: day, dismissed: false, question: null };
+
+  if (!persistedQuestion) await db.update(studyProfiles).set({
+    dailyQuickCheckDate: day,
+    dailyQuickCheckCourseId: courseId,
+    dailyQuickCheckQuestionId: String(question.id),
+    dailyQuickCheckDismissed: false,
+  }).where(eq(studyProfiles.userId, userId));
+
+  return { date: day, dismissed: persistedQuestion ? profile.dailyQuickCheckDismissed : false, question };
+}
+
+export async function dismissDailyQuickCheck(userId: number, courseId: string) {
+  const current = await getDailyQuickCheck(userId, courseId);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  if (current.question) await db.update(studyProfiles).set({ dailyQuickCheckDismissed: true }).where(eq(studyProfiles.userId, userId));
+  return { success: true } as const;
 }
 
 export async function recordAnswer(userId: number, questionId: string, correct: boolean) {
@@ -428,11 +490,11 @@ export async function listManagedUsers(search?: string) {
   if (!db) throw new Error("Banco de dados indisponível");
   const term = search?.trim().toLowerCase();
   const query = db.select({
-    id: users.id, name: users.name, username: users.username, email: users.email, role: users.role,
+    id: users.id, name: users.name, username: users.username, email: users.email, cpf: users.cpf, role: users.role,
     isBlocked: users.isBlocked, createdAt: users.createdAt, lastSignedIn: users.lastSignedIn,
   }).from(users);
   if (!term) return query.orderBy(desc(users.createdAt)).limit(100);
-  return query.where(or(like(users.name, `%${term}%`), like(users.username, `%${term}%`), like(users.email, `%${term}%`))).orderBy(desc(users.createdAt)).limit(100);
+  return query.where(or(like(users.name, `%${term}%`), like(users.username, `%${term}%`), like(users.email, `%${term}%`), like(users.cpf, `%${term.replace(/\D/g, "")}%`))).orderBy(desc(users.createdAt)).limit(100);
 }
 
 export async function getAdminStats() {
@@ -453,7 +515,7 @@ export async function writeAdminAudit(actorUserId: number, affectedUserId: numbe
   await db.insert(adminAuditLogs).values({ actorUserId, affectedUserId, action, detail });
 }
 
-export async function updateManagedUser(userId: number, input: { name: string; username: string; email: string }) {
+export async function updateManagedUser(userId: number, input: { name: string; username: string; email: string; cpf?: string }) {
   return updateUserProfile(userId, input);
 }
 

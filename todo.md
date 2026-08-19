@@ -113,7 +113,7 @@
 - [x] Ampliar a auditoria automatizada para confirmar que toda aula autoral possui material didático interativo e apostila correspondente.
 - [x] Substituir as referências externas com limitação de acesso automatizado por destinos oficiais atuais e verificáveis.
 - [ ] Executar o E2E autenticado de aluno e ROOT, em desktop e mobile, com contas de QA e matrícula temporária ativa.
-- [ ] Mapear cada subitem do conteúdo programático oficial do Agente PF 2025 para módulo, apostila ou questão e fechar a lacuna curricular de QA-001.
+- [x] Mapear cada subitem do conteúdo programático oficial do Agente PF 2025 para módulo, apostila ou questão e fechar a lacuna curricular de QA-001.
 - [ ] Revisar uma amostra pedagógica de vídeos por disciplina, com responsável e data de atualização normativa.
 - [ ] Anexar evidência visual autenticada do fluxo de revisão: instrução, abertura direta da questão na fila, correção e decisão.
 - [x] Criar para o aluno um caminho explícito de “revisar esta questão”, com registro de revisão e acesso posterior na área de estudo.
@@ -160,3 +160,8 @@
 - [x] Importar de modo idempotente somente questões conciliadas, preservar histórico e validar os novos vínculos no painel ROOT antes da publicação.
 - [x] Implementar o parser auditável e o importador idempotente dos 120 itens conciliados da prova de Agente PF 2018, preservando contextos e a fonte CESPE/CEBRASPE.
 - [x] Vincular cada item importado ao conteúdo central específico, cobrir a integridade dos 120 itens em teste e validar os novos totais no banco e no painel ROOT.
+- [x] Adicionar CPF obrigatório e validado ao cadastro local, com normalização, dígitos verificadores e unicidade persistida.
+- [x] Garantir unicidade de e-mail normalizado no cadastro local, com mensagens de erro claras no cliente e no servidor.
+- [x] Personalizar a checagem diária para selecionar perguntas curtas e variadas apenas entre conteúdos dos cursos com matrícula vigente do aluno.
+- [x] Adicionar fechamento acessível à checagem diária e impedir sua reabertura automática no mesmo dia após dispensa explícita.
+- [x] Cobrir CPF, e-mail, acesso por matrícula, variedade diária e fechamento com testes e validação responsiva antes da publicação.

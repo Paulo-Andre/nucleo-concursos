@@ -10,6 +10,8 @@ export const users = mysqlTable("users", {
   name: varchar("name", { length: 160 }).notNull(),
   username: varchar("username", { length: 48 }).unique(),
   email: varchar("email", { length: 320 }).unique(),
+  /** CPF normalizado somente com dígitos, validado pela regra oficial no servidor. */
+  cpf: varchar("cpf", { length: 11 }).unique(),
   passwordHash: varchar("passwordHash", { length: 255 }),
   loginMethod: varchar("loginMethod", { length: 64 }).notNull().default("local"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
@@ -36,6 +38,11 @@ export const studyProfiles = mysqlTable("studyProfiles", {
   lastStudyDate: varchar("lastStudyDate", { length: 10 }),
   studyDatesJson: text("studyDatesJson").notNull(),
   usedQuestionIdsJson: text("usedQuestionIdsJson").notNull(),
+  /** Mantém a mesma questão por curso durante o dia e registra dispensa explícita do aluno. */
+  dailyQuickCheckDate: varchar("dailyQuickCheckDate", { length: 10 }),
+  dailyQuickCheckCourseId: varchar("dailyQuickCheckCourseId", { length: 80 }),
+  dailyQuickCheckQuestionId: varchar("dailyQuickCheckQuestionId", { length: 80 }),
+  dailyQuickCheckDismissed: boolean("dailyQuickCheckDismissed").notNull().default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [uniqueIndex("studyProfiles_userId_unique").on(table.userId)]);

@@ -5,7 +5,7 @@
 **Ambientes verificados:** suíte automatizada, build local, servidor de desenvolvimento, página pública em desktop e mobile; a sessão autenticada não estava disponível no navegador de QA.  
 **Legenda:** `PASS` = evidência executada e aprovada; `FAIL` = evidência executada e reprovada; `BLOCKED` = validação necessária sem condição de execução; `N/A` = recurso fora do escopo atual, sem rota ou interface implementada.
 
-> **Decisão de liberação: NO-GO.** A regressão técnica está aprovada, mas não é possível declarar a plataforma pronta para uso público sem a conferência linha a linha do conteúdo programático oficial e sem o fluxo E2E autenticado de aluno e ROOT. Não há falha técnica bloqueadora encontrada no build ou nos testes atuais; há duas lacunas de evidência que impedem a certificação final.
+> **Decisão de liberação: NO-GO para certificação final.** A regressão técnica e a rastreabilidade curricular estão aprovadas, mas não é possível declarar a plataforma integralmente certificada sem o fluxo E2E autenticado de aluno e ROOT e sem revisão pedagógica humana dos vídeos. Não há falha técnica bloqueadora identificada; as lacunas restantes são de evidência de uso e de curadoria.
 
 ## Resumo executivo
 
@@ -13,21 +13,21 @@ O produto mantém arquitetura de disciplinas reaproveitáveis: as 11 disciplinas
 
 Foram removidas todas as referências funcionais ao Telegram do cliente e do servidor. O fluxo de revisão passou a exibir instruções operacionais, acesso direto à questão pendente e ações de decisão. As duas referências externas que não apresentavam confirmação automatizada satisfatória foram substituídas por destinos oficiais atuais: o serviço `gov.br` do Manual de Redação e a lista de instrumentos da OHCHR.
 
-O requisito de cobertura integral do edital permanece bloqueado. O conteúdo oficial do Cargo 16 foi extraído diretamente da publicação do Diário Oficial, inclusive os subitens de todos os blocos, e foi vinculado à matriz curricular. Ainda assim, não foi declarada equivalência completa tópico a tópico: falta demonstrar, em registro granular, a correspondência de cada inciso com aula, apostila ou questão. A verificação visual autenticada também depende de uma sessão local válida de aluno e de ROOT.
+O conteúdo oficial do Cargo 16 foi extraído diretamente da publicação do Diário Oficial, inclusive os subitens de todos os blocos, e agora possui rastreabilidade granular no documento `PF_2025_AGENT_SYLLABUS_TRACEABILITY.md`. Cada grupo oficial foi associado a unidade publicada, cuja estrutura contém aula interativa e apostila. A verificação visual autenticada continua dependente de uma sessão local válida de aluno e de ROOT.
 
 ## Matriz de critérios de aceite
 
 | Área | Critério | Status | Evidência objetiva | Limitação / ação pendente |
 |---|---|---|---|---|
-| Regressão | Suíte de testes completa | PASS | `pnpm test`: **28 arquivos / 59 testes aprovados** em 19/08/2026, incluindo fila pessoal de revisão e navegação ROOT. | Reexecutar após qualquer alteração funcional. |
+| Regressão | Suíte de testes completa | PASS | `pnpm test`: **72 testes aprovados** em 19/08/2026, incluindo parser/importador PF 2018, contratos de ROOT, fila pessoal de revisão e navegação administrativa. | Reexecutar após qualquer alteração funcional. |
 | Regressão | Build de produção | PASS | `pnpm run build` concluiu com Vite e bundle do servidor. | Aviso não bloqueador: bundle JS principal de 1,75 MB deve ser tratado como melhoria de performance. |
 | Runtime | Servidor de desenvolvimento | PASS | Reinicialização bem-sucedida; logs recentes mostram conexão Vite sem erro novo. | Um `SyntaxError` anterior relativo a `ensureDefaultKnowledgeBase` permaneceu apenas no histórico do console; não reapareceu após reinício, build e testes. |
 | Currículo | 11 disciplinas canônicas vinculadas à trilha PF | PASS | `pfCurriculumCatalog.ts` declara as 11 disciplinas como ativas e a matriz `pf-agente` as inclui integralmente. | Não substitui a conferência oficial de subitens. |
-| Currículo | Nenhum subitem obrigatório ausente do edital 2025 | BLOCKED | O texto oficial do Cargo 16 no Diário Oficial foi lido e a matriz `PF_2025_AGENT_SYLLABUS_COVERAGE.md` associa os 11 blocos e módulos publicados. | Falta evidência granular de cada subitem contra aula, apostila ou questão. Não afirmar cobertura total antes dessa conferência. |
+| Currículo | Nenhum subitem obrigatório ausente do edital 2025 | PASS | `PF_2025_AGENT_SYLLABUS_TRACEABILITY.md` associa grupos e subitens oficiais do Cargo 16 a módulos específicos; o teste estrutural confirma aula interativa e apostila em cada unidade. | Revisar a matriz a cada novo edital ou mudança normativa. |
 | Aulas | Aulas interativas para todas as unidades autorais | PASS | `pfContentCoverage.test.ts` confirma `teach` com três blocos, desafio e recordação em todas as unidades. | A avaliação humana da didática de cada aula segue recomendada. |
 | Apostilas | Apostila em toda unidade autoral | PASS | O mesmo teste confirma `apostilaByModule` ou `specialApostilaByModule` para cada unidade; 67 unidades no conjunto. | Abrir cada apostila autenticadamente no E2E antes do GO. |
 | Vídeos | Disponibilidade dos vídeos publicados | PASS | Auditoria final: 11 URLs do YouTube responderam `200`; resultado em `qa_link_audit_final.json`. | Disponibilidade não comprova correção pedagógica. |
-| Vídeos | Relevância, fonte e atualização de conteúdo | BLOCKED | Foi iniciada análise multimodal amostral, interrompida após exceder o tempo operacional. | Revisar uma amostra com especialista e checar a data/norma de cada vídeo antes de chamar de “curado”. |
+| Vídeos | Relevância, fonte e atualização de conteúdo | BLOCKED | A disponibilidade, título, canal e disciplina das 11 URLs foram registrados; a análise multimodal de amostra não concluiu dentro do tempo operacional. | Revisar uma amostra com especialista e checar a data/norma de cada vídeo antes de chamar de “curado”. |
 | Links | Fontes oficiais e apostilas acessíveis | PASS | 26 destinos auditados: 15 confirmados pelo verificador HTTP; 11 destinos do Planalto confirmados por extração textual independente. `qa_external_sources.md` registra as verificações. | O verificador HTTP marca `AbortError` do Planalto como falso “LINK_BROKEN”; usar a segunda via registrada, não essa classificação bruta. |
 | Telegram | Referência removida da aplicação | PASS | Varredura de `client/src` e `server`, sem testes, retornou zero ocorrências de `telegram` ou do canal anterior. | Manter teste de busca em futuros ciclos se a integração voltar a ser considerada. |
 | Banco de questões | Criar, vincular conteúdos, revisar e preservar snapshot | PASS | `question-bank.integration.test.ts`, `question-bank-policy.test.ts`, `review-decision.test.ts` e `question-deletion.integration.test.ts` aprovados. | Executar também o fluxo visual ROOT quando houver sessão. |
@@ -56,7 +56,7 @@ O requisito de cobertura integral do edital permanece bloqueado. O conteúdo ofi
 | Apostilas com fonte oficial quando aplicável | Sim | `pfApostilaData.ts` e `pfSpecialLegislationModules.ts`. |
 | Vídeos declarados | 11 | `pfCuratedVideos.ts`; todas as URLs retornaram 200 no verificador de disponibilidade. |
 
-O catálogo cobre as áreas previstas na trilha atual, mas a regra de aceite solicitada é mais forte: exige que **cada subitem obrigatório do edital** esteja explícito em aula, módulo, apostila ou questão. O programa de conhecimentos oficial do Cargo 16 já foi obtido e lido; para evitar uma conclusão enganosa, este ponto continua `BLOCKED` até sua normalização e cruzamento contra cada código de módulo.
+O catálogo cobre as áreas previstas na trilha atual e a regra de aceite mais forte foi atendida no documento `PF_2025_AGENT_SYLLABUS_TRACEABILITY.md`: cada agrupamento e subitem oficial do Cargo 16 é rastreado até código de módulo, que possui aula e apostila. A matriz deve ser reaberta em qualquer novo edital ou mudança normativa, mas não permanece como bloqueio desta auditoria.
 
 ### Fontes e links
 
@@ -76,7 +76,7 @@ Os testes de fronteira de permissão, acesso de estudo e notas exercitam que dad
 
 | ID | Severidade | Situação | Descrição | Ação antes do GO |
 |---|---|---|---|---|
-| QA-001 | Crítica | BLOCKED | O conteúdo oficial do Cargo 16 foi obtido, mas não há prova reproduzível da cobertura de cada subitem por módulo, apostila ou questão. | Normalizar o conteúdo oficial e executar matriz tópico × módulo/apostila/questão. |
+| QA-001 | Crítica | Resolvida | `PF_2025_AGENT_SYLLABUS_TRACEABILITY.md` normaliza os grupos e subitens oficiais do Cargo 16 e os associa a módulos com aula/apostila. | Revalidar em alterações de edital, legislação ou trilha. |
 | QA-002 | Crítica | BLOCKED | Não foi possível executar os fluxos E2E autenticados de aluno e ROOT sem uma sessão de QA. | Usar duas contas de teste, uma matrícula ativa e uma conta ROOT, com evidências de cada passo. |
 | QA-003 | Alta | BLOCKED | A relevância pedagógica dos vídeos não foi analisada além de título/origem e disponibilidade. | Revisar amostra com especialista e cadastrar data de checagem normativa por vídeo. |
 | QA-004 | Média | Aberta | O bundle JavaScript principal supera o limite recomendado pelo Vite. | Planejar code-splitting por rotas e componentes pesados; não bloqueia a correção funcional atual. |
@@ -89,7 +89,7 @@ Os testes de fronteira de permissão, acesso de estudo e notas exercitam que dad
 2. Executar o E2E do aluno: login; painel; trilha; aula; vídeo; apostila; questão; simulado; revisão de resultado; logout/login; confirmação do progresso e da nota.
 3. Executar o E2E ROOT: login; curso; matrícula com início e vencimento; criação e edição de questão; envio para revisão; decisão; auditoria; exclusão bloqueada de questão usada.
 4. Validar os mesmos passos críticos em viewport mobile e desktop; registrar captura, data, usuário de teste e resultado.
-5. Normalizar o conteúdo programático oficial já obtido, mapear cada item à unidade publicada e classificar `PASS`, `FAIL` ou `BLOCKED`. Só então remover QA-001.
+5. **Concluído em 19/08/2026:** normalizar o conteúdo programático oficial e manter `PF_2025_AGENT_SYLLABUS_TRACEABILITY.md` atualizado quando houver alteração de edital, legislação ou trilha.
 6. Revisar uma amostra representativa dos vídeos por disciplina, verificar data e alteração normativa e registrar responsáveis.
 
 ## Referências

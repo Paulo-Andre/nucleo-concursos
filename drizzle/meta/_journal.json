@@ -57,6 +57,13 @@
       "when": 1787173597132,
       "tag": "0007_sturdy_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1787181160673,
+      "tag": "0008_shallow_thor",
+      "breakpoints": true
     }
   ]
 }
