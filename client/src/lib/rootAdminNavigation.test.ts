@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { existingQuestionEditingSteps, rootAdminAreas } from "./rootAdminNavigation";
+import { existingQuestionEditingSteps, rootAdminActionContainerClassName, rootAdminAreas } from "./rootAdminNavigation";
 
 describe("navegação administrativa ROOT", () => {
   it("separa gestão de alunos da biblioteca de questões", () => {
@@ -12,5 +12,10 @@ describe("navegação administrativa ROOT", () => {
     expect(existingQuestionEditingSteps).toHaveLength(3);
     expect(existingQuestionEditingSteps.join(" ")).toContain("Editar questão");
     expect(existingQuestionEditingSteps.join(" ")).toContain("registrar histórico");
+  });
+
+  it("não oculta os acessos ROOT no contêiner usado em celular", () => {
+    expect(rootAdminActionContainerClassName).toContain("flex");
+    expect(rootAdminActionContainerClassName).not.toContain("hidden");
   });
 });
