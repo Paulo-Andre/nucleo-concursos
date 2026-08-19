@@ -1,0 +1,817 @@
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+• Cada um dos itens da prova objetiva está vinculado ao comando que imediatamente o antecede. De acordo com o comando a que
+cada um deles esteja vinculado, marque, na Folha de Respostas, para cada item: o campo designado com o código C, caso julgue
+o item CERTO; ou o campo designado com o código E, caso julgue o item ERRADO. A ausência de marcação ou a marcação de
+ambos os campos não serão apenadas, ou seja, não receberão pontuação negativa. Para as devidas marcações, use a Folha de
+Respostas, único documento válido para a correção da sua prova objetiva.
+• Nos itens que avaliarem conhecimentos de informática e(ou) tecnologia da informação, a menos que seja explicitamente
+informado o contrário, considere que todos os programas mencionados estão em configuração-padrão e que não há restrições de
+proteção, de funcionamento e de uso em relação aos programas, arquivos, diretórios, recursos e equipamentos mencionados.
+• Eventuais espaços livres — identificados ou não pela expressão “Espaço livre” — que constarem deste caderno de provas
+poderão ser utilizados para rascunho.
+PROVA OBJETIVA
+-- CONHECIMENTOS BÁSICOS – BLOCO I --
+Muitas obras cinematográficas e séries televisivas são
+inspiradas ou baseadas em obras literárias. Inúmeros filmes,
+desde o surgimento do cinema até a atualidade, seguem
+transpondo para a tela histórias relatadas nos livros, como atesta a
+crescente quantidade de best-sellers adaptados para o cinema.
+Segundo Carlos Gerbase, cineasta e jornalista brasileiro, a
+prevalência do estilo narrativo é quase natural, visto que as
+histórias contadas nos livros e nos filmes são uma forma de
+compreender a vida como uma progressão de acontecimentos.
+O autor explica que as histórias têm começo, meio e fim e que,
+nelas, os acontecimentos levam a outros acontecimentos — assim
+como em nossas vidas. Logo, as narrativas aproximam o público
+porque este se identifica nelas. Além disso, livros e filmes
+permitem viagens por diversos mundos e possibilitam reflexões e
+compreensões, novos conhecimentos e novas experiências.
+Ainda de acordo com Gerbase, quando nos identificamos
+com determinado personagem, aprendemos a como agir
+socialmente (ou antissocialmente). Nesse sentido, a literatura
+funciona como uma espécie de guia universal de boas maneiras
+para a convivência de comunidades às vezes muito diferentes
+culturalmente.
+Histórias sobre a polícia, segundo Jonathan Nichols-Pethick,
+acadêmico especialista em mídia e cinema, representam mais do que
+uma disputa entre o bem e o mal. Elas responderiam a algumas das
+nossas mais prementes preocupações sociais: preocupações sobre
+como imaginamos e mantemos um senso de comunidade em
+uma sociedade vasta e muitas vezes alienante, e também sobre como
+enxergamos os nossos direitos e as nossas responsabilidades
+como cidadãos.
+De acordo com Nichols-Pethick, o sucesso do gênero
+policial desde a literatura do século XIX, passando pelo cinema e
+pela televisão, se justificaria por essa relação estabelecida entre a
+narrativa policial e os indivíduos, que buscam nela sanar suas
+preocupações com a segurança ou buscar um senso de justiça.
+Camila Furuzawa. Séries policiais: características e particularidades das narrativas policiais televisivas.
+In: Vozes & Diálogo, v. 12, n.º 2. Itajaí, SC, jul.- dez./2013 (com adaptações).
+Julgue os itens que se seguem, considerando as ideias, as
+propriedades linguísticas e o vocabulário do texto precedente.
+1 O texto sugere que o gênero policial é o preferido do público
+na literatura, na televisão e no cinema.
+2 Entende-se da leitura do texto que a frequente transposição
+da narrativa de best-sellers para as telas da televisão e do
+cinema se justifica pela expectativa de repetição do sucesso
+obtido na venda das respectivas obras literárias.
+3 A partir das ideias de Carlos Gerbase reproduzidas no texto,
+conclui-se que as histórias narradas em livros e filmes
+podem nortear a conduta social de leitores e espectadores.
+4 O termo "crescente" (segundo período do primeiro
+parágrafo) poderia ser substituído, sem prejuízo do sentido
+original do texto, por considerável.
+5 No segundo período do segundo parágrafo, a oração "que as
+histórias têm começo, meio e fim" classifica-se
+sintaticamente como subordinada adjetiva restritiva.
+6 A supressão da vírgula empregada após "personagem"
+(primeiro período do terceiro parágrafo) prejudicaria a
+correção gramatical do texto.
+7 No segundo parágrafo, o intercambiamento das expressões
+"Logo" (terceiro período) e "Além disso" (quarto período),
+embora alterasse as relações coesivas entre os períodos,
+manteria a coerência das ideias do texto.
+8 O pronome presente no termo "nela" (último parágrafo) tem
+como referente "a narrativa policial".
+Julgue os itens a seguir com base no Manual de Redação da
+Presidência da República.
+9 Os assuntos objetos dos expedientes oficiais devem ser
+tratados de forma estritamente impessoal, uma vez que a
+redação oficial é elaborada sempre em nome do serviço
+público e em atendimento ao interesse geral dos cidadãos.
+10 Na redação oficial, os pronomes de tratamento são
+empregados em três contextos: endereçamento, vocativo e
+corpo do texto.
+Julgue os itens a seguir, relativos a noções de direito
+administrativo.
+11 A presunção de veracidade dos atos administrativos refere-se
+aos fatos, ou seja, presumem-se verdadeiros os fatos
+alegados pela administração pública, ao passo que a
+autoexecutoriedade constitui atributo pelo qual os atos
+administrativos se impõem a terceiros, independentemente
+de sua concordância.
+12 A pessoa que sofrer algum dano por ato praticado por
+um servidor público no exercício da função poderá ajuizar
+ação de indenização somente contra o Estado.
+13 As sociedades de economia mista e as empresas públicas
+desempenham atividade de natureza econômica e se
+distinguem pela forma de organização e pela composição do
+capital.
+14 O cancelamento do registro da penalidade de suspensão
+de servidor público, que ocorre após o decurso de dois anos
+de efetivo exercício, surtirá efeitos retroativos caso o
+servidor não pratique, nesse período, nova infração
+disciplinar.
+15 É inexigível a licitação para a contratação que possa
+acarretar comprometimento da segurança nacional, nos casos
+estabelecidos pelo Ministério da Defesa, mediante demanda
+dos comandos das Forças Armadas.
+16 O princípio da razoabilidade é considerado um princípio
+implícito da administração pública e se baseia naquilo que se
+situa dentro de limites aceitáveis.
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+Julgue os itens a seguir, a respeito de direitos e garantias
+fundamentais e forma e sistema de governo.
+17 O sigilo da correspondência e das comunicações telefônicas
+pode ser afastado por determinação judicial, quando isso for
+necessário à apuração de infrações penais ou administrativas,
+conforme dispuser a lei.
+18 A forma de governo diz respeito à relação entre os
+Poderes Executivo e Legislativo, ao passo que o sistema de
+governo refere-se à origem e à titularidade do poder político.
+Julgue os próximos itens, relativos à organização da segurança
+pública e à proteção aos indígenas e ao meio ambiente, de acordo
+com o disposto na Constituição Federal de 1988.
+19 Cabe à Polícia Federal exercer, com exclusividade, as
+funções de polícia judiciária da União, dos estados e do
+Distrito Federal.
+20 Além das pessoas físicas, as pessoas jurídicas também
+podem ser responsabilizadas penalmente pela prática de
+crimes ambientais.
+21 A pesquisa e a lavra de minerais em terras indígenas só
+podem ser efetivadas mediante autorização do
+Congresso Nacional.
+22 O patrulhamento ostensivo das ferrovias federais compete à
+Polícia Rodoviária Federal.
+Com base no Código Penal (CP) e na jurisprudência consolidada
+do Superior Tribunal de Justiça (STJ), julgue os itens seguintes.
+23 O crime de prevaricação exige, além da conduta típica de
+retardar, deixar de praticar ou praticar indevidamente ato
+de ofício, o dolo específico de satisfazer interesse ou
+sentimento pessoal, não sendo suficiente a constatação de
+mera negligência ou descompromisso funcional.
+24 O uso de um cabo de vassoura contra a vítima durante a
+prática de roubo pode justificar a aplicação da causa de
+aumento de pena prevista no art. 157, § 2.º, VII, do CP,
+desde que comprovada sua potencialidade lesiva, ainda que
+não haja perícia ou apreensão do objeto.
+25 Considere que um casal tenha sido preso em flagrante
+enquanto furtava cabos de energia elétrica em via pública: a
+mulher encontrava-se ao lado do poste de energia com uma
+mochila onde estavam armazenados diversos metros de fios
+já cortados e perto dela havia um facão utilizado para o
+corte; o homem se encontrava no alto do poste, com o facão
+em mãos, em plena retirada de novos cabos. Nessa situação,
+a ausência de laudo pericial sobre o local e os meios
+utilizados impede, em relação à mulher, a configuração da
+qualificadora da escalada no crime de furto, ainda que
+policiais tenham presenciado diretamente a prática delitiva e
+narrado detalhadamente os fatos.
+No que se refere ao inquérito policial, julgue os itens seguintes.
+26 O inquérito policial poderá ser iniciado mediante
+requerimento do ofendido, mesmo nos crimes de ação
+pública incondicionada.
+27 A autoridade policial deve instaurar inquérito policial sempre
+que qualquer pessoa do povo comunicar, verbalmente ou por
+escrito, a ocorrência de uma infração penal,
+independentemente da natureza da ação penal ou da
+verificação da procedência das informações.
+Durante operação de fiscalização em águas internacionais
+(alto-mar), uma embarcação brasileira de propriedade privada foi
+flagrada transportando substâncias entorpecentes. As autoridades
+estrangeiras permitiram que o Brasil conduzisse a investigação e
+eventual processo criminal, já que a embarcação estava registrada
+no Brasil.
+Com base na situação hipotética precedente e no disposto no CP,
+julgue o item abaixo.
+28 Como o crime ocorreu fora do território brasileiro, em
+alto-mar, e não envolveu embarcação pública, a lei penal
+brasileira não pode ser aplicada ao caso.
+Considerando o sistema internacional de proteção dos direitos
+humanos e as regras mínimas da ONU para o tratamento de
+pessoas presas, julgue os itens a seguir.
+29 Na admissão de indivíduos em estabelecimentos prisionais,
+deverá ser adicionado, no sistema de registro do recluso,
+inventário dos seus bens pessoais.
+30 As Regras de Mandela contemplam a possibilidade de se
+impor ao recluso a realização de trabalho no estabelecimento
+prisional em cumprimento de qualquer medida disciplinar.
+31 A separação de categorias de pessoas presas deve orientar-se
+por critérios de gênero, idade e natureza dos delitos, não
+havendo regra que determine a separação dos presos em
+razão da natureza da detenção, isto é, se preventiva ou se
+oriunda de condenação definitiva.
+32 Qualquer pessoa declarada culpada por um delito terá o
+direito de recorrer a uma instância superior para rever a
+sentença condenatória que lhe tenha sido imposta e a pena
+que lhe tenha sido aplicada.
+Julgue os itens seguintes, relativos ao disposto na Convenção
+Relativa ao Estatuto dos Refugiados e na Convenção contra a
+Tortura e Outros Tratamentos ou Penas Cruéis, Desumanos ou
+Degradantes.
+33 Os Estados-partes da Convenção contra a Tortura e Outros
+Tratamentos ou Penas Cruéis, Desumanos ou Degradantes
+devem incluir os atos de tortura como crimes extraditáveis
+em todos os tratados de extradição que vierem a concluir
+entre si.
+34 A Convenção Relativa ao Estatuto dos Refugiados veda aos
+Estados contratantes, em qualquer circunstância, a expulsão
+de refugiados.
+Espaço livre
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+Julgue os itens a seguir, com base nas Leis n.º 14.967/2024,
+n.º 13.445/2017, n.º 11.343/2006, n.º 9.455/1997 e
+n.º 8.069/1990.
+35 O pedido do Ministério Público para aplicação de medida
+socioeducativa deverá ser julgado improcedente pela
+autoridade judiciária nas seguintes hipóteses: comprovação
+da inexistência do fato; ausência de prova da existência do
+fato; não caracterização do fato como ato infracional; e falta
+de prova da participação do adolescente no ato infracional.
+36 No âmbito da segurança privada, compete à Polícia Federal
+renovar, a cada dois anos, a autorização de funcionamento
+das empresas de monitoramento de sistemas eletrônicos de
+segurança que atuam, simultaneamente, em mais de
+um estado da Federação.
+37 Segundo a Lei de Migração, desde que exista disposição
+específica em tratado, o pedido de prisão cautelar poderá ser
+transmitido à autoridade competente para extradição no
+Brasil, mediante canal estabelecido com o ponto focal da
+INTERPOL no país, devidamente instruído com a
+documentação comprobatória da existência de ordem de
+prisão proferida por Estado estrangeiro.
+38 A apreensão dos meios de transporte e dos maquinários,
+utensílios, instrumentos e objetos de qualquer natureza
+utilizados para a prática, habitual ou não, do tráfico ilícito de
+drogas deve ser imediatamente comunicada pela autoridade
+de polícia judiciária responsável pela investigação ao juízo
+competente, que, no prazo de trinta dias, contado dessa
+comunicação, deve determinar a alienação dos bens
+apreendidos, excetuadas as armas.
+39 O condenado por crime de tortura, bem como aquele que se
+houver omitido em face das condutas que o caracterizam
+quando tinha o dever de evitá-las ou apurá-las, iniciará o
+cumprimento da pena em regime fechado.
+Julgue os seguintes itens, de acordo com o disposto nas
+Leis n.º 10.826/2003, n.º 9.605/1998, n.º 10.446/2002 e
+n.º 7.116/1983, bem como no Decreto n.º 11.797/2023.
+40 A carteira de identidade fará prova de todos os dados nela
+incluídos, dispensando a apresentação dos documentos que
+lhe deram origem ou que nela tenham sido mencionados.
+41 No âmbito do Serviço de Identificação do Cidadão, compete
+à Polícia Federal definir especificações técnicas
+de documentos de segurança vinculados à identificação de
+pessoas naturais e regulamentar o procedimento a ser
+adotado em caso de divergência na verificação dos dados da
+pessoa natural.
+42 Quando houver repercussão interestadual ou internacional
+que exija repressão uniforme, poderá o Departamento de
+Polícia Federal do Ministério da Justiça, sem prejuízo da
+responsabilidade dos órgãos de segurança pública arrolados
+na Constituição Federal de 1988, proceder à investigação de
+quaisquer crimes praticados por meio da rede mundial de
+computadores que difundam conteúdo misógino, definido
+como aquele que propaga ódio ou aversão às mulheres.
+43 Pratica crime o proprietário de empresa de segurança e
+transporte de valores que, nas primeiras 24 horas depois de
+sofrer perda, furto, roubo ou outra forma de extravio de arma
+de fogo, acessório ou munição que estejam sob sua guarda,
+deixa de registrar ocorrência policial e de comunicar o fato à
+Polícia Federal.
+44 Nas infrações penais derivadas de condutas e atividades
+lesivas ao meio ambiente, a ação penal é pública
+incondicionada.
+Considerando que de uma população X que se distribui conforme
+uma distribuição normal com média  e variância  foi retirada
+uma amostra aleatória simples de tamanho  = 4, denotada como
+ଵ, ଶ, ଷ, ସ, julgue os itens a seguir, a respeito da soma
+ = ଵ + ଶ + ଷ + ସ.
+45 A mediana de  é igual a (ଶ + ଷ)/2.
+46  segue uma distribuição binomial com parâmetro  = 4.
+47 A probabilidade de  = 4 ×  é zero.
+48 O desvio padrão da razão /√ é igual a 2.
+Em uma perícia sobre contratos licitatórios, foi analisada a
+diferença  entre os valores licitados ( ) e os valores
+efetivamente pagos ( ) para certo tipo de prestação de serviço.
+Para essa finalidade, selecionou-se uma amostra aleatória simples
+de 36 contratos, assumindo-se que a população seja descrita por
+uma distribuição normal. Os resultados mostram que, para a
+variável  =  −  , a média amostral foi R$ 5 mil e o desvio
+padrão amostral, R$ 3 mil. Além disso, a regressão linear simples
+da variável  sobre  , obtida pelo método de mínimos
+quadrados ordinários, foi  = 0,5 + 1,1 ×  .
+Com base nos dados apresentados na situação hipotética
+precedente, julgue os próximos itens.
+49 O coeficiente de correlação linear de Pearson entre as
+variáveis  e  foi igual a 1,1.
+50 O intervalo de 95% confiança para a diferença entre as
+médias populacionais dos valores licitados e dos valores
+efetivamente pagos foi R$ 5 mil ± R$ 0,5 mil.
+51 O desvio padrão da variável  foi superior ao desvio padrão
+da variável  .
+52 A média amostral dos valores licitados ( ) foi de
+R$ 50 mil.
+Espaço livre
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+Julgue os próximos itens, relativos a estruturas lógicas, lógica de
+argumentação e lógica sentencial.
+53 Considere que, na tabela-verdade a seguir, P, Q e R sejam
+proposições,  denote o condicional “se... então... ”, “”, o
+conectivo “ou”, e ~R, a negação da proposição R. Com base
+nessas considerações, conclui-se que, ao preencher
+corretamente a última coluna da tabela-verdade, ocorrerão
+4 valores V (verdade) e 4 valores F (falso).
+54 Considere que um crime foi cometido e três suspeitos desse
+crime, X, Y e Z, foram intimados e conduzidos a
+um interrogatório. Nessa ocasião, sobre o crime,
+ X afirmou: “nem Y nem Z são culpados”;
+ Z afirmou: “os culpados foram Y e X”; e
+ Y afirmou: “o culpado foi Z ou X”.
+Nessa situação, sabendo-se que todos os suspeitos mentiram,
+é correto concluir que o culpado do crime é X.
+55 Considere que as seguintes proposições sejam verdadeiras.
+P: “Se Paulo é parente da vítima, então ele é inocente e
+estava no exterior no dia do crime”.
+Q: “Se Paulo tem o mesmo sobrenome da vítima ou tem o
+mesmo tipo sanguíneo, então ele é parente da vítima”.
+Com base nessas proposições, é correto afirmar que, se
+Paulo não estava no exterior no dia do crime, então ele não
+tem o mesmo tipo sanguíneo da vítima.
+56 Suponha que a sentença “Se Aldo ou Bruno é filho de
+Carlos, então Daniel é pai de Elza e de Fernanda” seja
+verdadeira. Nesse caso, se Elza não for filha de Daniel, então
+Carlos não é pai de Aldo nem de Bruno.
+Espaço livre
+Em determinado dia, 1.000 veículos de carga, com seus
+respectivos condutores e cargas, passaram por um posto de
+fiscalização de fronteira. Desses, 800 estavam com
+a documentação em situação regular — o veículo, o condutor e a
+carga —, e 200 apresentavam alguma irregularidade na
+documentação — do veículo, do condutor ou da carga. Além
+disso, as placas de todos esses 1.000 veículos foram devidamente
+registradas.
+Tendo como base a situação hipotética apresentada, julgue os
+itens seguintes.
+57 A negação da sentença “todo condutor abordado na
+fiscalização era brasileiro ou estrangeiro” é a seguinte
+sentença: “nenhum condutor abordado na fiscalização era
+brasileiro ou estrangeiro”.
+58 Se duas placas forem aleatoriamente selecionadas ao final do
+dia entre as 1.000 placas registradas, será superior a 0,3 a
+probabilidade de uma delas pertencer
+a um veículo/condutor/carga em situação irregular e a outra,
+a um veículo/condutor/carga em situação regular.
+59 Considere que as placas de todos os veículos sejam
+constituídas por uma sequência de 4 letras justaposta a
+uma sequência de 3 dígitos numéricos entre 0 e 9,
+admitindo-se repetições. Considere, ainda, que a soma dos
+dígitos numéricos da placa de cada um dos 1.000 veículos
+fiscalizados seja sempre superior ou igual a 26. Nessa
+situação, pelo menos 250 placas têm os mesmos dígitos
+numéricos, nas mesmas posições.
+60 Considere que, entre os veículos em situação irregular,
+
+ 120 apresentavam problemas na documentação do
+veículo;
+ 85, na documentação do condutor; e
+ 40, na documentação da carga transportada.
+Além disso, os veículos com problemas na documentação da
+carga não apresentavam problemas na documentação do
+veículo nem na documentação do condutor.
+Nessa situação, é inferior a 40 a quantidade de veículos que
+apresentavam, simultaneamente, irregularidades na
+documentação do veículo e do seu condutor.
+Espaço livre
+P Q R P  Q  ~R
+V V V
+V V F
+V F V
+V F F
+F V V
+F V F
+F F V
+F F F
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+-- CONHECIMENTOS BÁSICOS – BLOCO II --
+Acerca de Internet e intranet, bem como de tecnologias,
+ferramentas, aplicativos e procedimentos associados, julgue os
+próximos itens.
+61 O Microsoft Remote Desktop e o TeamViewer permitem
+acesso remoto a computadores, o que possibilita a
+transferência de arquivos, e os ambientes Microsoft Office e
+LibreOffice oferecem ferramentas para criação de textos,
+planilhas e apresentações, garantindo compatibilidade com
+diversos formatos.
+62 A Internet é uma rede pública global de comunicação e acesso
+a informações, ao passo que a intranet é restrita a
+organizações; ambas permitem o uso de navegadores, email,
+grupos de discussão, mecanismos de busca e redes sociais, e
+utilizam tecnologias como autenticação e criptografia, que
+garantem segurança no compartilhamento de dados.
+63 Em distribuições Linux, o comando ipconfig é utilizado
+para exibir informações de configuração de rede, como
+endereço IP e máscara de sub-rede; no Windows, o comando
+ifconfig desempenha a mesma função, permitindo a
+visualização e configuração de interfaces de rede.
+Julgue os itens a seguir, em relação a redes de computadores e
+conceitos de proteção e segurança.
+64 Firewalls são ferramentas de segurança que monitoram e
+controlam o tráfego de dados entre redes, podendo bloquear
+acessos não autorizados, ao passo que os antivírus são
+projetados para detectar, remover e prevenir a ação de vírus e
+outras pragas virtuais.
+65 No protocolo IPv6, cada endereço tem 256 bits, que são
+divididos em duas partes (a primeira define a rede e a
+segunda identifica o host); esse protocolo elimina o uso de
+máscaras de sub-rede, substituindo-as por prefixos de rede
+fixos; por sua vez, o IPv4 utiliza endereços de 32 bits e
+máscaras de sub-rede variáveis para definir a separação entre
+rede e host.
+Julgue os itens que se seguem, referentes a computação em
+nuvem, fundamentos da teoria geral de sistemas e sistemas de
+informação.
+66 Na arquitetura de sistemas, o frontend é a interface visível e
+interativa com o usuário, enquanto o backend realiza o
+processamento de dados e a lógica de negócios; essa
+separação reflete os princípios da teoria geral de sistemas,
+segundo a qual a organização de sistemas em partes
+interdependentes facilita sua compreensão e manutenção.
+67 A computação em nuvem permite que os usuários acessem
+recursos computacionais sob demanda, como
+armazenamento e processamento, sem a necessidade de
+conexão com a Internet, pois os dados e serviços são
+armazenados localmente nos dispositivos dos usuários.
+68 Na análise de requisitos de um sistema de informação, a
+etapa de especificação pode ser desconsiderada e substituída
+diretamente pelos ambientes de testes, homologação e
+produção, desde que os requisitos tenham sido bem definidos
+e documentados.
+Julgue os itens subsequentes, relativos à teoria da informação e a
+banco de dados.
+69 No modelo entidade-relacionamento, a abstração representa
+o mundo real com entidades, atributos e relacionamentos
+binários, ternários ou superiores; no modelo relacional, a
+integridade referencial depende de chaves primárias e
+estrangeiras, enquanto a análise funcional identifica
+dependências e normaliza tabelas até a forma normal
+adequada (3FN, Boyce-Codd ou 4FN), eliminando
+redundâncias e anomalias.
+70 A mineração de dados é uma técnica em que se utilizam
+exclusivamente algoritmos de aprendizado supervisionado
+para a identificação de padrões em grandes volumes de
+dados; no contexto de Big Data, a premissa principal é a
+utilização de bancos de dados relacionais tradicionais, que
+são suficientes para o enfrentamento dos desafios de volume,
+variedade e velocidade característicos desse ambiente.
+71 No contexto de banco de dados, dados estruturados são
+aqueles que não possuem um formato fixo e são
+armazenados em sistemas como bancos NoSQL, ao passo
+que dados não estruturados possuem um formato rígido e são
+armazenados em tabelas relacionais.
+72 Na teoria da informação, dados representam fatos brutos que,
+quando organizados e interpretados, se transformam em
+informação, e a segurança da informação busca protegê-los
+contra acessos não autorizados, garantindo sua
+confidencialidade, integridade e disponibilidade.
+Julgue os próximos itens, relativos aos modos de transmissão de
+dados, ao modelo OSI, à linguagem Python e aos conceitos
+de falso positivo (FPIR) e falso negativo (FNIR) dos testes de
+acurácia do NIST.GOV.
+73 Em sistemas biométricos de alta segurança, o controle do
+FNIR é mais relevante que o do FPIR, pois rejeitar
+um usuário legítimo acarreta maior risco que aceitar
+um impostor.
+74 O indicador FPIR é diretamente influenciado por um limiar
+de decisão mal ajustado, o que pode comprometer a
+segurança de sistemas biométricos ao se aceitarem usuários
+não autorizados.
+75 Em Python, a função lambda permite a criação de funções
+anônimas, que podem ser usadas como argumentos em
+funções de ordem superior, o que facilita a programação
+funcional.
+76 No modo de transmissão full-duplex, para que os dados
+sejam transmitidos simultaneamente em ambos os sentidos,
+os dispositivos devem estar sincronizados no mesmo
+clock lógico de rede.
+77 A camada de sessão do modelo OSI é a principal responsável
+pela fragmentação e reconstrução de pacotes IP entre
+sistemas finais na rede.
+78 Em Python, listas são estruturas de dados imutáveis, o que as
+torna ideais para serem usadas como chaves de
+dicionários (dict).
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+Acerca de machine learning, do sistema operacional Linux, do
+protocolo DNS e dos modelos de serviço em nuvem, julgue os
+itens subsequentes.
+79 Em serviços de nuvem, a utilização de plataforma como
+serviço (PaaS) é mais recomendada para empresas que
+desejem controlar totalmente o hardware e o sistema
+operacional utilizados.
+80 Em machine learning supervisionado, o algoritmo aprende, a
+partir de um conjunto de dados rotulados, a identificar
+padrões e realizar previsões em novos dados.
+81 No ambiente Linux, a execução do comando apresentado a
+seguir atribuirá permissões de leitura, escrita e execução para
+o proprietário do arquivo policial.pdf, e atribuirá
+permissões de leitura e execução para grupo e outros
+usuários.
+chmod 755 policial.pdf
+82 A infraestrutura como serviço (IaaS) oferece aos usuários
+recursos computacionais virtuais como servidores,
+armazenamento e redes, mas o gerenciamento do sistema
+operacional fica sob responsabilidade do cliente.
+83 O DNS é responsável por garantir a confidencialidade das
+comunicações entre cliente e servidor por meio de
+criptografia ponta a ponta embutida no próprio protocolo
+desde a sua concepção.
+84 O DNS utiliza o protocolo UDP para a maioria das
+consultas, mas pode usar o TCP para transferência de zonas e
+consultas que excedam 512 bytes.
+Em relação a ameaças digitais e técnicas de segurança, julgue os
+itens a seguir.
+85 O protocolo HMAC-based one-time password (HOTP) é
+uma solução usada em autenticação multifator (MFA) para a
+geração de códigos de autenticação que não expiram.
+86 Em autenticação multifator (MFA), hardwares tokens
+equivalem a dispositivos físicos que geram códigos de
+autenticação ou permitem autenticação via porta USB em
+computadores com esse tipo de interface.
+87 A técnica sandboxing, ao executar programas em
+um ambiente compartilhado para observar seu
+comportamento, altera o sistema principal.
+88 Detecção heurística é uma técnica de análise do
+comportamento e da estrutura do código para a identificação
+de características típicas de vírus, ainda que a assinatura
+específica não seja conhecida.
+Acerca de bancos de dados relacionais e suas características,
+julgue os itens que se seguem.
+89 Por princípio, a consistência pressupõe que uma transação
+inconsistente deve levar o banco de dados de um estado
+inconsistente para o estado consistente.
+90 Para a garantia dos princípios de atomicidade em banco de
+dados, uma transação somente é confirmada e tornada
+permanente no banco de dados após todas as suas operações
+serem executadas com sucesso.
+Com base nas informações do código precedente, julgue os
+próximos itens.
+91 O comando SELECT mostra que existe uma relação com
+uma tabela de nome produtos mediante id_produto.
+92 Pelo comando SELECT, entende-se que os valores da coluna
+valor_venda devem ser menores que zero.
+Julgue os itens subsecutivos, no que se refere a aprendizado de
+máquina e API (application programming interface).
+93 Em aprendizado de máquina, as técnicas de classificação e
+regressão são exemplos de aplicações práticas para a solução
+de problemas.
+94 REST (Representational state transfer) e GraphQL são
+dois tipos de API, cada um com suas características técnicas
+particulares.
+95 Em aprendizado de máquina, não há overfitting.
+96 Uma API deve manter estado entre as requisições visto que,
+para cada requisição, é necessária a completude oriunda de
+outra requisição a fim de que a aplicação tenha todas as
+informações necessárias para processá-la.
+Espaço livre
+CREATE TABLE catalogo (
+id_tabela INT,
+nome_tabela VARCHAR(255),
+descricao TEXT,
+colunas TEXT,
+relacionamentos TEXT,
+regras_negocio TEXT,
+data_criacao DATE,
+data_ultima_atualizacao DATE
+);
+INSERT INTO catalogo VALUES (
+1,
+'vendas',
+'Registros de vendas realizadas',
+'id_venda INT, data_venda DATE, valor_venda
+DECIMAL, id_produto INT',
+'id_produto REFERENCES produtos(id)',
+'valor_venda > 0',
+'2023-01-01',
+'2023-10-05'
+);
+SELECT * FROM catalogo WHERE nome_tabela = 'vendas';
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+-- CONHECIMENTOS ESPECÍFICOS – BLOCO III --
+Julgue os itens subsequentes, que dizem respeito à finalidade da
+contabilidade e a patrimônio, atos e fatos administrativos, contas
+e plano de contas.
+97 Uma empresa que realiza a compra de um terreno no valor
+de R$ 120.000 à vista, com recursos bancários, deve lançar
+esse valor a débito na conta bancos e a crédito na conta
+terrenos, pois está saindo dinheiro e entrando um bem.
+98 O plano de contas é um dos livros contábeis obrigatórios das
+empresas, devendo ser registrado e autenticado na junta
+comercial juntamente com o livro diário e o livro-razão.
+99 A principal finalidade do relatório financeiro para fins gerais
+é atender às necessidades da administração da entidade,
+fornecendo informações internas detalhadas para o
+planejamento e controle operacional e priorizando os
+usuários internos em detrimento dos externos.
+100 Uma movimentação entre contas do ativo e do passivo é
+classificada como fato modificativo, uma vez que envolve
+variação na estrutura patrimonial da entidade e altera
+diretamente o valor do patrimônio.
+101 O valor do patrimônio líquido de uma entidade no início de
+determinado ano resulta da diferença entre o total de bens e
+direitos da entidade e o montante de suas obrigações.
+Julgue os itens a seguir, acerca de escrituração contábil e dos atos
+e fatos administrativos.
+102 Os fatos administrativos permutativos correspondem à troca
+entre elementos do ativo ou do passivo que não alteram o
+patrimônio líquido, tal como ocorre na aquisição de um item
+para venda com pagamento à vista, que reduz o ativo caixa e
+aumenta o ativo estoque; entretanto, uma troca que envolva
+aumento simultâneo do ativo e do passivo não caracteriza
+fato permutativo, pois altera o patrimônio da empresa.
+103 Considere que, em determinado período, uma empresa tenha
+vendido R$ 125.000 e só recebido R$ 115.000 (o restante
+receberá no futuro); considere, ainda, que a mesma empresa
+tenha tido, no mesmo período, despesa de R$ 110.000 e
+tenha pago R$ 108.000. Com base nesses dados, conclui-se
+que, pelo regime de competência, a empresa apresentou
+lucro de R$ 15.000 no período.
+104 O livro diário deve conter, para cada lançamento, a data do
+fato, a conta debitada, a conta creditada, o histórico da
+operação e o valor correspondente, e nele deve-se obedecer
+à ordem cronológica dos registros.
+105 Pelo regime de competência, as receitas de vendas devem ser
+contabilizadas somente no momento do recebimento do
+dinheiro, independentemente da entrega do produto ou
+serviço.
+106 O valor pago antecipadamente pelo aluguel de uma sala
+comercial para uso por período de seis meses deve ser
+registrado pela empresa locatária como um direito no ativo,
+na conta despesas antecipadas, e deverá ser apropriado
+mensalmente como despesa, à medida que o direito de uso
+da sala for sendo consumido.
+conta saldo (R$)
+bancos 95.000
+materiais de consumo 4.000
+máquinas 9.000
+contas a pagar 5.700
+capital 100.000
+receita de serviços 7.000
+despesas com taxas 1.500
+despesa com pró-labore 2.000
+despesa antecipada 1.200
+Com base nos dados precedentes, relativos ao conjunto completo
+de saldos contábeis extraídos do balancete de uma empresa em
+31/12 de determinado ano, julgue os itens que se seguem.
+107 O patrimônio líquido total da entidade, considerado o
+resultado do exercício, é de R$ 100.000.
+108 O passivo circulante resulta no valor de R$ 5.700.
+109 O ativo soma R$ 109.200.
+110 O lucro apurado no exercício é de R$ 3.500.
+Julgue os itens a seguir, no que se refere a balancete de
+verificação contábil, balanço patrimonial e demonstração
+de resultado do exercício.
+111 O balancete de verificação permite que se identifiquem
+lançamentos que, embora estejam com débito e crédito
+equilibrados, tenham sido registrados equivocadamente em
+contas indevidas.
+112 De acordo com o Pronunciamento n.º 26 (R1) do Comitê de
+Pronunciamentos Contábeis (CPC), os impostos diferidos
+devem ser classificados no balanço patrimonial como ativo
+ou passivo não circulante.
+113 Na demonstração de resultados do exercício, a receita líquida
+corresponde à receita bruta menos as deduções, tais como
+devoluções de venda, impostos sobre vendas e descontos
+comerciais.
+A respeito da contabilização de operações contábeis, julgue os
+itens que se seguem.
+114 Um ativo temporariamente retirado de uso deve continuar
+sendo depreciado, exceto se já estiver totalmente depreciado
+ou se o método de depreciação adotado estiver diretamente
+vinculado ao seu uso.
+115 A provisão para contingência deve ser reconhecida no
+passivo sempre que a perda for considerada possível,
+independentemente do trânsito em julgado da ação judicial
+que a motivou.
+116 A provisão para férias representa um passivo para a empresa
+e deve ser reconhecida como despesa por ocasião do gozo de
+férias pelo empregado.
+117 De acordo com o Pronunciamento n.º 27 do CPC, a
+depreciação de um ativo deve cessar quando o bem estiver
+totalmente depreciado ou quando este for classificado como
+disponível para venda.
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+Com base na Estrutura Conceitual para Elaboração e Divulgação de Relatório Contábil-financeiro – CPC 00 (R2), julgue os itens
+subsequentes.
+118 A relevância e a compreensibilidade são as características fundamentais da informação contábil.
+119 A relevância da informação contábil está associada à sua capacidade de influenciar as decisões econômicas de seus usuários.
+120 O custo corrente de um ativo corresponde ao valor presente dos fluxos de caixa futuros que a entidade espera obter a partir do uso
+contínuo do ativo.
+Espaço livre
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+• Nesta prova, faça o que se pede, usando, caso deseje, o espaço para rascunho indicado no presente caderno. Em seguida,
+transcreva o texto para a FOLHA DE TEXTO DEFINITIVO DA PROVA DISCURSIVA, no local apropriado, pois não será
+avaliado fragmento de texto escrito em local indevido.
+• Qualquer fragmento de texto além da extensão máxima de linhas disponibilizadas será desconsiderado.
+• Na Folha de Texto Definitivo, a presença de qualquer marca identificadora no espaço destinado à transcrição do texto definitivo
+acarretará a anulação da sua prova discursiva.
+• Ao domínio do conteúdo serão atribuídos até 20,00 pontos, dos quais até 1,00 ponto será atribuído ao quesito apresentação
+(legibilidade, respeito às margens e indicação de parágrafos) e estrutura textual (organização das ideias em texto estruturado).
+-- PROVA DISCURSIVA –
+Evolução anual do IDC Global DataSphere* em zettabyte
+* O IDC Global DataSphere é uma medida de quanto dado é criado, capturado, replicado e
+consumido a cada ano no mundo.
+Internet: <www.researchgate.net>.
+Há dois mil anos, os romanos consolidaram as ideias de fronteira e lei como
+pilares de seu império. Além da lei e da fronteira, só existia a barbárie. Como lembra
+Umberto Eco, se lei e fronteira não são reconhecidas, então, não pode haver civitas —
+a cidadania. O longo período de trevas em que o mundo europeu mergulhou na Idade
+Média surgiu em decorrência do rompimento das fronteiras romanas e de suas leis. Só
+a lenta organização dos Estados europeus, forjando leis nacionais e desenhando
+fronteiras, recriou a civilização como a conhecemos, muitos séculos depois.
+O mundo contemporâneo flexibilizou os limites que já não são quase visíveis
+fisicamente. Podemos cruzar de avião muitas fronteiras nacionais sem percebê-las.
+Nossa comunicação digital com qualquer um em qualquer parte do mundo, as compras
+que fazemos online, a circulação instantânea da informação são alguns exemplos que
+nos dão a impressão de que vivemos num “mundo sem fronteiras”. O que vemos hoje,
+no ambiente digital, é o incentivo ao conceito do mundo sem fronteiras como a nova
+utopia: um mundo global, com menos limites reais e virtuais, facilitando o trânsito de
+mercadorias, capitais e ideias.
+Internet: <oglobo.globo.com> (com adaptações).
+A Operação Impregnator, realizada pela Polícia Federal (PF) em setembro
+de 2024, tinha o objetivo de combater a produção, o armazenamento e o
+compartilhamento de fotos e vídeos contendo cenas de abuso sexual infantil. Os
+agentes prenderam o investigado em flagrante após encontrarem, no celular dele,
+vários aplicativos de Dark Web com perfis em fóruns, nos quais compartilhava as
+imagens dos abusos contra menores.
+Segundo a PF, as investigações começaram após comunicado da Interpol aos
+agentes brasileiros a respeito de um alerta emitido pelo sistema de identificação de
+vítimas da agência internacional, em relação à existência de cenas de abuso sexual
+infantojuvenil em plataformas da Dark Web. Dada a possibilidade de os conteúdos
+ilegais envolverem crianças brasileiras, a Força Tarefa de Identificação de Vítimas na
+Dark Web, gerenciada pela Coordenação de Repressão a Crimes Cibernéticos da PF,
+realizou uma perícia técnica nos arquivos para constatar os crimes, tendo identificado o
+suspeito e constatado que as vítimas exibidas nos arquivos eram realmente brasileiras.
+Internet: <www.cnnbrasil.com.br> (com adaptações).
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+CONSTITUIÇÃO DA REPÚBLICA FEDERATIVA DO BRASIL DE 1988
+(...)
+Art. 144. (...)
+§ 1º A polícia federal, instituída por lei como órgão permanente, organizado e
+mantido pela União e estruturado em carreira, destina-se a: (Redação dada pela
+Emenda Constitucional nº 19, de 1998)
+I – apurar infrações penais contra a ordem política e social ou em detrimento de
+bens, serviços e interesses da União ou de suas entidades autárquicas e empresas
+públicas, assim como outras infrações cuja prática tenha repercussão interestadual ou
+internacional e exija repressão uniforme, segundo se dispuser em lei;
+(...)
+Internet: <www.planalto.gov.br>.
+Considerando que os textos precedentes têm caráter unicamente motivador, redija um texto dissertativo a respeito do tema a seguir.
+INVESTIGAÇÃO POLICIAL NA ERA DOS DADOS E DA DILUIÇÃO DE FRONTEIRAS
+Em seu texto, aborde os seguintes aspectos:
+1 o papel constitucional da Polícia Federal e a investigação de crimes em ambiente cibernético; [valor: 7,00 pontos]
+2 a importância de Big Data e mineração de dados nesse contexto; [valor: 6,00 pontos]
+3 a utilização de aprendizado de máquina e de inteligência artificial na investigação policial. [valor: 6,00 pontos]
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMDo1MiAtMDMwMA==
+www.pciconcursos.com.br
+CEBRASPE – PF – Edital: 2025
+RASCUNHO
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+

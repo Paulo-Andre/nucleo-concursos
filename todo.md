@@ -154,3 +154,9 @@
 - [x] Ajustar os estados de carregamento do painel ROOT para não mostrar listas vazias nem contadores incompletos enquanto a consulta administrativa ainda está em andamento; validação visual publicada confirmou os 71 conteúdos e as questões após a consulta.
 - [x] Garantir que os botões ROOT “ALUNOS” e “QUESTÕES” permaneçam visíveis e acessíveis em celular.
 - [x] Validar a navegação ROOT em desktop e em viewport de celular antes da publicação.
+- [x] Inventariar os cadernos de prova e gabaritos PDF recebidos, identificando versões duplicadas e a correspondência entre cada conjunto.
+- [x] Extrair questões e respostas dos PDFs, conciliando-as com os gabaritos sem inferir respostas ausentes ou ambíguas.
+- [x] Correlacionar cada questão validada a um ou mais conteúdos existentes da biblioteca central, registrando fonte, prova e ano.
+- [x] Importar de modo idempotente somente questões conciliadas, preservar histórico e validar os novos vínculos no painel ROOT antes da publicação.
+- [x] Implementar o parser auditável e o importador idempotente dos 120 itens conciliados da prova de Agente PF 2018, preservando contextos e a fonte CESPE/CEBRASPE.
+- [x] Vincular cada item importado ao conteúdo central específico, cobrir a integridade dos 120 itens em teste e validar os novos totais no banco e no painel ROOT.

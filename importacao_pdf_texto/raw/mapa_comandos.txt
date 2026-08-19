@@ -1,0 +1,63 @@
+--- 2018 ---
+67:No que se refere aos sentidos e aos aspectos linguísticos do texto
+101:Considerandoofragmentodetextoapresentado,julgueosseguintes
+209:No que se refere à tipologia e aos sentidos do texto 12A1AAA,
+227:Julgue os seguintes itens, relativos aos sentidos e aos aspectos
+261:Acerca da organização da administração pública brasileira, julgue
+287:No que se refere à defesa do Estado e das instituições democráticas,
+295:Com relação à segurança pública e à atuação da Polícia Federal,
+395:A respeito dessa situação hipotética, julgue os próximos itens,
+425:Considerando que ~X representa a negação da proposição X, julgue
+494:Julgue os próximos itens, a respeito de proteção e segurança,
+525:Considerando essas informações, julgue os seguintes itens.
+544:Acerca da teoria geral dos sistemas, julgue o item subsequente.
+548:A respeito da utilização de tecnologias, ferramentas, aplicativos
+566:Julgue os itens que se seguem, acerca da edição de textos, planilhas
+585:Julgue os próximos itens, a respeito da teoria da informação e de
+599:Considerando o modelo entidade-relacionamento (ER) precedente,
+618:Julgue os itens que se seguem, relativos a noções de mineração de
+635:Acerca de redes de comunicação, julgue os itens a seguir.
+648:Julgue os itens subsequentes, relativos a redes de computadores.
+667:Julgue os próximos itens, relativos a noções de programação
+703:Considerando que a contabilidade é a ciência que estuda os
+732:Com base nessas informações, julgue os seguintes itens.
+744:A respeito dessa situação hipotética, julgue os próximos itens.
+751:Com relação à escrituração contábil nos livros das sociedades,
+794:No que se refere ao balancete de verificação contábil, julgue os
+826:Com base nessas informações, julgue os itens que se seguem.
+832:Com base no disposto na Lei n.º 6.404/1976 e suas alterações e na
+926:Considerando que as informações precedentes têm caráter unicamente motivador, redija um texto dissertativo a respeito do seguinte tema.
+--- 2025 ---
+52:Julgue os itens que se seguem, considerando as ideias, as
+78:Julgue os itens a seguir com base no Manual de Redação da
+87:Julgue os itens a seguir, relativos a noções de direito
+117:Julgue os itens a seguir, a respeito de direitos e garantias
+126:Julgue os próximos itens, relativos à organização da segurança
+140:Com base no Código Penal (CP) e na jurisprudência consolidada
+164:No que se refere ao inquérito policial, julgue os itens seguintes.
+179:Com base na situação hipotética precedente e no disposto no CP,
+184:Considerando o sistema internacional de proteção dos direitos
+202:Julgue os itens seguintes, relativos ao disposto na Convenção
+218:Julgue os itens a seguir, com base nas Leis n.º 14.967/2024,
+251:Julgue os seguintes itens, de acordo com o disposto nas
+280:Considerando que de uma população X que se distribui conforme
+299:Com base nos dados apresentados na situação hipotética
+314:Julgue os próximos itens, relativos a estruturas lógicas, lógica de
+335:Com base nessas proposições, é correto afirmar que, se
+396:Acerca de Internet e intranet, bem como de tecnologias,
+416:Julgue os itens a seguir, em relação a redes de computadores e
+430:Julgue os itens que se seguem, referentes a computação em
+449:Julgue os itens subsequentes, relativos à teoria da informação e a
+476:Julgue os próximos itens, relativos aos modos de transmissão de
+505:Acerca de machine learning, do sistema operacional Linux, do
+532:Em relação a ameaças digitais e técnicas de segurança, julgue os
+548:Acerca de bancos de dados relacionais e suas características,
+557:Com base nas informações do código precedente, julgue os
+563:Julgue os itens subsecutivos, no que se refere a aprendizado de
+603:Julgue os itens subsequentes, que dizem respeito à finalidade da
+625:Julgue os itens a seguir, acerca de escrituração contábil e dos atos
+665:Com base nos dados precedentes, relativos ao conjunto completo
+673:Julgue os itens a seguir, no que se refere a balancete de
+688:A respeito da contabilização de operações contábeis, julgue os
+708:Com base na Estrutura Conceitual para Elaboração e Divulgação de Relatório Contábil-financeiro – CPC 00 (R2), julgue os itens
+777:Considerando que os textos precedentes têm caráter unicamente motivador, redija um texto dissertativo a respeito do tema a seguir.

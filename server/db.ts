@@ -31,6 +31,7 @@ import { persistReviewDecision, type ReviewDecision as PersistedReviewDecision }
 import { completeStudyModules } from "../client/src/data/pfCompleteStudyData";
 import { contestCatalog, disciplineCatalog, getDisciplineIdForModule } from "../client/src/data/pfCurriculumCatalog";
 import { questionBank, type StudyQuestion } from "../client/src/data/pfStudyData";
+import { loadPF2018Questions } from "./importProvasPF";
 
 type UserUpsertInput = {
   openId: string;
@@ -626,6 +627,68 @@ async function importLegacyQuestions(actorUserId: number, contentIdsByTitle: Map
   return imported;
 }
 
+/** Importa somente itens conciliados com o gabarito oficial do Cargo 12, sem remover vínculos editoriais posteriores. */
+async function importPF2018Questions(actorUserId: number, contentIdsByTitle: Map<string, number>) {
+  const db = await getDb();
+  if (!db) return 0;
+  const drafts = loadPF2018Questions();
+  const contentIdsByCode = new Map(
+    Array.from(contentIdsByTitle.entries()).map(([title, contentId]) => [title.split(" — ")[0].toUpperCase(), contentId]),
+  );
+  const missingContentCodes = Array.from(new Set(drafts.flatMap(draft => draft.contentCodes)))
+    .filter(code => !contentIdsByCode.has(code));
+  if (missingContentCodes.length) {
+    throw new Error(`A importação PF 2018 não encontrou conteúdos centrais para: ${missingContentCodes.join(", ")}.`);
+  }
+
+  const rows = await db.select({ id: questions.id, source: questions.source }).from(questions);
+  const questionIdsByMarker = new Map(
+    rows
+      .filter(row => row.source?.startsWith("PROVA_PF_2018:item_"))
+      .map(row => [row.source!.split(" | ")[0], row.id]),
+  );
+  let imported = 0;
+
+  for (const draft of drafts) {
+    const marker = `PROVA_PF_2018:item_${draft.itemNumber}`;
+    let questionId = questionIdsByMarker.get(marker);
+    if (!questionId) {
+      const result = await db.insert(questions).values({
+        statement: draft.statement,
+        questionType: "certo_errado",
+        optionsJson: "[]",
+        answerJson: JSON.stringify(draft.answer),
+        explanation: "Resposta conforme o gabarito preliminar oficial da prova PF 2018, Cargo 12 (Agente).",
+        difficulty: "intermediate",
+        source: draft.source,
+        banca: "CESPE/CEBRASPE",
+        year: 2018,
+        status: "published",
+        requiresReview: false,
+        createdByUserId: actorUserId,
+        updatedByUserId: actorUserId,
+      });
+      questionId = Number(result[0].insertId);
+      questionIdsByMarker.set(marker, questionId);
+      await writeQuestionChange(questionId, actorUserId, "created", null, { statement: draft.statement, source: draft.source });
+      imported += 1;
+    }
+
+    for (const contentCode of draft.contentCodes) {
+      const contentId = contentIdsByCode.get(contentCode)!;
+      const existingLink = await db.select({ id: questionContentLinks.id })
+        .from(questionContentLinks)
+        .where(and(eq(questionContentLinks.questionId, questionId), eq(questionContentLinks.contentId, contentId)))
+        .limit(1);
+      if (!existingLink[0]) {
+        await db.insert(questionContentLinks).values({ questionId, contentId, linkedByUserId: actorUserId });
+        await writeQuestionChange(questionId, actorUserId, "contentLink", null, contentId);
+      }
+    }
+  }
+  return imported;
+}
+
 /**
  * Disponibiliza na biblioteca persistente os módulos didáticos que já existiam
  * na trilha de estudo. A rotina é idempotente e não substitui conteúdo criado
@@ -699,8 +762,9 @@ export async function ensureDefaultKnowledgeBase(actorUserId: number) {
   }
 
   const importedQuestions = await importLegacyQuestions(actorUserId, contentIdsByTitle);
-  if (importedContents || importedDisciplines || importedQuestions) {
-    await writeAdminAudit(actorUserId, null, "SEMEADURA_BIBLIOTECA_CENTRAL", `${importedDisciplines} disciplina(s), ${importedContents} conteúdo(s) e ${importedQuestions} questão(ões) legadas foram disponibilizados na biblioteca central.`);
+  const importedPF2018Questions = await importPF2018Questions(actorUserId, contentIdsByTitle);
+  if (importedContents || importedDisciplines || importedQuestions || importedPF2018Questions) {
+    await writeAdminAudit(actorUserId, null, "SEMEADURA_BIBLIOTECA_CENTRAL", `${importedDisciplines} disciplina(s), ${importedContents} conteúdo(s), ${importedQuestions} questão(ões) legadas e ${importedPF2018Questions} questão(ões) da prova PF 2018 foram disponibilizadas na biblioteca central.`);
   }
 }
 

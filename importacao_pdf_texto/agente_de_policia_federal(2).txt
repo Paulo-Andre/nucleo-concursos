@@ -1,0 +1,802 @@
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                                         CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+•       Cada um dos itens da(s) prova(s) objetiva(s) está vinculado ao comando que imediatamente o antecede. De acordo com o comando
+        a que cada um deles esteja vinculado, marque, na Folha de Respostas, para cada item: o campo designado com o código C, caso julgue
+        o item CERTO; ou o campo designado com o código E, caso julgue o item ERRADO. A ausência de marcação ou a marcação de
+        ambos os campos não serão apenadas, ou seja, não receberão pontuação negativa. Para as devidas marcações, use a Folha de
+        Respostas, único documento válido para a correção da(s) sua(s) prova(s) objetiva(s).
+•       Nos itens que avaliarem conhecimentos de informática e(ou) tecnologia da informação, a menos que seja explicitamente informado
+        o contrário, considere que todos os programas mencionados estão em configuração-padrão, em português, e que não há restrições de
+        proteção, de funcionamento e de uso em relação aos programas, arquivos, diretórios, recursos e equipamentos mencionados.
+•       No(s) item(ns) constituído(s) pela estrutura Situação hipotética: ... seguida de Assertiva: ..., os dados apresentados como situação
+        hipotética deverão ser considerados premissa(s) para o julgamento da assertiva proposta.
+•       Eventuais espaços livres — identificados ou não pela expressão “Espaço livre” — que constarem deste caderno de provas poderão
+        ser utilizados para anotações, rascunhos etc.
+
+                                                                 PROVA OBJETIVA
+                                Bloco I                                                     4    De acordo com o texto, diversos países da América e da
+                                                                                                 Europa compraram a licença de uso do software criado pelos
+    1             Imagine uma operação de busca na selva. Sem mapas,
+                                                                                                 policiais federais do Mato Grosso do Sul, o que demonstra o
+        binóculos ou apoio logístico; somente com um facão. Assim
+        eram feitas as operações de combate à pornografia infantil                               reconhecimento estrangeiro da qualidade do trabalho forense
+    4   pela Polícia Federal até o dia em que peritos criminais                                  do Brasil.
+        federais desenvolveram, no estado de Mato Grosso do Sul,
+        o Nudetective.                                                                      5    Conclui-se do texto que a varredura do Nudetective é restrita
+    7             O programa executa em minutos uma busca que                                    a dispositivos conectados à Internet.
+        poderia levar meses, encontrando todo o conteúdo
+        pornográfico de pedofilia em computadores, pendrives,                               6    A inserção de uma vírgula imediatamente após a palavra
+10      smartphones e demais mídias de armazenamento.                                            “Assim” (R.2) alteraria os sentidos do texto.
+                  Para ajudar o trabalho dos peritos, existem programas
+        que buscam os arquivos de imagem e vídeo através de sua hash                        7    No período em que se insere, o termo “Logo” (R.13) expressa
+13      ou sua assinatura digital. Logo nos primeiros testes, a detecção                         uma ideia de conclusão.
+        de imagens apresentou mais de 90% de acerto.
+                  Para o teste, pegaram um HD com conteúdo já                               8    O emprego do sinal indicativo de crase em “a uma paleta”
+16      periciado e rodaram o programa. Conseguiram 95% de acerto                                (R.20) manteria a correção gramatical do texto, uma vez que, no
+        em 12 minutos. Seu diferencial era não só buscar pela                                    trecho, o vocábulo “a” antecede palavras no feminino.
+        assinatura digital ou nomes conhecidos, mas também por novos
+19      arquivos por intermédio da leitura dos pixels presentes                                      Não se concebe que um ato normativo de qualquer
+        na imagem calibrados a uma paleta de tons de pele.                                  natureza seja redigido de forma obscura, que dificulte ou
+        Começava a revolução em termos de investigação criminal
+22      de pornografia infantil.                                                            impossibilite sua compreensão. A transparência do sentido dos atos
+                  Além da detecção de imagens e vídeos, todo o                              normativos, bem como sua inteligibilidade, são requisitos do
+        processo de busca e obtenção de resultados é simultâneo, o que                      próprio Estado de direito: é inaceitável que um texto legal não seja
+25      economiza tempo e dinheiro.
+                  A licença de uso do software, que é programado em                         entendido pelos cidadãos. A publicidade implica, pois,
+        Java, é gratuita e só é disponibilizada para forças da lei e                        necessariamente, clareza e concisão.
+28      pesquisas acadêmicas. Segundo seus desenvolvedores, nunca
+                                                                                                                            Brasil. Presidência da República. Manual de Redação da
+        houve o intuito de venda, pois não enxergam sentido em lucrar                                                       Presidência da República. 2.ª ed. Brasília, 2002.
+        com algo que seja para salvar crianças. Mas, então, por que não
+31      deixá-lo disponível para todos? Somente para que não possa
+        ser utilizado para criar formas de burlá-lo, explicam.                              Considerando o fragmento de texto apresentado, julgue os seguintes
+                  Desde seu lançamento, o Nudetective já foi                                itens, de acordo com o disposto no Manual de Redação da
+34      compartilhado com Argentina, Paraguai, Suécia, Áustria,                             Presidência da República (MRPR).
+        Noruega, Nova Zelândia e Portugal. Ganhou reconhecimento
+        e premiações em congressos forenses no Brasil e no mundo.                           9    A redação dos atos normativos deve permitir que cada cidadão,
+                                    Internet: <www.cartacapital.com.br> (com adaptações).
+                                                                                                 a partir de suas condições próprias de leitura, atribua ao texto
+No que se refere aos sentidos e aos aspectos linguísticos do texto                               legal sua própria interpretação.
+apresentado, julgue os itens seguintes.
+                                                                                            10   Embora estabeleça parâmetros para o uso da língua em
+1       Infere-se do texto que o Nudetective foi desenvolvido                                    redações oficiais, o MRPR rejeita a adoção de um padrão
+        especificamente para o combate à pornografia infantil.
+                                                                                                 de escrita baseado em uma linguagem administrativa
+2       Um dos benefícios do Nudetective para a Polícia Federal é
+                                                                                                 específica, alheia à evolução natural da língua.
+        tornar mais célere a investigação de crimes relacionados à
+        pornografia infantil.                                                               11   A concisão é uma qualidade da redação oficial que atende ao
+3       O primeiro parágrafo do texto informa que, antes da criação do                           princípio da economia linguística, segundo o qual se deve
+        Nudetective, a Polícia Federal não dispunha de dispositivos
+                                                                                                 reduzir ao mínimo de palavras possível o conteúdo a ser
+        tecnológicos para a investigação de crimes de pedofilia na
+        Internet.                                                                                comunicado, evitando-se redundâncias ou trechos inúteis.
+
+
+
+                                                           www.pciconcursos.com.br                                             www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                                              CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+Texto 12A1AAA                                                                                    No que se refere à tipologia e aos sentidos do texto 12A1AAA,
+ 1             — A polícia parisiense — disse ele — é extremamente                               julgue os próximos itens.
+     hábil à sua maneira. Seus agentes são perseverantes,
+     engenhosos, astutos e perfeitamente versados nos                                            12   O primeiro parágrafo do texto é predominantemente descritivo,
+ 4   conhecimentos que seus deveres parecem exigir de modo                                            pois apresenta as características da “polícia parisiense”.
+     especial. Assim, quando o delegado G... nos contou,
+     pormenorizadamente, a maneira pela qual realizou suas                                       13   Infere-se das falas de Dupin que a opinião do delegado
+ 7   pesquisas no Hotel D..., não tive dúvida de que efetuara                                         a respeito dos poetas foi determinante para que ele não
+     uma investigação satisfatória (...) até o ponto a que chegou                                     encontrasse “a carta roubada”.
+     o seu trabalho.
+10             — Até o ponto a que chegou o seu trabalho? —                                      14   Dupin é irônico ao caracterizar a polícia parisiense como hábil
+     perguntei.                                                                                       no primeiro parágrafo, o que é comprovado pela crítica que
+               — Sim — respondeu Dupin. — As medidas adotadas
+13   não foram apenas as melhores que poderiam ser tomadas, mas                                       faz, no quinto parágrafo, ao trabalho do delegado e de sua
+     realizadas com absoluta perfeição. Se a carta estivesse                                          equipe, os quais, conforme Dupin, “Estão certos apenas num
+     depositada dentro do raio de suas investigações, esses rapazes,                                  ponto” (R. 32 e 33).
+16   sem dúvida, a teriam encontrado.
+               Ri, simplesmente — mas ele parecia haver dito tudo                                15   Na opinião de Dupin, a inteligência da polícia de Paris
+     aquilo com a máxima seriedade.                                                                   equipara-se à “da massa” (R.34), que, conforme se infere do
+19             — As medidas, pois — prosseguiu —, eram boas em
+     seu gênero, e foram bem executadas: seu defeito residia em                                       texto, é uma inteligência média.
+     serem inaplicáveis ao caso e ao homem em questão. Um certo                                  16   O narrador discorda de Dupin com relação à opinião de que
+22   conjunto de recursos altamente engenhosos é, para o delegado,
+     uma espécie de leito de Procusto, ao qual procura adaptar à                                      o fato de o ministro ser poeta é o que lhe permite raciocinar
+     força todos os seus planos. Mas, no caso em apreço, cometeu                                      bem, o que fica evidente no último parágrafo do texto.
+25   uma série de erros, por ser demasiado profundo ou demasiado
+     superficial. (...) E, se o delegado e toda a sua corte têm                                  Julgue os seguintes itens, relativos aos sentidos e aos aspectos
+     cometido tantos enganos, isso se deve (...) a uma apreciação                                linguísticos do texto 12A1AAA.
+28   inexata, ou melhor, a uma não apreciação da inteligência
+     daqueles com quem se metem. Consideram engenhosas apenas                                    17   Mantendo-se a correção gramatical e os sentidos originais do
+     as suas próprias ideias e, ao procurar alguma coisa que se ache
+                                                                                                      texto, o seu sexto parágrafo poderia ser assim reescrito:
+31   escondida, não pensam senão nos meios que eles próprios
+     teriam empregado para escondê-la. Estão certos apenas num                                        Perguntei, entretanto, se ele era realmente poeta. Sabia que são
+     ponto: naquele em que sua engenhosidade representa fielmente                                     dois irmãos e que ambos adquiriram renome nas letras.
+34   a da massa; mas, quando a astúcia do malfeitor é diferente da                                    O ministro, acreditava eu, escrevia eruditamente sobre o
+     deles, o malfeitor, naturalmente, os engana. Isso sempre
+     acontece quando a astúcia deste último está acima da deles e,                                    cálculo diferencial: é um matemático, não um poeta.
+37   muito frequentemente, quando está abaixo. Não variam seu                                    18   O pronome “ele”, no trecho “ele é apenas culpado de uma non
+     sistema de investigação; na melhor das hipóteses, quando são
+     instigados por algum caso insólito, ou por alguma recompensa                                     distributio medii” (R. 51 e 52), refere-se a “o ministro” (R.49).
+40   extraordinária, ampliam ou exageram os seus modos de agir                                   19   A correção gramatical do texto seria mantida caso a forma
+     habituais, sem que se afastem, no entanto, de seus princípios.
+     (...) Você compreenderá, agora, o que eu queria dizer ao                                         verbal “compreenderá” (R.42) fosse substituída por
+43   afirmar que, se a carta roubada tivesse sido escondida dentro                                    compreende, embora o sentido original do período em que ela
+     do raio de investigação do nosso delegado — ou, em outras                                        ocorre fosse alterado: no original, o emprego do futuro revela
+     palavras, se o princípio inspirador estivesse compreendido nos
+46   princípios do delegado —, sua descoberta seria uma questão                                       uma expectativa de Dupin em relação a seu interlocutor; com
+     inteiramente fora de dúvida. Este funcionário, porém, se                                         o emprego do presente, essa expectativa seria transformada em
+     enganou por completo, e a fonte remota de seu fracasso reside                                    fato consumado.
+49   na suposição de que o ministro é um idiota, pois adquiriu
+     renome de poeta. Segundo o delegado, todos os poetas são                                    20   Dados os sentidos do sexto parágrafo, é possível supor que, na
+     idiotas — e, neste caso, ele é apenas culpado de uma non                                         frase “E ambas as coisas”, no sétimo parágrafo, está elíptico o
+52   distributio medii, ao inferir que todos os poetas são idiotas.
+               — Mas ele é realmente poeta? — perguntei. — Sei                                        trecho ele é logo após “E”.
+     que são dois irmãos, e que ambos adquiriram renome nas                                      21   No trecho “ao procurar alguma coisa que se ache escondida”
+55   letras. O ministro, creio eu, escreveu eruditamente sobre o
+     cálculo diferencial. É um matemático, e não um poeta.                                            (R. 30 e 31), o pronome “que” exerce a função de complemento
+               — Você está enganado. Conheço-o bem. E ambas as                                        da forma verbal “ache”.
+58   coisas. Como poeta e matemático, raciocinaria bem; como
+     mero matemático, não raciocinaria de modo algum, e ficaria,                                 22   A supressão do sinal indicativo de crase em “à sua maneira”
+     assim, à mercê do delegado.                                                                      (R.2) manteria a correção gramatical do texto.
+61             — Você me surpreende — respondi — com essas
+     opiniões, que têm sido desmentidas pela voz do mundo.                                       23   Feitas as devidas alterações de maiúsculas e minúsculas, o
+     Naturalmente, não quererá destruir, de um golpe, ideias                                          ponto e vírgula empregado logo após “bem” (R.58) poderia ser
+64   amadurecidas durante tantos séculos. A razão matemática é há                                     corretamente substituído por ponto final.
+     muito considerada como a razão par excellence.
+                       Edgar Allan Poe. A carta roubada. In: Histórias extraordinárias. Victor
+                                                                                                 24   A supressão da vírgula empregada logo após a palavra “algum”
+                       Civita, 1981. Tradução de Brenno Silveira e outros.
+                                                                                                      (R.59) manteria a correção gramatical do texto.
+
+
+                                                               www.pciconcursos.com.br                                              www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                   CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+Acerca da organização da administração pública brasileira, julgue                Depois de adquirir um revólver calibre 38, que sabia
+os itens subsequentes.                                                 ser produto de crime, José passou a portá-lo municiado, sem
+                                                                       autorização e em desacordo com determinação legal. O
+25   Sob a perspectiva do critério formal adotado pelo Brasil,         comportamento suspeito de José levou-o a ser abordado em
+     somente é administração pública aquilo determinado como           operação policial de rotina. Sem a autorização de porte de arma de
+     tal pelo ordenamento jurídico brasileiro, independentemente       fogo, José foi conduzido à delegacia, onde foi instaurado inquérito
+                                                                       policial.
+     da atividade exercida. Assim, a administração pública é
+     composta exclusivamente pelos órgãos integrantes da               Tendo como referência essa situação hipotética, julgue os itens
+     administração direta e pelas entidades da administração           seguintes.
+     indireta.                                                         33   A receptação praticada por José consumou-se a partir do
+26   Ao outorgar determinada atribuição a pessoa não integrante de          momento em que ele adquiriu o armamento.
+     sua administração direta, o Estado serve-se da denominada         34   Se, durante o processo judicial a que José for submetido, for
+     desconcentração administrativa.                                        editada nova lei que diminua a pena para o crime de
+                                                                            receptação, ele não poderá se beneficiar desse fato, pois o
+A administração pública, além de estar sujeita ao controle                  direito penal brasileiro norteia-se pelo princípio de aplicação
+dos Poderes Legislativo e Judiciário, exerce controle sobre                 da lei vigente à época do fato.
+seus próprios atos. Tendo como referência inicial essas                35   O inquérito instaurado contra José é procedimento de natureza
+informações, julgue os itens a seguir, acerca do controle da                administrativa, cuja finalidade é obter informações a respeito
+administração pública.                                                      da autoria e da materialidade do delito.
+                                                                       36   Caso declarações de José sejam divergentes de declarações
+27   O poder de autotutela tem fundamento, preponderantemente,              de testemunhas da receptação praticada, poderá ser realizada
+     nos princípios da legalidade e da preponderância do interesse          a acareação, que é uma medida cabível exclusivamente na fase
+     público e pode ser exercido de ofício quando a autoridade              investigatória.
+     competente verificar ilegalidade em ato da própria                37   Os agentes de polícia podem decidir, discricionariamente,
+     administração.                                                         acerca da conveniência ou não de efetivar a prisão em flagrante
+                                                                            de José.
+28   O Poder Judiciário tem competência para apreciar o mérito dos
+     atos discricionários exarados pela administração pública,         Em cada um dos itens que se seguem, é apresentada uma situação
+                                                                       hipotética, seguida de uma assertiva a ser julgada com base em
+     devendo, no entanto, restringir-se à análise da legalidade
+                                                                       disposições das Leis n.os 9.605/1998, 11.343/2006 e 13.445/2017.
+     desses atos.
+                                                                       38   Durante uma vistoria, no estado do Paraná, em passageiros
+No que se refere à defesa do Estado e das instituições democráticas,        que viajavam de ônibus de Foz do Iguaçu – PR para
+julgue os itens a seguir.                                                   Florianópolis – SC, policiais rodoviários federais encontraram
+                                                                            seis quilos de maconha na mochila de Lucas, que foi preso em
+29   O direito ao sigilo de correspondência é constitucionalmente           flagrante delito. Nessa situação, no cálculo da pena de Lucas,
+     previsto, mas poderá ser restringido nas hipóteses de estado           não se considerará a majorante do tráfico interestadual
+     de defesa e de estado de sítio.                                        de drogas, pois a transposição da fronteira entre os estados
+                                                                            ainda não tinha ocorrido.
+30   Na vigência do estado de defesa, é legal a prisão de indivíduo
+     por até trinta dias, independentemente de autorização do Poder    39   Em determinado estado da Federação, vários imigrantes foram
+                                                                            encontrados em situação irregular e notificados pessoalmente
+     Judiciário.
+                                                                            para proceder à regularização migratória em prazo não
+Com relação à segurança pública e à atuação da Polícia Federal,             superior a sessenta dias. Nesse caso, o imigrante que não
+julgue os itens seguintes.                                                  regularizar sua situação poderá ser deportado e, iniciado o
+                                                                            procedimento administrativo de deportação, a Defensoria
+31   A Polícia Federal tem a atribuição de apurar infrações                 Pública da União deverá ser notificada para que possa prestar
+     que exijam repressão uniforme e tenham repercussão                     a devida assistência ao deportando.
+     internacional; infrações que exijam repressão uniforme,           40   Em operação da Polícia Federal, um cidadão foi flagrado
+     mas que tenham repercussão interestadual, devem ser                    tentando pescar em local interditado por órgão federal.
+                                                                            O pescador argumentou que, apesar da tentativa, não obteve
+     apuradas pelas polícias civis e militares.
+                                                                            êxito na pesca. Nessa situação, mesmo sem o sucesso
+32   Compete à Polícia Federal exercer, com exclusividade,                  pretendido, o pescador responderá por crime previsto na lei
+     as funções de polícia judiciária da União.                             que tipifica os crimes ambientais.
+
+
+
+                                                  www.pciconcursos.com.br                                www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                     CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+         Determinado órgão governamental estimou que a                 Espaço livre
+probabilidade p de um ex-condenado voltar a ser condenado por
+algum crime no prazo de 5 anos, contados a partir da data da
+libertação, seja igual a 0,25. Essa estimativa foi obtida com base
+em um levantamento por amostragem aleatória simples
+de 1.875 processos judiciais, aplicando-se o método da máxima
+verossimilhança a partir da distribuição de Bernoulli.
+Sabendo que P(Z < 2) = 0,975, em que Z representa a distribuição
+normal padrão, julgue os itens que se seguem, em relação a essa
+situação hipotética.
+41    Em um grupo formado aleatoriamente por 4 ex-condenados
+      libertos no mesmo dia, estima-se que a probabilidade de que
+      apenas um deles volte a ser condenado por algum crime no
+      prazo de 5 anos, contados a partir do dia em que eles foram
+      libertados, seja superior a 0,4.
+42    O erro padrão da estimativa da probabilidade p foi igual
+      a 0,01.
+43    A estimativa intervalar 0,25 ± 0,05 representa o intervalo
+      de 95% de confiança do parâmetro populacional p.
+44    Se X seguir uma distribuição binomial com parâmetros
+      n = 1.000 e probabilidade de sucesso p, a estimativa de
+      máxima verossimilhança da média de X será superior a 300.
+         Um pesquisador estudou a relação entre a taxa de
+criminalidade (Y) e a taxa de desocupação da população
+economicamente ativa (X) em determinada região do país.
+Esse pesquisador aplicou um modelo de regressão linear simples na
+forma Y = bX + a + ε, em que b representa o coeficiente angular, a é
+o intercepto do modelo e ε denota o erro aleatório com média zero
+e variância σ2. A tabela a seguir representa a análise de variância
+(ANOVA) proporcionada por esse modelo.
+     fonte de variação      graus de liberdade   soma de quadrados
+         modelo                      1                   225
+         erro                      899                   175
+         total                     900                   400
+
+A respeito dessa situação hipotética, julgue os próximos itens,
+sabendo que b > 0 e que o desvio padrão amostral da variável X é
+igual a 2.
+45    A correlação linear de Pearson entre a variável resposta Y e a
+      variável regressora X é igual a 0,75.
+46    A estimativa da variância σ2 é superior a 0,5.
+47    A estimativa do coeficiente angular b, pelo método de mínimos
+      quadrados ordinários, é igual a 0,25.
+         O valor diário (em R$ mil) apreendido de contrabando
+em determinada região do país é uma variável aleatória W que
+segue distribuição normal com média igual a R$ 10 mil e desvio
+padrão igual a R$ 4 mil.
+Nessa situação hipotética,
+48    se W1 e W2 forem duas cópias independentes e identicamente
+      distribuídas como W, então a soma W1 + W2 seguirá
+      distribuição normal com média igual a R$ 20 mil e desvio
+      padrão igual a R$ 8 mil.
+49    P(W > R$ 10 mil) = 0,5.
+
+50    a razão            segue distribuição normal padrão.
+
+
+
+
+                                                  www.pciconcursos.com.br                             www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                    CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+         As proposições P, Q e R a seguir referem-se a um ilícito     Espaço livre
+penal envolvendo João, Carlos, Paulo e Maria:
+
+     P: “João e Carlos não são culpados”.
+     Q: “Paulo não é mentiroso”.
+     R: “Maria é inocente”.
+
+Considerando que ~X representa a negação da proposição X, julgue
+os itens a seguir.
+
+51   As proposições P, Q e R são proposições simples.
+52   A proposição “Se Paulo é mentiroso então Maria é culpada.”
+     pode ser representada simbolicamente por (~Q):(~R).
+
+53   Se ficar comprovado que apenas um dos quatro envolvidos no
+     ilícito penal é culpado, então a proposição simbolizada por
+     (~P)6(~Q)wR será verdadeira.
+54   Independentemente de quem seja culpado, a proposição
+     {P6(~Q)}6{Qw[(~Q)wR]} será sempre verdadeira, isto é, será
+     uma tautologia.
+55   As proposições Pv(~Q)6(~R) e R6[Qv(~P)] são equivalentes.
+56   Se as três proposições P, Q e R forem falsas, então pelo menos
+     duas das pessoas envolvidas no ilícito penal serão culpadas.
+
+         Em um aeroporto, 30 passageiros que desembarcaram
+de determinado voo e que estiveram nos países A, B ou C, nos
+quais ocorre uma epidemia infecciosa, foram selecionados para ser
+examinados. Constatou-se que exatamente 25 dos passageiros
+selecionados estiveram em A ou em B, nenhum desses
+25 passageiros esteve em C e 6 desses 25 passageiros estiveram
+em A e em B.
+
+Com referência a essa situação hipotética, julgue os itens que
+se seguem.
+
+57   Se 11 passageiros estiveram em B, então mais de 15 estiveram
+     em A.
+58   Se 2 dos 30 passageiros selecionados forem escolhidos ao
+     acaso, então a probabilidade de esses 2 passageiros terem
+
+     estado em 2 desses países é inferior a    .
+
+
+59   A quantidade de maneiras distintas de se escolher 2 dos
+     30 passageiros selecionados de modo que pelo menos um deles
+     tenha estado em C é superior a 100.
+60   Considere que, separando-se o grupo de passageiros
+     selecionados que visitou o país A, o grupo que visitou o país
+     B e o grupo que visitou o país C, seja verificado, em cada um
+     desses grupos, que pelo menos a metade dos seus componentes
+     era do sexo masculino. Nessa situação, conclui-se que o grupo
+     de 30 passageiros selecionados tem, no máximo, 14 mulheres.
+
+
+                                                   www.pciconcursos.com.br                           www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                    CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+                            Bloco II                                             Os gestores de determinado órgão público decidiram
+                                                                        adotar a computação em nuvem como solução para algumas
+                                                                        dificuldades de gerenciamento dos recursos de tecnologia da
+         Marta utiliza uma estação de trabalho que executa              informação. Assim, para cada contexto, análises devem ser
+o sistema operacional Windows 10 e está conectada à rede local          realizadas a fim de compatibilizar os recursos de gerenciamento e
+da empresa em que ela trabalha. Ela acessa usualmente os sítios         segurança com os modelos técnicos de contratação.
+da intranet da empresa e também sítios da Internet pública.             Considerando essas informações, julgue os seguintes itens.
+Após navegar por vários sítios, Marta verificou o histórico
+de navegação e identificou que um dos sítios acessados com              70   Se, para enviar e receber emails sem precisar gerenciar
+                                                                             recursos adicionais voltados ao software de email e sem
+sucesso por meio do protocolo HTTP tinha o endereço 172.20.1.1.              precisar manter os servidores e sistemas operacionais nos quais
+Tendo como referência essa situação hipotética, julgue os itens              o software de email estiver sendo executado, os gestores
+                                                                             optarem por um serviço de email em nuvem embasado em
+a seguir.                                                                    webmail, eles deverão contratar, para esse serviço, um modelo
+                                                                             de computação em nuvem do tipo plataforma como um
+61   O endereço 172.20.1.1 identificado por Marta é o endereço
+                                                                             serviço (PaaS).
+     IPv4 de um servidor web na Internet pública.
+                                                                        71   Para o armazenamento de dados de trabalho dos colaboradores
+62   Por meio do serviço de proxy para rede local, Marta poderá              desse órgão público, incluindo-se documentos, imagens e
+     acessar, a partir da sua estação de trabalho, tanto os sítios da        planilhas, e para o uso de recursos de rede compartilhados,
+     intranet quanto os sítios da Internet pública.                          como impressoras e computadores, seria adequado contratar o
+                                                                             modelo de computação em nuvem denominado infraestrutura
+63   O sistema operacional utilizado na estação de trabalho                  como um serviço (IaaS).
+     de Marta inclui nativamente a plataforma Windows Defender,         72   Um estudo técnico de viabilidade e um projeto de re-hosting
+     composta por ferramentas antivírus e de firewall pessoal, entre         em computação em nuvem IaaS é indicado para as aplicações
+     outras.                                                                 legadas do órgão que tenham sido originalmente desenvolvidas
+                                                                             para mainframe.
+64   WHOIS é o serviço que permite a consulta direta dos
+     endereços IPv4 dos sítios visitados por Marta, a partir das        Acerca da teoria geral dos sistemas, julgue o item subsequente.
+     URLs contidas no seu histórico de navegação.                       73   Essa teoria contribui para a unidade da ciência, ao desenvolver
+65   A despeito das configurações dos ativos de segurança                    princípios unificadores que atravessam verticalmente os
+                                                                             universos particulares das diversas ciências envolvidas.
+     corporativos e do serviço de firewall instalado na estação
+     de trabalho, Marta poderá acessar remotamente sua estação          A respeito da utilização de tecnologias, ferramentas, aplicativos
+                                                                        e procedimentos associados a Internet/intranet, julgue os itens
+     de trabalho usando a Conexão de Área de Trabalho Remota,
+                                                                        seguintes.
+     a partir de outra estação conectada à Internet.
+                                                                        74   Nas ferramentas de busca, o indexador é o programa que
+Julgue os próximos itens, a respeito de proteção e segurança,                navega autonomamente pela Internet, localizando e varrendo
+e noções de vírus, worms e pragas virtuais.                                  os documentos em busca de palavras-chaves para compor
+                                                                             a base de dados da pesquisa.
+66   Um ataque de ransomware comumente ocorre por meio                  75   Nas aplicações de transferência de arquivos por fluxo contínuo,
+     da exploração de vulnerabilidades de sistemas e protocolos;             os dados são transferidos como uma série de blocos precedidos
+     a forma mais eficaz de solucionar um ataque desse tipo e                por um cabeçalho especial de controle.
+     recuperar os dados “sequestrados” (criptografados)                 76   Nas aplicações multimídia, os fluxos de dados podem conter
+     é a utilização de técnicas de quebra por força bruta                    áudio, vídeo e metadados que viabilizam a sincronização
+     da criptografia aplicada.                                               de áudio e vídeo. Cada um desses três fluxos pode ser
+                                                                             manipulado por diferentes programas, processos ou hardwares,
+67   A infecção de um sistema por códigos maliciosos pode ocorrer            mas, para que os fluxos de dados de determinada aplicação
+     por meio da execução de arquivos infectados obtidos                     multimídia sejam qualitativamente otimizados na transmissão
+     de anexos de mensagens eletrônicas, de mídias removíveis,               ou no armazenamento, eles devem ser encapsulados juntos, em
+     de páginas web comprometidas, de redes sociais ou                       um formato de contêiner.
+     diretamente de outros equipamentos.                                Julgue os itens que se seguem, acerca da edição de textos, planilhas
+                                                                        e apresentações nos ambientes Microsoft Office e BrOffice.
+68   Na autenticação em dois fatores, necessariamente, o primeiro
+     fator de autenticação será algo que o usuário possui — por         77   Na versão 2013 do PowerPoint do Microsoft Office
+     exemplo, um token gerador de senhas — e o segundo,                      Professional, é possível abrir arquivos no formato .odp, do
+     alguma informação biométrica, como, por exemplo, impressão              Impress do BrOffice; contudo, não é possível exportar ou
+                                                                             salvar arquivos .pptx originais do PowerPoint como arquivos
+     digital ou geometria da face reconhecida.                               .odp.
+69   A superexposição de dados pessoais nas redes sociais facilita      78   Considere que um designer que habitualmente utiliza o
+     o furto de identidade ou a criação de identidade falsa com              software Microsoft Visio, da Microsoft Office, necessite
+     dados da vítima, identidades essas que podem ser usadas para            realizar um trabalho de editoração de gráficos vetoriais
+     atividades maliciosas tais como a realização de transações              e diagramação em um computador no qual esteja instalada
+                                                                             apenas a plataforma BrOffice. Nessa situação, para essa tarefa,
+     financeiras fraudulentas, a disseminação de códigos maliciosos          seria adequada a utilização do software Draw, da plataforma
+     e o envio de mensagens eletrônicas falsas por email ou redes            BrOffice, levando-se em conta a semelhança das
+     sociais.                                                                funcionalidades dos dois softwares.
+
+
+                                                 www.pciconcursos.com.br                                  www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                   CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+Julgue os próximos itens, a respeito da teoria da informação e de      88   Situação hipotética: Múltiplos hospedeiros devem ser
+sistemas de informação.                                                     conectados a LANs sem fio, a redes por satélite e a redes de
+                                                                            fibra (HFC). Para isso, deve-se escolher entre dois tipos de
+79   O conceito de conhecimento é mais complexo que o de                    canais distintos, em função das características da camada de
+     informação, pois conhecimento pressupõe um processo de                 enlace: difusão (broadcast) ou ponto a ponto. Assertiva: Nessa
+     compreensão e internalização das informações recebidas,                situação, deve-se fazer a conexão dos hospedeiros por meio de
+     possivelmente combinando-as.                                           difusão.
+80   No desenvolvimento de um sistema de informação, a fase de
+     levantamento de requisitos consiste em compreender                Julgue os itens subsequentes, relativos a redes de computadores.
+     o problema, dando aos desenvolvedores e usuários a mesma          89   As redes de computadores podem ser classificadas, pela sua
+     visão do que deve ser construído para resolvê-lo, e a fase de          abrangência, em LAN (local area network), MAN
+     projeto consiste na realização da descrição computacional,             (metropolitan area network), e WAN (wide area network).
+     incluindo a arquitetura do sistema, a linguagem de
+                                                                       90   Um protocolo da camada de transporte é implementado no
+     programação utilizada e o sistema gerenciador de banco de
+                                                                            sistema final e fornece comunicação lógica entre processos de
+     dados (SGBD) utilizado.
+                                                                            aplicação que rodam em hospedeiros diferentes.
+                                                                       91   Os modelos de arquitetura OSI/ISO e TCP/IP possuem,
+                                                                            respectivamente, sete e quatro camadas. Na camada de rede, o
+                                                                            modelo OSI/ISO é compatível com a comunicação sem
+                                                                            conexão e com a comunicação orientada a conexões. No
+                                                                            modelo TCP/IP, só há um modo de operação na camada de
+                                                                            rede (sem conexão), mas, na camada de transporte, o modelo
+                                                                            TCP/IP aceita ambos os modos, oferecendo aos usuários a
+                                                                            possibilidade de escolha.
+Considerando o modelo entidade-relacionamento (ER) precedente,
+julgue os seguintes itens, relativos a banco de dados.                 92   DNS é um protocolo da camada de aplicação que usa o UDP
+                                                                            — com o UDP há apresentação entre as entidades remetente e
+81   Conforme o modelo ER em questão, um tipo de produto                    destinatária da camada de transporte antes do envio de um
+     pode estar associado a somente 1 produto e cada produto                segmento.
+     possui um preço e uma descrição.
+                                                                       Julgue os próximos itens, relativos a noções de programação
+82   Considerando-se apenas o diagrama apresentado, infere-se que,     Python e R.
+     na aplicação das regras para a transformação do modelo ER em
+     um modelo relacional, é necessário realizar a fusão das tabelas   93   Considere o programa a seguir, escrito em R.
+     referentes às entidades envolvidas no relacionamento.
+                                                                            x <- c (3, 5, 7)
+83   Situação hipotética: Ao analisar o modelo ER em questão,               y <- c (1, 9, 11)
+     Paulo verificou que há duas chaves identificadas com o mesmo           print (x + y)
+     nome: código — em tipo de produto e em produto.
+     Paulo sabe que o conceito de chaves é básico para estabelecer          Após a execução do programa, será obtido o seguinte resultado.
+     relações entre linhas de tabelas de um banco de dados
+     relacional e que as chaves primárias devem ser únicas.                 [1]   36
+     Assertiva: Nessa situação, Paulo deve invalidar o modelo ER       94   Considere o programa a seguir, escrito em R.
+     em questão, pois ele está semanticamente errado, já que não
+     pode haver chaves primárias com nomes iguais, ainda que em             x <- TRUE
+                                                                            y <- FALSE
+     entidades distintas.                                                   print (xy)
+Julgue os itens que se seguem, relativos a noções de mineração de
+dados, big data e aprendizado de máquina.                                   Após a execução do programa, será obtido o seguinte resultado.
+84   Situação hipotética: Na ação de obtenção de informações por            [1] FALSE
+     meio de aprendizado de máquina, verificou-se que o processo       95   Considere o programa a seguir, na linguagem Python.
+     que estava sendo realizado consistia em examinar as
+     características de determinado objeto e atribuir-lhe uma ou            if 5 > 2
+     mais classes; verificou-se também que os algoritmos utilizados             {
+     eram embasados em algoritmos de aprendizagem                                  print("True!")
+     supervisionados. Assertiva: Nessa situação, a ação em                       }
+     realização está relacionada ao processo de classificação.
+                                                                            A sintaxe do programa está correta e, quando executado, ele
+85   Big data refere-se a uma nova geração de tecnologias e                 apresentará o seguinte resultado.
+     arquiteturas projetadas para processar volumes muito grandes
+     e com grande variedade de dados, permitindo alta velocidade            True!
+     de captura, descoberta e análise.                                 96   Considere o programa a seguir, na linguagem Python.
+86   Pode-se definir mineração de dados como o processo de
+     identificar, em dados, padrões válidos, novos, potencialmente          letras == ["P", "F"]
+     úteis e, ao final, compreensíveis.                                     for x in letras
+                                                                              {
+Acerca de redes de comunicação, julgue os itens a seguir.                       print(x)
+                                                                              }
+87   A conexão de sistemas como TVs, laptops e telefones celulares
+     à Internet, e também entre si, pode ser realizada com o uso de         A sintaxe do programa está correta e, quando executado, ele
+     comutadores (switches) de pacotes, os quais têm como função            apresentará o seguinte resultado.
+     encaminhar a um de seus enlaces de saída o pacote que está
+     chegando a um de seus enlaces de entrada.                              PF
+
+
+
+                                                www.pciconcursos.com.br                                 www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                       CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+                             Bloco III                                   Com relação à escrituração contábil nos livros das sociedades,
+                                                                         julgue os itens subsequentes.
+Considerando que a contabilidade é a ciência que estuda os
+fenômenos patrimoniais sob o aspecto da finalidade organizacional,       106   A aquisição à vista de um veículo pelo valor de R$ 80.000,
+                                                                               ainda que esse valor resulte de um desconto, negociado no
+julgue os itens a seguir, no que se refere a conceitos, objetivos e
+                                                                               momento da aquisição, no valor de R$ 4.000, representa-se por
+finalidades da contabilidade.                                                  meio de um lançamento de primeira fórmula.
+97    Sob a ótica citada, o objeto da contabilidade é o patrimônio do    107   Em função da competência contábil, deve ser considerado
+      ente contábil específico.                                                despesa do exercício corrente o valor do aluguel do imóvel que
+                                                                               tenha sido utilizado no exercício corrente e só será pago no
+98    Para o estudo da contabilidade, patrimônio é a diferença entre
+                                                                               exercício seguinte.
+      ativos e passivos detidos pelas entidades.
+                                                                         108   Em algumas atividades, é comum que o cliente realize um
+99    A contabilidade integra o rol das ciências exatas por estar              adiantamento ao fornecedor, por conta do bem ou do serviço
+      dedicada à mensuração da riqueza do ente contábil.                       que lhe será entregue. Quando do efetivo recebimento do
+                                                                               adiantamento, o fornecedor, em cumprimento ao regime de
+Nas demonstrações contábeis de determinada empresa,
+                                                                               caixa, deverá lançar em sua contabilidade um crédito em conta
+foram selecionadas as contas a seguir, reunidas em quatro grupos,              de passivo, em contrapartida à conta caixa ou equivalentes.
+e seus respectivos saldos.
+                                                                                  Determinada sociedade comercial realizou, no período
+grupo 1                                                                  corrente, as transações apresentadas a seguir.
+caixa e equivalentes R$ 10.000
+                                                                               C   Apropriou a terceira cota anual cheia de depreciação de
+créditos contra clientes R$ 350.000
+                                                                                   um veículo, originalmente adquirido por R$ 60.000, com
+estoques para revenda R$ 250.000                                                   vida útil estimada em 5 anos. A empresa tem como política
+veículos R$ 120.000                                                                considerar um valor residual de 10% para todos os seus
+                                                                                   bens. O método de depreciação empregado é o da soma
+grupo 2
+                                                                                   dos dígitos dos anos.
+duplicatas descontadas R$ 100.000                                              C   Descontou, no banco onde mantém conta, uma duplicata
+fornecedores R$ 80.000                                                             a vencer em 60 dias. O título, com valor nominal de
+salários e encargos a pagar R$ 50.000                                              R$ 100.000, gerou um crédito de R$ 97.000 na
+                                                                                   conta-corrente da empresa.
+grupo 3
+                                                                               C   Vendeu mercadorias por R$ 10.000, líquido de tributos,
+capital social R$ 400.000                                                          realizando a baixa dos estoques correspondentes, no valor
+reservas de lucros R$ 100.000                                                      de R$ 5.500.
+grupo 4                                                                  Nessa situação hipotética,
+depreciação R$ 15.000
+                                                                         109   a venda de mercadorias gerou um resultado com mercadorias
+vendas líquidas R$ 2.000.000
+                                                                               de R$ 4.500.
+salários e encargos R$ 450.000
+                                                                         110   a empresa, no momento do desconto do título, contabilizou
+Com base nessas informações, julgue os seguintes itens.                        despesa com encargos financeiros de R$ 3.000.
+                                                                         111   a depreciação do veículo gerou um crédito de R$ 10.800 na
+100   O rol de contas está incompleto, visto que o total de saldos das
+                                                                               conta de depreciação acumulada.
+      contas dos grupos 1 e 2 supera o montante do grupo 3.
+                                                                         Espaço livre
+101   Um fato modificativo exige um registro contábil em conta do
+      grupo 4.
+102   Se a empresa realizar um crédito em conta do grupo 1, em
+      contrapartida a um débito em contas dos grupos 2 e 4, ela
+      estará representando um fato misto.
+         Determinada sociedade comercial criou uma rubrica
+contábil para abrigar os valores dos estoques em trânsito. Na
+abertura do exercício corrente, essa rubrica possuía saldo de
+R$ 50.000.
+
+A respeito dessa situação hipotética, julgue os próximos itens.
+
+103   A referida conta é de natureza credora.
+104   No plano de contas da sociedade, a conta descrita integra o
+      ativo disponível.
+105   A aquisição de mercadorias para revenda, quando classificável
+      na conta mencionada, gerará uma contrapartida em conta de
+      fornecedores ou de caixa e equivalentes.
+
+
+                                                  www.pciconcursos.com.br                                  www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+Matriz_408_DGPPF012_ Pag 9N245245                                                       CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+No que se refere ao balancete de verificação contábil, julgue os         Espaço livre
+itens subsequentes.
+
+112   O balancete de verificação é um resumo ordenado de todas
+      as contas utilizadas pela contabilidade da entidade que o
+      apresenta, destinando-se a detectar todos os possíveis erros
+      de contabilização eventualmente ocorridos.
+113   O balancete de verificação pode ser levantado em modelos
+      que vão de um mínimo de duas colunas a um máximo de
+      seis colunas.
+114   Em um balancete de seis colunas, apresentam-se, inicialmente,
+      os saldos existentes nas rubricas contábeis no final do período
+      anterior, seguidos da letra D ou C, que indicam se o referido
+      saldo é devedor ou credor, respectivamente.
+Considere os dados da tabela a seguir, retidos da contabilidade de
+determinada sociedade empresarial, com valores em reais (R$).
+
+  caixa e equivalentes                               10.000
+  duplicatas a receber                               80.000
+  estoques                                           50.000
+  máquinas                                         100.000
+  terrenos                                         160.000
+  marcas e patentes                                100.000
+  fornecedores                                     200.000
+  duplicatas descontadas                             40.000
+  salários e encargos a pagar                      200.000
+  capital social                                   150.000
+  vendas de mercadorias                           1.000.000
+  custo das mercadorias vendidas                   600.000
+  despesas administrativas                           90.000
+  despesas comerciais                              160.000
+  despesas financeiras                               33.000
+  outras despesas                                    41.000
+  IR e CSLL                                          26.000
+
+Com base nessas informações, julgue os itens que se seguem.
+115   As contas do ativo dessa empresa somam R$ 500.000.
+116   O lucro bruto do exercício da referida empresa foi de
+      R$ 50.000.
+117   O patrimônio líquido da empresa em questão soma
+      R$ 200.000.
+Com base no disposto na Lei n.º 6.404/1976 e suas alterações e na
+Norma Brasileira de Contabilidade – NBC TSP Estrutura
+Conceitual/2016, julgue os itens subsecutivos.
+
+118   A lei das sociedades por ações aplica-se a todas as companhias
+      ou sociedades anônimas, independentemente de suas ações
+      serem, ou não, comercializadas em bolsa de valores.
+119   De acordo com a Norma Brasileira de Contabilidade, para que
+      uma informação contábil seja capaz de fazer a diferença nas
+      decisões, ela deve ter valor preditivo, confirmatório ou ambos.
+120   Relevância, materialidade e fidedignidade são as características
+      qualitativas fundamentais da informação contábil útil.
+
+
+                                                  www.pciconcursos.com.br                               www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+||408_DGP_PF_DISC012_01||                                                           CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+                                               PROVA DISCURSIVA
+•   Nesta prova, faça o que se pede, usando, caso deseje, o espaço para rascunho indicado no presente caderno. Em seguida, transcreva
+    o texto para a FOLHA DE TEXTO DEFINITIVO DA PROVA DISCURSIVA, no local apropriado, pois não será avaliado
+    fragmento de texto escrito em local indevido.
+•   Qualquer fragmento de texto além da extensão máxima de linhas disponibilizadas será desconsiderado.
+•   Na Folha de Texto Definitivo, a presença de qualquer marca identificadora no espaço destinado à transcrição do texto definitivo
+    acarretará a anulação da sua prova discursiva.
+•   Ao domínio do conteúdo serão atribuídos até 13,00 pontos, dos quais até 0,60 ponto será atribuído ao quesito apresentação
+    (legibilidade, respeito às margens e indicação de parágrafos) e estrutura textual (organização das ideias em texto estruturado).
+
+              A consolidação de um direito brasileiro democrático da criança e do adolescente tem suas origens
+      na Campanha Criança e Constituinte, antes mesmo da entrada em vigor do Estatuto da Criança e do
+      Adolescente (Lei n.º 8.069/1990), por força de princípios constitucionais que reconheceram a proteção
+      integral e a prioridade absoluta no estabelecimento de todas as políticas dirigidas à infância e à juventude.
+      A doutrina da proteção integral interfere, diretamente, na organização de um sistema de justiça especializado
+      e na adoção de uma legislação especial para regulamentar todas as situações que envolvam criança ou
+      adolescente, com especial destaque às situações nas quais o adolescente é autor de uma infração à lei penal.
+
+                                                               Karyna Batista Sposato. Por que dizer não à redução da idade penal. Brasília:
+                                                               UNICEF, 2007, p. 6. Internet: <www.crianca.mppr.mp.br> (com adaptações).
+
+
+
+
+           Tabela comparativa da idade de responsabilidade penal juvenil e de adultos, em diferentes países
+
+                               responsabilidade penal
+           país                                                                                  observações
+                                 juvenil                de adultos
+                                                                       De 18 a 21 anos de idade, o sistema alemão admite o que
+                                                                       se convencionou chamar de sistema de jovens adultos, no
+                                                                       qual, mesmo após os 18 anos de idade, conforme o
+        Alemanha                   14                      18/21
+                                                                       estudo do discernimento, podem ser aplicadas as regras
+                                                                       do sistema de justiça juvenil. Após os 21 anos de idade,
+                                                                       a competência é exclusiva da jurisdição penal tradicional.
+                                                                       O sistema argentino é tutelar. Segundo esse sistema, a
+                                                                       partir dos 16 anos de idade, adolescentes podem ser
+                                                                       privados de sua liberdade, se cometerem delitos, e podem
+        Argentina                  16                        18        ser internados em alcaidías (estabelecimentos
+                                                                       penitenciários destinados ao alojamento de detidos que
+                                                                       ainda não receberam detenção preventiva) ou
+                                                                       penitenciárias.
+                                                                       O art. 104 do Estatuto da Criança e do Adolescente
+                                                                       (Lei n.º 8.069/1990) determina que são penalmente
+          Brasil                   12                        18        inimputáveis os menores de 18 anos de idade, sujeitos às
+                                                                       medidas socioeducativas previstas na lei a partir dos
+                                                                       12 anos de idade.
+                                                                       A legislação canadense admite que, a partir dos 14 anos
+                                                                       de idade, nos casos de delitos de extrema gravidade, o
+                                                                       adolescente seja julgado pela justiça comum e receba
+         Canadá                    12                      14/18       sanções previstas no Código Criminal, porém estabelece
+                                                                       que nenhuma sanção aplicada a um adolescente poderá
+                                                                       ser mais severa do que aquela aplicada a um adulto pela
+                                                                       prática do mesmo crime.
+                                                                       A lei chinesa admite a responsabilidade de adolescentes
+                                                                       de 14 anos de idade nos casos de crimes violentos como
+                                                                       homicídios, lesões graves intencionais, estupro, roubo,
+          China                   14/16                      18
+                                                                       tráfico de drogas, incêndio, explosão, envenenamento etc.
+                                                                       Em casos de crimes cometidos sem violências, a
+                                                                       responsabilidade somente se dará aos 16 anos de idade.
+                                                                       Na maioria dos estados federados, adolescentes com mais
+                                                                       de 12 anos de idade podem ser submetidos aos mesmos
+         Estados
+                    10 (somente para delitos graves)       12/16       procedimentos dos adultos, inclusive com a imposição de
+         Unidos
+                                                                       pena de morte ou prisão perpétua. O país não ratificou a
+                                                                       Convenção Internacional sobre os Direitos da Criança.
+                                                                       Os adolescentes entre 13 e 18 anos de idade gozam de
+         França                    13                        18
+                                                                       presunção relativa de irresponsabilidade penal.
+                                                                       A Lei Juvenil Japonesa, embora possua uma definição de
+          Japão                    14                        21        delinquência juvenil mais ampla que a da maioria dos
+                                                                       países, fixa a maioridade penal em 21 anos de idade.
+
+
+
+
+                                              www.pciconcursos.com.br                                       www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+||408_DGP_PF_DISC012_01||                                                         CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+Considerando que as informações precedentes têm caráter unicamente motivador, redija um texto dissertativo a respeito do seguinte tema.
+
+                                         A RESPONSABILIDADE PENAL NO BRASIL
+
+Em seu texto, posicione-se, de forma clara e fundamentada, a respeito da redução da maioridade penal [valor: 4,00 pontos] e discuta os
+seguintes aspectos:
+
+    1   proteção da criança e do adolescente pelo Estado; [valor: 2,80 pontos]
+    2   redução/aumento da violência e tratamento dos adolescentes em conflito com a lei como adultos; [valor: 2,80 pontos]
+    3   papel do poder público na elaboração de políticas sociais com potencial de reduzir o envolvimento de adolescentes com a
+        violência no Brasil. [valor: 2,80 pontos]
+
+
+
+
+                                               www.pciconcursos.com.br                                www.pciconcursos.com.br
+pcimarkpci MjgwNDowMjE0OmEwODE6ZTgyZTo3ZDhhOmNmYzE6NmMyZjoxYjU3:V2VkLCAxOSBBdWcgMjAyNiAxOToxMToyMCAtMDMwMA==
+
+
+||408_DGP_PF_DISC012_01||                                          CESPE | CEBRASPE – DGP/PF – Aplicação: 2018
+
+                                                                                               RASCUNHO
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+
+
+
+
+                                      www.pciconcursos.com.br                      www.pciconcursos.com.br
+

@@ -1,0 +1,252 @@
+--- 2018 ---
+69:1 Infere-se do texto que o Nudetective foi desenvolvido
+71:2 Um dos benefícios do Nudetective para a Polícia Federal é
+74:3 O primeiro parágrafo do texto informa que, antes da criação do
+78:4 De acordo com o texto, diversos países da América e da
+83:5 Conclui-se do texto que a varredura do Nudetective é restrita
+85:6 A inserção de uma vírgula imediatamente após a palavra
+87:7 No período em que se insere, o termo “Logo” (R.13) expressa
+89:8 O emprego do sinal indicativo de crase em “a uma paleta”
+104:9 Aredaçãodos atos normativos deve permitir que cada cidadão,
+107:10 Embora estabeleça parâmetros para o uso da língua em
+111:11 A concisão é uma qualidade da redação oficial que atende ao
+211:12 Oprimeiroparágrafodotextoépredominantementedescritivo,
+213:13 Infere-se das falas de Dupin que a opinião do delegado
+216:14 Dupin é irônico ao caracterizar a polícia parisiense como hábil
+221:15 Na opinião de Dupin, a inteligência da polícia de Paris
+224:16 O narrador discorda de Dupin com relação à opinião de que
+229:17 Mantendo-se a correção gramatical e os sentidos originais do
+235:18 O pronome “ele”, no trecho “ele é apenas culpado de uma non
+237:19 A correção gramatical do texto seria mantida caso a forma
+244:20 Dados os sentidos do sexto parágrafo, é possível supor que, na
+247:21 No trecho “ao procurar alguma coisa que se ache escondida”
+250:22 A supressão do sinal indicativo de crase em “à sua maneira”
+252:23 Feitas as devidas alterações de maiúsculas e minúsculas, o
+255:24 Asupressãoda vírgula empregada logo após a palavra“algum”
+263:25 Sob a perspectiva do critério formal adotado pelo Brasil,
+270:26 Ao outorgar determinada atribuição a pessoa não integrante de
+278:27 O poder de autotutela tem fundamento, preponderantemente,
+283:28 O Poder Judiciário tem competência para apreciar o mérito dos
+289:29 O direito ao sigilo de correspondência é constitucionalmente
+292:30 Na vigência do estado de defesa, é legal a prisão de indivíduo
+297:31 A Polícia Federal tem a atribuição de apurar infrações
+302:32 Compete à Polícia Federal exercer, com exclusividade,
+313:33 A receptação praticada por José consumou-se a partir do
+315:34 Se, durante o processo judicial a que José for submetido, for
+320:35 O inquérito instaurado contra José é procedimento de natureza
+323:36 Caso declarações de José sejam divergentes de declarações
+327:37 Os agentes de polícia podem decidir, discricionariamente,
+334:38 Durante uma vistoria, no estado do Paraná, em passageiros
+342:39 Em determinado estado da Federação, vários imigrantes foram
+350:40 Em operação da Polícia Federal, um cidadão foi flagrado
+370:41 Em um grupo formado aleatoriamente por 4 ex-condenados
+375:42 O erro padrão da estimativa da probabilidade p foi igual
+377:43 A estimativa intervalar 0,25 ± 0,05 representa o intervalo
+379:44 Se X seguir uma distribuição binomial com parâmetros
+398:45 A correlação linear de Pearson entre a variável resposta Y e a
+400:46 A estimativa da variância σ2
+402:47 A estimativa do coeficiente angular b, pelo método de mínimos
+409:48 se W1 e W2 forem duas cópias independentes e identicamente
+413:49 P(W > R$ 10 mil) = 0,5.
+414:50 a razão segue distribuição normal padrão.
+427:51 As proposições P, Q e R são proposições simples.
+428:52 A proposição “Se Paulo é mentiroso então Maria é culpada.”
+430:53 Se ficar comprovado que apenas um dos quatro envolvidos no
+433:54 Independentemente de quem seja culpado, a proposição
+436:55 As proposições Pv(~Q)6(~R) e R6[Qv(~P)] são equivalentes.
+437:56 Se as três proposições P, Q e R forem falsas, então pelo menos
+444:25 passageiros esteve em C e 6 desses 25 passageiros estiveram
+448:57 Se 11 passageiros estiveram em B, então mais de 15 estiveram
+450:58 Se 2 dos 30 passageiros selecionados forem escolhidos ao
+453:59 A quantidade de maneiras distintas de se escolher 2 dos
+454:30 passageiros selecionados de modo que pelo menos um deles
+456:60 Considere que, separando-se o grupo de passageiros
+477:61 O endereço 172.20.1.1 identificado por Marta é o endereço
+479:62 Por meio do serviço de proxy para rede local, Marta poderá
+482:63 O sistema operacional utilizado na estação de trabalho
+486:64 WHOIS é o serviço que permite a consulta direta dos
+489:65 A despeito das configurações dos ativos de segurança
+496:66 Um ataque de ransomware comumente ocorre por meio
+502:67 A infecção de um sistema por códigos maliciosos pode ocorrer
+507:68 Na autenticação em dois fatores, necessariamente, o primeiro
+512:69 A superexposição de dados pessoais nas redes sociais facilita
+526:70 Se, para enviar e receber emails sem precisar gerenciar
+534:71 Para o armazenamento de dados de trabalho dos colaboradores
+540:72 Um estudo técnico de viabilidade e um projeto de re-hosting
+545:73 Essa teoria contribui para a unidade da ciência, ao desenvolver
+551:74 Nas ferramentas de busca, o indexador é o programa que
+555:75 Nasaplicaçõesdetransferênciadearquivosporfluxocontínuo,
+558:76 Nas aplicações multimídia, os fluxos de dados podem conter
+568:77 Na versão 2013 do PowerPoint do Microsoft Office
+573:78 Considere que um designer que habitualmente utiliza o
+587:79 O conceito de conhecimento é mais complexo que o de
+591:80 No desenvolvimento de um sistema de informação, a fase de
+601:81 Conforme o modelo ER em questão, um tipo de produto
+604:82 Considerando-seapenasodiagramaapresentado,infere-seque,
+608:83 Situação hipotética: Ao analisar o modelo ER em questão,
+620:84 Situação hipotética: Na ação de obtenção de informações por
+628:85 Big data refere-se a uma nova geração de tecnologias e
+632:86 Pode-se definir mineração de dados como o processo de
+636:87 Aconexãode sistemas como TVs, laptops e telefonescelulares
+641:88 Situação hipotética: Múltiplos hospedeiros devem ser
+649:89 As redes de computadores podem ser classificadas, pela sua
+652:90 Um protocolo da camada de transporte é implementado no
+655:91 Os modelos de arquitetura OSI/ISO e TCP/IP possuem,
+663:92 DNS é um protocolo da camada de aplicação que usa o UDP
+669:93 Considere o programa a seguir, escrito em R.
+675:94 Considere o programa a seguir, escrito em R.
+681:95 Considere o programa a seguir, na linguagem Python.
+689:96 Considere o programa a seguir, na linguagem Python.
+707:97 Sob a ótica citada, o objeto da contabilidade é o patrimônio do
+709:98 Para o estudo da contabilidade, patrimônio é a diferença entre
+711:99 A contabilidade integra o rol das ciências exatas por estar
+733:100 O rol de contas está incompleto, visto que o total de saldos das
+735:101 Um fato modificativo exige um registro contábil em conta do
+737:102 Se a empresa realizar um crédito em conta do grupo 1, em
+745:103 A referida conta é de natureza credora.
+746:104 No plano de contas da sociedade, a conta descrita integra o
+748:105 A aquisição de mercadorias para revenda, quando classificável
+753:106 A aquisição à vista de um veículo pelo valor de R$ 80.000,
+757:107 Em função da competência contábil, deve ser considerado
+761:108 Em algumas atividades, é comum que o cliente realize um
+783:109 a venda de mercadorias gerou um resultado com mercadorias
+785:110 a empresa, no momento do desconto do título, contabilizou
+787:111 a depreciação do veículo gerou um crédito de R$ 10.800 na
+796:112 O balancete de verificação é um resumo ordenado de todas
+800:113 O balancete de verificação pode ser levantado em modelos
+803:114 Em um balancete de seis colunas, apresentam-se, inicialmente,
+827:115 As contas do ativo dessa empresa somam R$ 500.000.
+828:116 O lucro bruto do exercício da referida empresa foi de
+830:117 O patrimônio líquido da empresa em questão soma
+835:118 A lei das sociedades por ações aplica-se a todas as companhias
+838:119 De acordo com a Norma Brasileira de Contabilidade, para que
+841:120 Relevância,materialidadeefidedignidadesãoascaracterísticas
+891:12 anos de idade.
+909:10 (somente para delitos graves) 12/16
+930:1 proteção da criança e do adolescente pelo Estado; [valor: 2,80 pontos]
+931:2 redução/aumento da violência e tratamento dos adolescentes em conflito com a lei como adultos; [valor: 2,80 pontos]
+932:3 papel do poder público na elaboração de políticas sociais com potencial de reduzir o envolvimento de adolescentes com a
+--- 2025 ---
+54:1 O texto sugere que o gênero policial é o preferido do público
+56:2 Entende-se da leitura do texto que a frequente transposição
+60:3 A partir das ideias de Carlos Gerbase reproduzidas no texto,
+63:4 O termo "crescente" (segundo período do primeiro
+66:5 No segundo período do segundo parágrafo, a oração "que as
+69:6 A supressão da vírgula empregada após "personagem"
+72:7 No segundo parágrafo, o intercambiamento das expressões
+76:8 O pronome presente no termo "nela" (último parágrafo) tem
+80:9 Os assuntos objetos dos expedientes oficiais devem ser
+84:10 Na redação oficial, os pronomes de tratamento são
+89:11 A presunção de veracidade dos atos administrativos refere-se
+95:12 A pessoa que sofrer algum dano por ato praticado por
+98:13 As sociedades de economia mista e as empresas públicas
+102:14 O cancelamento do registro da penalidade de suspensão
+107:15 É inexigível a licitação para a contratação que possa
+111:16 O princípio da razoabilidade é considerado um princípio
+119:17 O sigilo da correspondência e das comunicações telefônicas
+123:18 A forma de governo diz respeito à relação entre os
+129:19 Cabe à Polícia Federal exercer, com exclusividade, as
+132:20 Além das pessoas físicas, as pessoas jurídicas também
+135:21 A pesquisa e a lavra de minerais em terras indígenas só
+138:22 O patrulhamento ostensivo das ferrovias federais compete à
+142:23 O crime de prevaricação exige, além da conduta típica de
+147:24 O uso de um cabo de vassoura contra a vítima durante a
+152:25 Considere que um casal tenha sido preso em flagrante
+165:26 O inquérito policial poderá ser iniciado mediante
+168:27 A autoridade policial deve instaurar inquérito policial sempre
+181:28 Como o crime ocorreu fora do território brasileiro, em
+187:29 Na admissão de indivíduos em estabelecimentos prisionais,
+190:30 As Regras de Mandela contemplam a possibilidade de se
+193:31 A separação de categorias de pessoas presas deve orientar-se
+198:32 Qualquer pessoa declarada culpada por um delito terá o
+206:33 Os Estados-partes da Convenção contra a Tortura e Outros
+211:34 A Convenção Relativa ao Estatuto dos Refugiados veda aos
+221:35 O pedido do Ministério Público para aplicação de medida
+227:36 No âmbito da segurança privada, compete à Polícia Federal
+232:37 Segundo a Lei de Migração, desde que exista disposição
+239:38 A apreensão dos meios de transporte e dos maquinários,
+247:39 O condenado por crime de tortura, bem como aquele que se
+254:40 A carteira de identidade fará prova de todos os dados nela
+257:41 No âmbito do Serviço de Identificação do Cidadão, compete
+263:42 Quando houver repercussão interestadual ou internacional
+271:43 Pratica crime o proprietário de empresa de segurança e
+277:44 Nas infrações penais derivadas de condutas e atividades
+285:45 A mediana de  é igual a (ଶ + ଷ)/2.
+287:47 A probabilidade de  = 4 ×  é zero.
+288:48 O desvio padrão da razão /√ é igual a 2.
+301:49 O coeficiente de correlação linear de Pearson entre as
+303:50 O intervalo de 95% confiança para a diferença entre as
+306:51 O desvio padrão da variável  foi superior ao desvio padrão
+308:52 A média amostral dos valores licitados ( ) foi de
+316:53 Considere que, na tabela-verdade a seguir, P, Q e R sejam
+321:4 valores V (verdade) e 4 valores F (falso).
+322:54 Considere que um crime foi cometido e três suspeitos desse
+330:55 Considere que as seguintes proposições sejam verdadeiras.
+338:56 Suponha que a sentença “Se Aldo ou Bruno é filho de
+353:57 A negação da sentença “todo condutor abordado na
+357:58 Se duas placas forem aleatoriamente selecionadas ao final do
+362:59 Considere que as placas de todos os veículos sejam
+370:60 Considere que, entre os veículos em situação irregular,
+399:61 O Microsoft Remote Desktop e o TeamViewer permitem
+405:62 A Internet é uma rede pública global de comunicação e acesso
+411:63 Em distribuições Linux, o comando ipconfig é utilizado
+418:64 Firewalls são ferramentas de segurança que monitoram e
+423:65 No protocolo IPv6, cada endereço tem 256 bits, que são
+433:66 Na arquitetura de sistemas, o frontend é a interface visível e
+439:67 A computação em nuvem permite que os usuários acessem
+444:68 Na análise de requisitos de um sistema de informação, a
+451:69 No modelo entidade-relacionamento, a abstração representa
+459:70 A mineração de dados é uma técnica em que se utilizam
+466:71 No contexto de banco de dados, dados estruturados são
+471:72 Na teoria da informação, dados representam fatos brutos que,
+480:73 Em sistemas biométricos de alta segurança, o controle do
+484:74 O indicador FPIR é diretamente influenciado por um limiar
+488:75 Em Python, a função lambda permite a criação de funções
+492:76 No modo de transmissão full-duplex, para que os dados
+496:77 A camada de sessão do modelo OSI é a principal responsável
+499:78 Em Python, listas são estruturas de dados imutáveis, o que as
+508:79 Em serviços de nuvem, a utilização de plataforma como
+512:80 Em machine learning supervisionado, o algoritmo aprende, a
+515:81 No ambiente Linux, a execução do comando apresentado a
+521:82 A infraestrutura como serviço (IaaS) oferece aos usuários
+525:83 O DNS é responsável por garantir a confidencialidade das
+529:84 O DNS utiliza o protocolo UDP para a maioria das
+534:85 O protocolo HMAC-based one-time password (HOTP) é
+537:86 Em autenticação multifator (MFA), hardwares tokens
+541:87 A técnica sandboxing, ao executar programas em
+544:88 Detecção heurística é uma técnica de análise do
+550:89 Por princípio, a consistência pressupõe que uma transação
+553:90 Para a garantia dos princípios de atomicidade em banco de
+559:91 O comando SELECT mostra que existe uma relação com
+561:92 Pelo comando SELECT, entende-se que os valores da coluna
+565:93 Em aprendizado de máquina, as técnicas de classificação e
+568:94 REST (Representational state transfer) e GraphQL são
+571:95 Em aprendizado de máquina, não há overfitting.
+572:96 Uma API deve manter estado entre as requisições visto que,
+606:97 Uma empresa que realiza a compra de um terreno no valor
+610:98 O plano de contas é um dos livros contábeis obrigatórios das
+613:99 A principal finalidade do relatório financeiro para fins gerais
+618:100 Uma movimentação entre contas do ativo e do passivo é
+622:101 O valor do patrimônio líquido de uma entidade no início de
+627:102 Os fatos administrativos permutativos correspondem à troca
+634:103 Considere que, em determinado período, uma empresa tenha
+641:104 O livro diário deve conter, para cada lançamento, a data do
+645:105 Pelo regime de competência, as receitas de vendas devem ser
+649:106 O valor pago antecipadamente pelo aluguel de uma sala
+668:107 O patrimônio líquido total da entidade, considerado o
+670:108 O passivo circulante resulta no valor de R$ 5.700.
+671:109 O ativo soma R$ 109.200.
+672:110 O lucro apurado no exercício é de R$ 3.500.
+676:111 O balancete de verificação permite que se identifiquem
+680:112 De acordo com o Pronunciamento n.º 26 (R1) do Comitê de
+684:113 Na demonstração de resultados do exercício, a receita líquida
+690:114 Um ativo temporariamente retirado de uso deve continuar
+694:115 A provisão para contingência deve ser reconhecida no
+698:116 A provisão para férias representa um passivo para a empresa
+701:117 De acordo com o Pronunciamento n.º 27 do CPC, a
+710:118 A relevância e a compreensibilidade são as características fundamentais da informação contábil.
+711:119 A relevância da informação contábil está associada à sua capacidade de influenciar as decisões econômicas de seus usuários.
+712:120 O custo corrente de um ativo corresponde ao valor presente dos fluxos de caixa futuros que a entidade espera obter a partir do uso
+780:1 o papel constitucional da Polícia Federal e a investigação de crimes em ambiente cibernético; [valor: 7,00 pontos]
+781:2 a importância de Big Data e mineração de dados nesse contexto; [valor: 6,00 pontos]
+782:3 a utilização de aprendizado de máquina e de inteligência artificial na investigação policial. [valor: 6,00 pontos]
