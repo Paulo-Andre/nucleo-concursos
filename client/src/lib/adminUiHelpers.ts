@@ -14,6 +14,12 @@ export function countQuestionsByContent<T extends { contentIds: number[] }>(ques
   return counts;
 }
 
+export function libraryLoadState(isLoading: boolean, itemCount: number) {
+  if (isLoading) return "loading" as const;
+  if (itemCount === 0) return "empty" as const;
+  return "ready" as const;
+}
+
 export function reviewEmptyStateMessage(hasActiveFilters: boolean) {
   return hasActiveFilters
     ? "Nenhum item corresponde aos filtros atuais. Ajuste a busca ou selecione ‘Todas as decisões’."

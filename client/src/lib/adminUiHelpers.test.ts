@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countQuestionsByContent, reviewEmptyStateMessage, reviewFlowSteps } from "./adminUiHelpers";
+import { countQuestionsByContent, libraryLoadState, reviewEmptyStateMessage, reviewFlowSteps } from "./adminUiHelpers";
 
 describe("orientações da revisão administrativa", () => {
   it("indica como adicionar uma questão à fila quando não há pendências", () => {
@@ -25,5 +25,11 @@ describe("orientações da revisão administrativa", () => {
     expect(counts.get(102)).toBe(20);
     expect(counts.get(103)).toBe(10);
     expect([...counts.values()].reduce((total, count) => total + count, 0)).toBe(60);
+  });
+
+  it("diferencia carregamento assíncrono de uma biblioteca realmente vazia", () => {
+    expect(libraryLoadState(true, 0)).toBe("loading");
+    expect(libraryLoadState(false, 0)).toBe("empty");
+    expect(libraryLoadState(false, 60)).toBe("ready");
   });
 });
