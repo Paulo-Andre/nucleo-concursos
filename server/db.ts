@@ -936,7 +936,9 @@ export async function createManagedQuestion(actorUserId: number, input: ManagedQ
   await syncQuestionContentLinks(actorUserId, questionId, input.contentIds);
   await writeAdminAudit(actorUserId, null, "CRIACAO_DE_QUESTAO", `Questão ${questionId} criada.`);
   if (input.status === "review") await ensureItemInReviewQueue(actorUserId, "question", questionId);
-  return getManagedQuestionById(questionId);
+  const created = await getManagedQuestionById(questionId);
+  if (!created) throw new Error("A questão foi criada, mas não pôde ser recuperada para confirmação.");
+  return created;
 }
 
 export async function updateManagedQuestion(actorUserId: number, questionId: number, input: ManagedQuestionInput) {

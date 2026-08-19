@@ -68,8 +68,21 @@
 - [x] Validar visualmente, como ROOT, o texto orientado exibido na aba Revisar quando não há pendências.
 - [x] Excluir um curso temporário pelo próprio painel ROOT publicado e confirmar visualmente seu desaparecimento sem afetar a biblioteca central.
 - [x] Abrir o dropdown de resposta correta publicado com quatro alternativas reais e registrar visualmente as opções A/B/C/D.
-- [ ] Criar, vincular e salvar visualmente uma questão de teste pelo painel ROOT, confirmar o comportamento e removê-la em seguida.
+- [x] Criar, vincular e salvar visualmente uma questão de teste pelo painel ROOT, confirmar o comportamento e removê-la em seguida.
 - [ ] Salvar e publicar um checkpoint posterior às validações visuais completas.
 - [x] Corrigir a falha de criação de questão no painel ROOT quando alternativas, resposta e conteúdos vinculados já foram preenchidos.
-- [ ] Validar no painel ROOT publicado o pós-envio da criação de questão: mensagem de sucesso e aparição do item na listagem administrativa.
-- [ ] Executar um ciclo único e auditável de criação e remoção de questão temporária pelo painel ROOT, sem limpeza manual no banco.
+- [x] Validar no painel ROOT publicado o pós-envio da criação de questão: mensagem de sucesso e aparição do item na listagem administrativa.
+- [x] Executar um ciclo único e auditável de criação e remoção de questão temporária pelo painel ROOT, sem limpeza manual no banco.
+- [x] Registrar visualmente no painel ROOT publicado a mensagem de sucesso após criar uma questão e a aparição explícita do mesmo identificador na listagem.
+- [x] Executar uma única criação e uma única exclusão de questão temporária no painel ROOT publicado, confirmando visualmente a entrada de auditoria correspondente.
+- [x] Comprovar no painel ROOT publicado a mensagem de sucesso exibida após criar uma questão e registrar seu texto no contexto.
+- [x] Após criar a questão temporária no painel ROOT publicado, capturar evidência explícita do mesmo identificador aparecendo na listagem na mesma validação.
+- [x] Comprovar visualmente no painel ROOT publicado a entrada de auditoria da exclusão da questão temporária #330001, registrando o texto exibido e o identificador correspondente.
+- [x] No painel ROOT publicado, pesquisar ou rolar a listagem administrativa após a criação e capturar evidência objetiva do cartão da questão #360001.
+- [ ] Registrar no contexto uma saída do painel publicado que contenha a mensagem de sucesso e o identificador #360001 associado à listagem administrativa.
+- [ ] Após comprovar a listagem de #360001, removê-la pelo fluxo auditável do painel ROOT e registrar a evidência de exclusão correspondente.
+- [ ] No painel ROOT publicado, registrar uma única saída de DOM ou console que mostre simultaneamente a mensagem de sucesso da criação e o identificador #360001 na listagem administrativa.
+- [ ] Após excluir #360001 pelo painel ROOT, capturar evidência objetiva pós-ação: cartão ausente da listagem filtrada e auditoria “Questão 360001 excluída...” visível, ou confirmação SQL complementar.
+- [ ] Exibir o identificador persistente na confirmação de criação de questão e reinicializar o formulário após o sucesso para impedir recriações acidentais.
+- [ ] Cobrir em teste a confirmação pós-criação com identificador e a prevenção de reenvio involuntário após sucesso.
+- [ ] Validar no painel ROOT publicado uma criação única com mensagem contendo o identificador e a limpeza do formulário antes da exclusão auditável.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeQuestionOptions } from "../client/src/lib/questionOptions";
-import { questionFormValidationError } from "../client/src/lib/questionFormValidation";
+import { questionCreationSuccessMessage, questionFormValidationError } from "../client/src/lib/questionFormValidation";
 
 describe("validação visível do formulário de questão", () => {
   const options = normalizeQuestionOptions("A) Correta\nB) Incorreta\nC) Distrator\nD) Outra opção");
@@ -37,5 +37,9 @@ describe("validação visível do formulário de questão", () => {
       options: [],
       answer: true,
     })).toBe("Informe um enunciado com ao menos 12 caracteres.");
+  });
+
+  it("informa o identificador persistente na confirmação de criação", () => {
+    expect(questionCreationSuccessMessage(42)).toBe("Questão #42 criada com identificador persistente.");
   });
 });

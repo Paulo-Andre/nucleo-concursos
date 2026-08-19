@@ -24,3 +24,7 @@ export function questionFormValidationError(input: QuestionFormValidationInput):
 
   return null;
 }
+
+export function questionCreationSuccessMessage(questionId: number) {
+  return `Questão #${questionId} criada com identificador persistente.`;
+}
