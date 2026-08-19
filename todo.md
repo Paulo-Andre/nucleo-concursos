@@ -136,3 +136,8 @@
 - [ ] Validar e publicar o fluxo de revisão disponível durante e após a resposta do simulado.
 - [x] Manter a questão do simulado visível após CERTO ou ERRADO, exibindo acerto/erro, explicação e a ação de revisão antes do avanço.
 - [x] Exibir uma ação explícita “Próxima questão” somente após o aluno visualizar o feedback e decidir sobre a revisão.
+- [x] Agrupar a listagem ROOT de questões por conteúdo, com contador, busca e acesso de edição no próprio grupo.
+- [x] Criar uma visão de detalhes do conteúdo no ROOT com as questões vinculadas e ação inequívoca de editar cada questão.
+- [x] Acrescentar ao cadastro e à edição de conteúdo os campos de objetivo, resumo, texto do card, URL de vídeo, URL de material complementar e rótulos dos recursos.
+- [x] Exibir links de vídeo e material complementar no card do conteúdo quando cadastrados, com rótulos acessíveis.
+- [x] Cobrir os novos contratos de conteúdo e questões com testes, validação pública, migração de banco e publicação.

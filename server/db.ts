@@ -710,8 +710,14 @@ type DisciplineInput = {
 
 type ContentInput = {
   title: string;
+  objective?: string | null;
   description?: string | null;
+  cardText?: string | null;
   body?: string | null;
+  videoUrl?: string | null;
+  videoLabel?: string | null;
+  materialUrl?: string | null;
+  materialLabel?: string | null;
   requiresReview: boolean;
   status?: KnowledgeStatus;
   disciplineIds?: number[];
@@ -881,7 +887,7 @@ export async function createManagedContent(actorUserId: number, input: ContentIn
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const result = await db.insert(contents).values({
-    title: input.title.trim(), description: normalizeOptional(input.description), body: normalizeOptional(input.body),
+    title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
     requiresReview: input.requiresReview, status: input.status === "review" ? "draft" : (input.status ?? "draft"), createdByUserId: actorUserId, updatedByUserId: actorUserId,
   });
   const contentId = Number(result[0].insertId);
@@ -898,7 +904,7 @@ export async function updateManagedContent(actorUserId: number, contentId: numbe
   const existing = await getManagedContentById(contentId);
   if (!existing) throw new Error("Conteúdo não encontrado.");
   const next = {
-    title: input.title.trim(), description: normalizeOptional(input.description), body: normalizeOptional(input.body),
+    title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
     requiresReview: input.requiresReview, status: input.status ?? existing.status,
   };
   await db.update(contents).set({ ...next, updatedByUserId: actorUserId }).where(eq(contents.id, contentId));

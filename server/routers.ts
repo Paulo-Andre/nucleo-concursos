@@ -91,8 +91,14 @@ const difficultySchema = z.enum(["basic", "intermediate", "advanced"]);
 const entityIdSchema = z.number().int().positive();
 const contentSchema = z.object({
   title: z.string().trim().min(4, "Informe o título do conteúdo.").max(220),
+  objective: z.string().trim().max(4000).optional(),
   description: z.string().trim().max(4000).optional(),
+  cardText: z.string().trim().max(1200).optional(),
   body: z.string().trim().max(30000).optional(),
+  videoUrl: z.string().trim().url("Informe uma URL de vídeo válida.").max(2048).optional().or(z.literal("")),
+  videoLabel: z.string().trim().max(160).optional(),
+  materialUrl: z.string().trim().url("Informe uma URL de material válida.").max(2048).optional().or(z.literal("")),
+  materialLabel: z.string().trim().max(160).optional(),
   requiresReview: z.boolean().default(false),
   status: knowledgeStatusSchema.optional(),
   disciplineIds: z.array(entityIdSchema).max(100).default([]),
