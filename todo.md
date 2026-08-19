@@ -151,4 +151,4 @@
 - [x] Importar e vincular todas as questões existentes do simulado à biblioteca ROOT de forma idempotente, preservando alternativas, explicações e histórico.
 - [x] Validar no painel ROOT que os contadores por conteúdo e a edição direta refletem a cobertura total do banco de questões.
 - [x] Validar o carregamento do painel ROOT: o lote administrativo retorna 71 conteúdos e 60 questões, que são exibidos após a conclusão da consulta assíncrona.
-- [ ] Ajustar os estados de carregamento do painel ROOT para não mostrar listas vazias nem contadores incompletos enquanto a consulta administrativa ainda está em andamento.
+- [x] Ajustar os estados de carregamento do painel ROOT para não mostrar listas vazias nem contadores incompletos enquanto a consulta administrativa ainda está em andamento; validação visual publicada confirmou os 71 conteúdos e as questões após a consulta.
