@@ -36,9 +36,11 @@
 - [x] Criar fluxo configurável de revisão para questões e conteúdos, incluindo envio, aprovação, rejeição, devolução e solicitação de correção.
 - [x] Criar aba Revisar com contador de pendências, filtros por tipo/status e pesquisa administrativa.
 - [x] Garantir que simulados automáticos utilizem somente itens aprovados/publicados quando a revisão for exigida.
-- [ ] Criar migrações, testes Vitest e validação ponta a ponta para edição, vínculos múltiplos, revisão e simulados sem duplicidade.
+- [x] Criar migrações, testes Vitest e validação ponta a ponta para edição, vínculos múltiplos, revisão e simulados sem duplicidade.
 - [x] Persistir um snapshot imutável de enunciado, resposta e metadados para cada questão central usada em simulado.
 - [x] Adicionar pesquisa de conteúdos diretamente no seletor de vínculos da questão.
 - [x] Exigir e armazenar observações na decisão de revisão de rejeição ou solicitação de correção.
 - [x] Impedir o fallback estático quando existirem questões persistentes configuradas para revisão obrigatória.
 - [x] Cobrir em teste a gravação e recuperação das observações em decisões de rejeição e solicitação de correção.
+- [x] Adicionar teste de integração real com banco e tRPC para questão, vínculos N:N, revisão, aprovação e consulta estudantil única.
+- [x] Executar e registrar um smoke completo do fluxo administrativo pelo contrato tRPC, com limpeza garantida dos dados temporários.
