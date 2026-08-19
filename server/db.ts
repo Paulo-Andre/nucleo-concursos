@@ -27,6 +27,8 @@ import { getEnrollmentLifecycleStatus } from "./enrollmentStatus";
 import { DEFAULT_COURSES } from "./courseCatalog";
 import { canUseQuestionInSimulation, requiresExclusiveCentralBank, uniqueSimulationQuestions } from "./question-bank-policy";
 import { persistReviewDecision, type ReviewDecision as PersistedReviewDecision } from "./review-decision";
+import { completeStudyModules } from "../client/src/data/pfCompleteStudyData";
+import { contestCatalog, disciplineCatalog, getDisciplineIdForModule } from "../client/src/data/pfCurriculumCatalog";
 
 type UserUpsertInput = {
   openId: string;
@@ -505,6 +507,83 @@ export async function ensureDefaultCourses(actorUserId: number) {
   for (const course of DEFAULT_COURSES) {
     const existing = await db.select({ id: courses.id }).from(courses).where(eq(courses.id, course.id)).limit(1);
     if (!existing[0]) await db.insert(courses).values({ ...course, createdByUserId: actorUserId, isActive: true });
+  }
+}
+
+/**
+ * Disponibiliza na biblioteca persistente os módulos didáticos que já existiam
+ * na trilha de estudo. A rotina é idempotente e não substitui conteúdo criado
+ * manualmente: cursos apenas apontam para disciplinas e conteúdos reutilizáveis.
+ */
+export async function ensureDefaultKnowledgeBase(actorUserId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  const currentContents = await db.select({ id: contents.id, title: contents.title }).from(contents);
+  const contentIdsByTitle = new Map(currentContents.map(content => [content.title, content.id]));
+  const contentIdsByDiscipline = new Map<string, number[]>();
+  let importedContents = 0;
+
+  for (const module of completeStudyModules) {
+    const disciplineCatalogId = getDisciplineIdForModule(module);
+    if (!disciplineCatalogId) continue;
+    const title = `${module.code} — ${module.title}`;
+    let contentId = contentIdsByTitle.get(title);
+    if (!contentId) {
+      const result = await db.insert(contents).values({
+        title,
+        description: module.summary,
+        body: [
+          module.summary,
+          `Conceitos-chave: ${module.concepts.join("; ")}.`,
+          `Pontos de atenção: ${module.attention.join("; ")}.`,
+          `Exemplo: ${module.example}`,
+          `Roteiro rápido: ${module.fastTrack.join(" ")}`,
+          `Mnemônico: ${module.mnemonic}`,
+        ].join("\n\n"),
+        status: "published",
+        requiresReview: false,
+        createdByUserId: actorUserId,
+        updatedByUserId: actorUserId,
+      });
+      contentId = Number(result[0].insertId);
+      contentIdsByTitle.set(title, contentId);
+      importedContents += 1;
+    }
+    contentIdsByDiscipline.set(disciplineCatalogId, [...(contentIdsByDiscipline.get(disciplineCatalogId) ?? []), contentId]);
+  }
+
+  const currentDisciplines = await db.select({ id: disciplines.id, shortName: disciplines.shortName }).from(disciplines);
+  const disciplineIdsByShortName = new Map(currentDisciplines.map(discipline => [discipline.shortName, discipline.id]));
+  const availableCourseIds = new Set((await db.select({ id: courses.id }).from(courses)).map(course => course.id));
+  let importedDisciplines = 0;
+
+  for (const discipline of disciplineCatalog) {
+    const shortName = discipline.shortName.toUpperCase();
+    if (disciplineIdsByShortName.has(shortName)) continue;
+    const result = await db.insert(disciplines).values({
+      name: discipline.name,
+      shortName,
+      description: discipline.description,
+      status: "published",
+      requiresReview: false,
+      createdByUserId: actorUserId,
+      updatedByUserId: actorUserId,
+    });
+    const disciplineId = Number(result[0].insertId);
+    disciplineIdsByShortName.set(shortName, disciplineId);
+    importedDisciplines += 1;
+
+    for (const contest of contestCatalog.filter(contest => contest.disciplineIds.includes(discipline.id) && availableCourseIds.has(contest.id))) {
+      await db.insert(courseDisciplines).values({ courseId: contest.id, disciplineId, linkedByUserId: actorUserId });
+    }
+    for (const contentId of contentIdsByDiscipline.get(discipline.id) ?? []) {
+      await db.insert(disciplineContents).values({ disciplineId, contentId, linkedByUserId: actorUserId });
+    }
+  }
+
+  if (importedContents || importedDisciplines) {
+    await writeAdminAudit(actorUserId, null, "SEMEADURA_BIBLIOTECA_CENTRAL", `${importedDisciplines} disciplina(s) e ${importedContents} conteúdo(s) foram disponibilizados na biblioteca central.`);
   }
 }
 

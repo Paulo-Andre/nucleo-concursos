@@ -51,5 +51,10 @@
 - [x] Tornar a fila de revisão funcional, compreensível e orientada quando não houver itens pendentes.
 - [x] Cobrir os novos fluxos administrativos com testes e validação visual.
 - [ ] Validar visualmente o painel ROOT com alternativas normalizadas, vínculos pesquisáveis, exclusão segura de curso e fila de revisão sem pendências.
+- [x] Corrigir o parsing de texto colado com sequências literais \n para preservar cada alternativa inteira.
+- [x] Garantir que o seletor de resposta correta exiba somente A/B/C/D, mantendo internamente alternativas completas, únicas e na mesma ordem do campo de texto.
+- [x] Exibir conteúdos existentes na área de vínculo de questão e esclarecer o estado vazio quando a biblioteca ainda não possuir conteúdos.
+- [x] Adicionar busca e ação de edição claramente visíveis para conteúdos existentes no painel ROOT.
+- [ ] Validar por teste e visualmente o cadastro de questão e a busca/edição de conteúdo.
 - [x] Ampliar os testes de contrato para busca de vínculos e estado de revisão sem pendências.
 - [x] Adicionar teste de integração da listagem administrativa de disciplinas e conteúdos reutilizáveis usada na busca de vínculos.

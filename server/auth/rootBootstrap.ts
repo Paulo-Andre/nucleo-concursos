@@ -3,6 +3,7 @@ import {
   convertUserToLocalRoot,
   createLocalUser,
   ensureDefaultCourses,
+  ensureDefaultKnowledgeBase,
   getUserByOpenId,
   getUserByUsername,
   updateUserRole,
@@ -24,6 +25,7 @@ export async function ensureRootAccount() {
       await convertUserToLocalRoot(existingLocal.id, await hashPassword(ENV.rootInitialPassword));
     }
     await ensureDefaultCourses(existingLocal.id);
+    await ensureDefaultKnowledgeBase(existingLocal.id);
     return;
   }
 
@@ -35,6 +37,7 @@ export async function ensureRootAccount() {
     if (existingOwner) {
       await convertUserToLocalRoot(existingOwner.id, await hashPassword(ENV.rootInitialPassword));
       await ensureDefaultCourses(existingOwner.id);
+      await ensureDefaultKnowledgeBase(existingOwner.id);
       return;
     }
   }
@@ -48,4 +51,5 @@ export async function ensureRootAccount() {
     role: "admin",
   });
   await ensureDefaultCourses(root.id);
+  await ensureDefaultKnowledgeBase(root.id);
 }
