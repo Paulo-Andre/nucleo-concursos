@@ -69,9 +69,9 @@
 - [x] Excluir um curso temporário pelo próprio painel ROOT publicado e confirmar visualmente seu desaparecimento sem afetar a biblioteca central.
 - [x] Abrir o dropdown de resposta correta publicado com quatro alternativas reais e registrar visualmente as opções A/B/C/D.
 - [x] Criar, vincular e salvar visualmente uma questão de teste pelo painel ROOT, confirmar o comportamento e removê-la em seguida.
-- [ ] Salvar e publicar um checkpoint posterior às validações visuais completas.
-- [ ] Salvar um checkpoint final posterior à validação #540001 e registrar seu version_id publicado.
-- [ ] Confirmar a versão final do novo checkpoint no painel ROOT publicado antes de concluir o checklist.
+- [x] Salvar e publicar um checkpoint posterior às validações visuais completas.
+- [x] Salvar um checkpoint final posterior à validação #540001 e registrar seu version_id publicado: d5cf7cd8.
+- [x] Confirmar a versão final do novo checkpoint no painel ROOT publicado antes de concluir o checklist.
 - [x] Corrigir a falha de criação de questão no painel ROOT quando alternativas, resposta e conteúdos vinculados já foram preenchidos.
 - [x] Validar no painel ROOT publicado o pós-envio da criação de questão: mensagem de sucesso e aparição do item na listagem administrativa.
 - [x] Executar um ciclo único e auditável de criação e remoção de questão temporária pelo painel ROOT, sem limpeza manual no banco.
