@@ -21,6 +21,7 @@ import {
   studyAnswers,
   studyNotes,
   studyProfiles,
+  studyReviewItems,
   users,
 } from "../drizzle/schema";
 import { getEnrollmentLifecycleStatus } from "./enrollmentStatus";
@@ -63,6 +64,15 @@ type SimulationInput = {
   persistentAnswers?: { questionId: number; correct: boolean; snapshot: Record<string, unknown> }[];
 };
 
+export type StudyReviewSnapshot = {
+  statement: string;
+  answer: boolean;
+  explanation: string;
+  discipline: string;
+  subject: string;
+  source?: string;
+};
+
 const emptyProfile = { xp: 0, lastStudyDate: null as string | null, studyDatesJson: "[]", usedQuestionIdsJson: "[]" };
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -81,6 +91,16 @@ function parseMetric(raw: string) {
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
+  }
+}
+
+function parseStudyReviewSnapshot(raw: string): StudyReviewSnapshot | null {
+  try {
+    const parsed = JSON.parse(raw) as Partial<StudyReviewSnapshot>;
+    if (!parsed || typeof parsed !== "object" || typeof parsed.statement !== "string" || typeof parsed.answer !== "boolean" || typeof parsed.explanation !== "string" || typeof parsed.discipline !== "string" || typeof parsed.subject !== "string") return null;
+    return { statement: parsed.statement, answer: parsed.answer, explanation: parsed.explanation, discipline: parsed.discipline, subject: parsed.subject, ...(typeof parsed.source === "string" ? { source: parsed.source } : {}) };
+  } catch {
+    return null;
   }
 }
 
@@ -292,6 +312,37 @@ export async function recordAnswer(userId: number, questionId: string, correct: 
   await db.insert(studyAnswers).values({ userId, questionId, correct });
   await registerStudyActivity(userId, correct ? 8 : 2);
   return getStudyState(userId);
+}
+
+export async function listStudyReviewItems(userId: number, status: "pending" | "mastered" = "pending") {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select().from(studyReviewItems).where(and(eq(studyReviewItems.userId, userId), eq(studyReviewItems.status, status))).orderBy(desc(studyReviewItems.createdAt));
+  return rows.flatMap(item => {
+    const snapshot = parseStudyReviewSnapshot(item.snapshotJson);
+    return snapshot ? [{ id: item.id, questionKey: item.questionKey, snapshot, status: item.status, createdAt: item.createdAt.toISOString(), reviewedAt: item.reviewedAt?.toISOString() ?? null }] : [];
+  });
+}
+
+export async function saveStudyReviewItem(userId: number, input: { questionKey: string; snapshot: StudyReviewSnapshot }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.insert(studyReviewItems).values({ userId, questionKey: input.questionKey, snapshotJson: JSON.stringify(input.snapshot), status: "pending", reviewedAt: null }).onDuplicateKeyUpdate({ set: { snapshotJson: JSON.stringify(input.snapshot), status: "pending", reviewedAt: null } });
+  return listStudyReviewItems(userId);
+}
+
+export async function completeStudyReviewItem(userId: number, id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.update(studyReviewItems).set({ status: "mastered", reviewedAt: new Date() }).where(and(eq(studyReviewItems.id, id), eq(studyReviewItems.userId, userId)));
+  return listStudyReviewItems(userId);
+}
+
+export async function removeStudyReviewItem(userId: number, id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.delete(studyReviewItems).where(and(eq(studyReviewItems.id, id), eq(studyReviewItems.userId, userId)));
+  return listStudyReviewItems(userId);
 }
 
 export async function completeStudyModule(userId: number, moduleId: string) {

@@ -116,3 +116,11 @@
 - [ ] Mapear cada subitem do conteúdo programático oficial do Agente PF 2025 para módulo, apostila ou questão e fechar a lacuna curricular de QA-001.
 - [ ] Revisar uma amostra pedagógica de vídeos por disciplina, com responsável e data de atualização normativa.
 - [ ] Anexar evidência visual autenticada do fluxo de revisão: instrução, abertura direta da questão na fila, correção e decisão.
+- [x] Criar para o aluno um caminho explícito de “revisar esta questão”, com registro de revisão e acesso posterior na área de estudo.
+- [x] Criar no painel ROOT uma aba “Todas as questões” com busca, filtros, acesso direto à edição e estado vazio orientado.
+- [x] Tornar os rótulos e orientações da revisão distintos entre revisão de estudo do aluno e revisão editorial administrativa de questões.
+- [x] Cobrir os novos fluxos com testes e validar visualmente a experiência de aluno e ROOT.
+- [x] Renomear no painel ROOT a aba de questões para “Todas as questões”, preservando busca, filtros, edição direta e estado vazio orientado.
+- [x] Distinguir no painel ROOT a revisão editorial da revisão pessoal do aluno, com rótulos “Revisar (ROOT)” e “Adicionar à revisão ROOT”.
+- [x] Renomear no painel ROOT a aba de questões para “Todas as questões”, preservando busca, filtros, edição direta e estado vazio orientado.
+- [x] Distinguir no painel ROOT a revisão editorial da revisão pessoal do aluno, com rótulos “Revisar (ROOT)” e “Adicionar à revisão ROOT”.

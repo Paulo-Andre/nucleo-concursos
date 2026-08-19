@@ -57,6 +57,20 @@ export const studyAnswers = mysqlTable("studyAnswers", {
   answeredAt: timestamp("answeredAt").defaultNow().notNull(),
 }, table => [index("studyAnswers_userId_idx").on(table.userId), index("studyAnswers_user_question_idx").on(table.userId, table.questionId)]);
 
+/** Fila pessoal de questões que o estudante escolheu retomar em uma revisão futura. */
+export const studyReviewItems = mysqlTable("studyReviewItems", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  questionKey: varchar("questionKey", { length: 80 }).notNull(),
+  snapshotJson: text("snapshotJson").notNull(),
+  status: mysqlEnum("status", ["pending", "mastered"]).notNull().default("pending"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+}, table => [
+  uniqueIndex("studyReviewItems_user_question_unique").on(table.userId, table.questionKey),
+  index("studyReviewItems_user_status_idx").on(table.userId, table.status),
+]);
+
 /** Resultados de simulados, com recortes por disciplina e bloco serializados em JSON. */
 export const simulationRecords = mysqlTable("simulationRecords", {
   id: varchar("id", { length: 64 }).primaryKey(),

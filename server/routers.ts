@@ -33,10 +33,14 @@ import {
   listManagedUsers,
   listQuestionChangelog,
   listReviewQueue,
+  listStudyReviewItems,
   listUserEnrollments,
+  completeStudyReviewItem,
   recordAnswer,
   recordSimulation,
+  removeStudyReviewItem,
   saveNote,
+  saveStudyReviewItem,
   setUserBlocked,
   setManagedCourseActive,
   updateManagedUser,
@@ -60,6 +64,14 @@ const profileSchema = z.object({
   email: z.string().trim().toLowerCase().email("Informe um e-mail válido.").max(320),
 });
 const metricSchema = z.record(z.string(), z.object({ correct: z.number().int().nonnegative(), total: z.number().int().nonnegative() }));
+const studyReviewSnapshotSchema = z.object({
+  statement: z.string().trim().min(1).max(12000),
+  answer: z.boolean(),
+  explanation: z.string().trim().min(1).max(12000),
+  discipline: z.string().trim().min(1).max(160),
+  subject: z.string().trim().min(1).max(240),
+  source: z.string().trim().max(400).optional(),
+});
 const enrollmentSchema = z.object({
   userId: z.number().int().positive(),
   courseId: z.string().trim().min(1).max(80),
@@ -194,6 +206,12 @@ export const appRouter = router({
     })).mutation(({ input, ctx }) => recordSimulation(ctx.user.id, input)),
     questions: router({
       list: enrollmentRequiredProcedure.query(() => listStudyQuestions()),
+    }),
+    review: router({
+      list: enrollmentRequiredProcedure.query(({ ctx }) => listStudyReviewItems(ctx.user.id)),
+      add: enrollmentRequiredProcedure.input(z.object({ questionKey: z.string().trim().min(1).max(80), snapshot: studyReviewSnapshotSchema })).mutation(({ input, ctx }) => saveStudyReviewItem(ctx.user.id, input)),
+      complete: enrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => completeStudyReviewItem(ctx.user.id, input.id)),
+      remove: enrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyReviewItem(ctx.user.id, input.id)),
     }),
     note: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).query(({ input, ctx }) => import("./db").then(({ getNote }) => getNote(ctx.user.id, input.moduleId))),
     saveNote: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80), content: z.string().trim().max(12000) })).mutation(({ input, ctx }) => saveNote(ctx.user.id, input.moduleId, input.content)),
