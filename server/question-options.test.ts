@@ -13,6 +13,6 @@ describe("normalização de alternativas", () => {
   it("mostra somente a letra da alternativa no seletor, mas preserva o texto como valor", () => {
     const options = normalizeQuestionOptions("A\\n certo\nB\\n errado\nC\\n talvez");
     expect(options).toEqual(["A certo", "B errado", "C talvez"]);
-    expect(options.map(questionOptionLabel)).toEqual(["Alternativa A", "Alternativa B", "Alternativa C"]);
+    expect(options.map(questionOptionLabel)).toEqual(["A", "B", "C"]);
   });
 });

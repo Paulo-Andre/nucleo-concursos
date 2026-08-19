@@ -56,5 +56,8 @@
 - [x] Exibir conteúdos existentes na área de vínculo de questão e esclarecer o estado vazio quando a biblioteca ainda não possuir conteúdos.
 - [x] Adicionar busca e ação de edição claramente visíveis para conteúdos existentes no painel ROOT.
 - [ ] Validar por teste e visualmente o cadastro de questão e a busca/edição de conteúdo.
+- [x] Ajustar o rótulo do seletor de resposta para exibir exclusivamente A/B/C/D nas opções.
+- [ ] Confirmar no painel ROOT publicado que o seletor exibe somente A/B/C/D para quatro alternativas reais.
+- [ ] Salvar e publicar a correção do rótulo após a confirmação visual autenticada.
 - [x] Ampliar os testes de contrato para busca de vínculos e estado de revisão sem pendências.
 - [x] Adicionar teste de integração da listagem administrativa de disciplinas e conteúdos reutilizáveis usada na busca de vínculos.

@@ -11,5 +11,5 @@ export function normalizeQuestionOptions(rawValue: string) {
 /** Exibe apenas a letra no seletor, mantendo o texto integral como valor persistido. */
 export function questionOptionLabel(option: string, index: number) {
   const prefix = option.match(/^\s*(?:alternativa\s+)?([a-e])(?:[).,:;-]|\s|$)/i)?.[1]?.toUpperCase();
-  return `Alternativa ${prefix ?? String.fromCharCode(65 + index)}`;
+  return prefix ?? String.fromCharCode(65 + index);
 }
