@@ -133,7 +133,7 @@
 - [x] Corrigir a referência normativa da Lei de Identificação Civil na aula LE-04 conforme o edital oficial e validar a alteração.
 - [x] Incluir a unidade LE-04 de identificação civil no conjunto de módulos efetivamente exibido ao aluno e cobrir essa composição por teste.
 - [x] Exibir no simulado a ação “Adicionar à minha revisão” antes da resposta, com estado claro de item salvo.
-- [ ] Validar e publicar o fluxo de revisão disponível durante e após a resposta do simulado.
+- [x] Validar e publicar o fluxo de revisão disponível durante e após a resposta do simulado.
 - [x] Manter a questão do simulado visível após CERTO ou ERRADO, exibindo acerto/erro, explicação e a ação de revisão antes do avanço.
 - [x] Exibir uma ação explícita “Próxima questão” somente após o aluno visualizar o feedback e decidir sobre a revisão.
 - [x] Agrupar a listagem ROOT de questões por conteúdo, com contador, busca e acesso de edição no próprio grupo.
