@@ -1,0 +1,253 @@
+                                       http://estrategi.ac/rj0t5p
+
+
+
+
+Noções de Controle de acesso e autenticação. 21 Dados. 21.1 Banco de dados relacionais: conceitos
+básicos e características. 21.2 Noções de linguagem SQL. 21.3 Modelagem conceitual: entidades, atributos
+e relacionamentos. 21.4 Dados estruturados e não estruturados. 21.5 Conceito de DataWarehouse,
+DataMart, DataLake, DataMesh. 21.6 Metadados. 22 Noções de análise de dados. 22.1 Mineração de
+dados: conceituação e características. 22.2 Noções de Business Intelligence: Ferramentas e aplicabilidade.
+22.3 Noções de aprendizado de máquina, inteligência artificial. 22.4 Noções de big data: conceito,
+premissas e aplicação. 23 Noções de Programação e Interoperabilidade. 23.1 Noções de programação em
+Python. 23.2 Conceito de API (Application Programming Interface). 23.3 ETL/ELT (Extract, Transform,
+Load).
+BLOCO III
+CONTABILIDADE GERAL: 1 Conceios, objevos e nalidades da conabilidade. 2 Parimônio:
+componenes, equação fundamenal do parimônio, siuação líquida, represenação gráca. 3 Aos e faos
+adminisravos: conceios, faos permuavos, modicavos e misos. 4 Conas: conceios, conas de
+débios, conas de crédios e saldos. 5 Plano de conas: conceios, elenco de conas, função e
+funcionameno das conas. 6 Escriuração: conceios, lançamenos conábeis, elemenos essenciais,
+fórmulas de lançamenos, livros de escriuração, méodos e processos, regime de compeência e regime
+de caixa. 7 Conabilização de operações conábeis diversas: juros, desconos, ribuos, aluguéis, variação
+moneária/ cambial, folha de pagameno, compras, vendas e provisões, depreciações e baixa de bens. 8
+Balancee de vericação: conceios, modelos e écnicas de elaboração. 9 Balanço parimonial: conceios,
+objevo, composição. 10 Demonsração de resulado de exercício: conceio, objevo, composição. 11 Lei
+nº 6.404/1976 e suas alerações, legislação complemenar e pronunciamenos do Comiê de
+Pronunciamenos Conábeis (CPC). 12 Norma Brasileira de Conabilidade ‐ NBC TSP Esruura Conceiual,
+de 23 de seembro de 2016.
+ARQUIVOLOGIA: 1 Arquivística. 1.1 Princípios e conceitos. 2 Políticas públicas de arquivo, legislação
+arquivística. 3 Normas nacionais e internacionais de arquivo. 4 Sistemas e redes de arquivo. 5 Gestão de
+documentos; implementação de programas de gestão de documentos. 6 Diagnóstico da situação
+arquivística e realidade arquivística brasileira. 7 Protocolo. 7.1 Recebimento, registro, distribuição,
+tramitação e expedição de documentos. 8 Funções arquivísticas. 8.1 Criação de documentos. 8.2
+Aquisição de documentos. 8.3 Classificação de documentos. 8.4 Avaliação de documentos. 8.5 Difusão de
+documentos. 8.6 Descrição de documentos. 8.7 Preservação de documentos. 9 Análise tipológica dos
+documentos de arquivo. 10 Políticas de acesso aos documentos de arquivo. 11 Sistemas informatizados
+de gestão arquivística de documentos. 11.1 Documentos digitais. 11.2 Requisitos. 11.3 Metadados. 12
+Microfilmagem de documentos de arquivo.
+CARGO 16: AGENTE DE POLÍCIA FEDERAL
+BLOCO I
+LÍNGUA PORTUGUESA: 1 Compreensão e inerpreação de exos de gêneros variados. 2 Reconhecimeno
+de pos e gêneros exuais. 3 Domínio da orograa ocial. 4 Domínio dos mecanismos de coesão exual.
+4.1 Emprego de elemenos de referenciação, subsuição e repeção, de conecores e de ouros
+elemenos de sequenciação exual. 4.2 Emprego de empos e modos verbais. 5 Domínio da esruura
+morfossináca do período. 5.1 Emprego das classes de palavras. 5.2 Relações de coordenação enre
+orações e enre ermos da oração. 5.3 Relações de subordinação enre orações e enre ermos da oração.
+5.4 Emprego dos sinais de ponuação. 5.5 Concordância verbal e nominal. 5.6 Regência verbal e nominal.
+5.7 Emprego do sinal indicavo de crase. 5.8 Colocação dos pronomes áonos. 6 Reescria de frases e
+parágrafos do exo. 6.1 Signicação das palavras. 6.2 Subsuição de palavras ou de rechos de exo. 6.3
+Reorganização da esruura de orações e de períodos do exo. 6.4 Reescria de exos de diferenes
+                                       http://estrategi.ac/rj0t5p
+
+
+
+
+gêneros e níveis de formalidade. 7 Correspondência ocial (conforme Manual de Redação da Presidência
+da República). 7.1 Aspecos gerais da redação ocial. 7.2 Finalidade dos expedienes ociais. 7.3
+Adequação da linguagem ao po de documeno. 7.4 Adequação do formao do exo ao gênero.
+NOÇÕES DE DIREITO ADMINISTRATIVO: 1 Noções de organização adminisrava. 1.1 Cenralização,
+descenralização, concenração e desconcenração. 1.2 Adminisração direa e indirea. 1.3 Auarquias,
+fundações, empresas públicas e sociedades de economia misa. 2 Ao adminisravo. 2.1 Conceio,
+requisios, aribuos, classicação e espécies. 3 Agenes públicos. 3.1 Legislação pernene. 3.1.1 Lei nº
+8.112/1990 e suas alerações. 3.1.2 Disposições consucionais aplicáveis. 3.2 Disposições dourinárias.
+3.2.1 Conceio. 3.2.2 Espécies. 3.2.3 Cargo, emprego e função pública. 4 Poderes adminisravos. 4.1
+Hierárquico, disciplinar, regulamenar e de polícia. 4.2 Uso e abuso do poder. 5 Liciação. 5.1 Princípios.
+5.2 Conraação direa: dispensa e inexigibilidade. 5.3 Modalidades. 5.4 Tipos. 5.5 Procedimeno. 6
+Conrole da Adminisração Pública. 6.1 Conrole exercido pela Adminisração Pública. 6.2 Conrole
+judicial. 6.3 Conrole legislavo. 7 Responsabilidade civil do Esado. 7.1 Responsabilidade civil do Esado
+no direio brasileiro. 7.1.1 Responsabilidade por ao comissivo do Esado. 7.1.2 Responsabilidade por
+omissão do Esado. 7.2 Requisios para a demonsração da responsabilidade do Esado. 7.3 Causas
+excludenes e aenuanes da responsabilidade do Esado. 8 Regime jurídico‐adminisravo. 8.1 Conceio.
+8.2 Princípios expressos e implícios da Adminisração Pública.
+NOÇÕES DE DIREITO CONSTITUCIONAL: 1 Direios e garanas fundamenais: direios e deveres
+individuais e colevos; direio à vida, à liberdade, à igualdade, à segurança e à propriedade; direios
+sociais; nacionalidade; cidadania e direios polícos; pardos polícos; garanas consucionais
+individuais; garanas dos direios colevos, sociais e polícos. 2 Poder Execuvo: forma e sisema de
+governo; chea de Esado e chea de governo. 3 Defesa do Esado e das insuições democrácas:
+segurança pública; organização da segurança pública. 4 Ordem social: base e objevos da ordem social;
+seguridade social; meio ambiene; família, criança, adolescene, idoso, indígenas.
+NOÇÕES DE DIREITO PENAL E DE DIREITO PROCESSUAL PENAL: 1 Princípios básicos. 2 Aplicação da lei
+penal. 2.1 A lei penal no empo e no espaço. 2.2 Tempo e lugar do crime. 2.3 Terriorialidade e
+exraerriorialidade da lei penal. 3 O fao tpico e seus elemenos. 3.1 Crime consumado e enado. 3.2
+Iliciude e causas de exclusão. 3.3 Excesso punível. 4 Crimes conra a pessoa. 5 Crimes conra o parimônio.
+6 Crimes conra a fé pública. 7 Crimes conra a Adminisração Pública. 8 Inquério policial. 8.1 Hisórico,
+naureza, conceio, nalidade, caraceríscas, fundameno, ularidade, grau de cognição, valor
+probaório, formas de insauração, notta criminis, delato criminis, procedimenos invesgavos,
+indiciameno, garanas do invesgado; conclusão. 9 Prova. 9.1 Preservação de local de crime. 9.2
+Requisios e ônus da prova. 9.3 Nulidade da prova. 9.4 Documenos de prova. 9.5 Reconhecimeno de
+pessoas e coisas. 9.6 Acareação. 9.7 Indícios. 9.8 Busca e apreensão. 10 Resrição de liberdade. 10.1 Prisão
+em agrane.
+DIREITOS HUMANOS: 1 Direitos humanos na Constituição Federal de 1988. 2 Sistema internacional de
+proteção dos direitos humanos. 3 Convenção para a Prevenção e Punição ao Crime de Genocídio. 4
+Convenção Relava ao Esauo dos Refugiados. Proocolo sobre o Esauo dos Refugiados. 5 Convenção
+sobre a Eliminação de Todas as Formas de Discriminação Racial. 6 Convenção sobre a Eliminação de Todas
+as Formas de Discriminação conra a Mulher. 7 Convenção conra a Torura e Ouros Traamenos ou Penas
+Cruéis, Desumanos ou Degradanes. 8 Convenção Inernacional para a Proeção de Todas as Pessoas
+conra o Desaparecimeno Forçado. 9 Regras mínimas da ONU para o raameno de pessoas presas. 10
+Princípios Básicos sobre o Uso da Força e Armas de Fogo (adotado pelo 8º Congresso das Nações Unidas
+para a Prevenção do Crime e o Tratamento dos Delinquentes, em Havana, Cuba, de 27 de agosto a 07 de
+setembro de 1990). 11 Lei nº 13.060, de 22 de dezembro de 2014 - Disciplina o uso dos instrumentos de
+                                       http://estrategi.ac/rj0t5p
+
+
+
+
+menor potencial ofensivo pelos agentes de segurança pública, em todo o território nacional. 12. Decreto
+nº 12.341, de 23 de dezembro de 2024 - Regulamenta a Lei nº 13.060, de 22 de dezembro de 2014, para
+disciplinar o uso da força e dos instrumentos de menor potencial ofensivo pelos profissionais de segurança
+pública.
+LEGISLAÇÃO ESPECIAL: 1 Lei 14.967/2024 (Esauo da Segurança Privada e da Segurança das Insuições
+Financeiras). 2 Lei nº 10.357/2001 (Normas de controle e fiscalização de produtos químicos). 3 Lei nº
+13.445/2017 (Lei de migração). 4 Lei nº 11.343/2006 (normas de repressão ao tráfico ilícito de drogas) e
+suas alterações (aspectos penais e processuais penais). 5 Lei nº 9.455/1997 (crimes de tortura) e suas
+alterações (aspectos penais e processuais penais). 6 Lei nº 8.069/1990 (ECA) e suas alterações (aspectos
+penais e processuais penais). 7 Lei nº 10.826/2003 (Normas sobre registro, posse e comercialização de
+arma de fogo) e suas alterações (aspectos penais e processuais penais). 8 Lei nº 9.605/1998 (infrações
+ambientais) e suas alterações (aspectos penais e processuais penais). 9 Lei nº 10.446/2002 (infrações de
+repercussão interestadual ou internacional) e suas alterações. 10 Lei nº 13.444/2017 (idencação Civil
+Nacional). 11 Lei nº 14.534/2023 (adoa CPF como nº idencação). 12 Lei nº 7.116/1983 (Careira de
+Idendade) e Decreo nº 10.977/2022 (regulamena a Lei nº 7.116/1983). 13 Decreo nº 11.797/2023
+(serviço de idencação do cidadão). 14 Lei nº 9.545/1997 (insui o número único de regisro de
+idendade civil). 15 Decreto nº 11.491/2023 (Convenção sobre o Crime Cibernético).
+ESTATÍSTICA: 1 Esatsca descriva e análise exploraória de dados: grácos, diagramas, abelas, medidas
+descrivas (posição, dispersão, assimeria e curose). 2 Probabilidade. 2.1 Probabilidade e Probabilidade
+Condicional. 2.2 Conceios básicos de probabilidade. 2.3 Cálculo de probabilidades condicionais. 2.4
+Denições básicas e axiomas. 2.5 Probabilidade condicional e independência. 2.6 Variáveis aleaórias
+discreas e contnuas. 2.7 Disribuição de probabilidades. 2.8 Função de probabilidade. 2.9 Função
+densidade de probabilidade. 2.10 Esperança e momenos. 2.11 Disribuições especiais. 2.12 Disribuições
+condicionais e independência. 2.13 Transformação de variáveis. 2.14 Leis dos grandes números. 2.15
+Teorema cenral do limie. 2.16 Amosras aleaórias. 2.17 Disribuições amosrais. 2.18 Independência de
+Evenos, Regra de Bayes e Teorema da Probabilidade Toal. 2.19 Conceio de independência. 2.20
+Aplicação da regra de Bayes. 2.21 Uso do eorema da probabilidade oal. 2.21 Variáveis Aleaórias e
+Funções de Probabilidade. 2.21.1 Denição e exemplos de variáveis aleaórias. 2.21.2 Função de
+probabilidade (para variáveis discreas) e função densidade de probabilidade (para variáveis contnuas).
+2.22 Principais Disribuições de Probabilidade Discreas e Contnuas. 2.22.1 Disribuição uniforme. 2.22.2
+Disribuição de Bernoulli. 2.22.3 Disribuição binomial. 2.22.4 Disribuição normal. 2.23 Medidas de
+Tendência Cenral. 2.23.1 Média (ariméca, ponderada, geomérica e harmônica). 2.23.2 Mediana.
+2.23.3 Moda. 2.24 Medidas de Dispersão. 2.24.1 Ampliude. 2.24.2 Variância. 2.24.3 Desvio padrão. 2.24.4
+Coeciene de variação. 2.25 Coeciene de Correlação de Pearson. 2.25.1 Conceio e cálculo da
+correlação enre duas variáveis. 2.26 Teorema Cenral do Limie. 2.26.1 Imporância do eorema para a
+disribuição amosral da média. 2.27 Regra Empírica (Regra dos Três Sigma) da Disribuição Normal. 2.27.1
+Aproximação da dispersão dos dados na disribuição normal. 2.28 Técnicas de Amosragem. 2.29
+Amosragem aleaória simples, esracada, sisemáca e por conglomerados. 2.29.1 Conceios básicos
+para deerminação do amanho amosral. 3 Inferência esatsca. 3.1 Esmação ponual: méodos de
+esmação, propriedades dos esmadores, suciência. 3.2 Esmação inervalar: inervalos de conança,
+inervalos de credibilidade. 3.3 Teses de hipóeses: hipóeses simples e composas, níveis de signicância
+e poência de um ese, ese  de Suden, ese qui‐quadrado. 4 Análise de regressão linear. 4.1 Criérios
+de mínimos quadrados e de máxima verossimilhança. 4.2 Modelos de regressão linear. 4.3 Inferência
+sobre os parâmeros do modelo. 4.4 Análise de variância. 4.5 Análise de resíduos. 5 Técnicas de
+amosragem: amosragem aleaória simples, esracada, sisemáca e por conglomerados. 5.1 Tamanho
+amosral.
+                                        http://estrategi.ac/rj0t5p
+
+
+
+
+RACIOCÍNIO LÓGICO: 1 Estruturas lógicas. 2 Lógica de argumentação: analogias, inferências, deduções e
+conclusões. 3 Lógica sentencial (ou proposicional). 3.1 Proposições simples e compostas. 3.2 Tabelas
+verdade. 3.3 Equivalências. 3.4 Leis de Morgan. 3.5 Diagramas lógicos. 4 Lógica de primeira ordem. 5
+Princípios de contagem e probabilidade. 6 Operações com conjuntos. 7 Raciocínio lógico envolvendo
+problemas aritméticos, geométricos e matriciais.
+BLOCO II
+INFORMÁTICA: 1 Conceito de internet e intranet. 2 Conceitos e modos de utilização de tecnologias,
+ferramentas, aplicativos e procedimentos associados a internet/intranet. 2.1 Ferramentas e aplicativos
+comerciais de navegação, de correio eletrônico, de grupos de discussão, de busca, de pesquisa e de redes
+sociais. 2.2 Noções de sistema operacional (ambiente Linux e Windows). 2.3 Acesso à distância a
+computadores, transferência de informação e arquivos, aplicativos de áudio, vídeo e multimídia. 2.4
+Edição de textos, planilhas e apresentações (ambientes Microsoft Office e LibreOffice). 3 Redes de
+computadores. 3.1 Formação de endereços IPV4 e IPV6. 4 Conceitos de proteção e segurança. 4.1 Noções
+de vírus, worms e pragas virtuais. 4.2 Aplicativos para segurança (antivírus, firewall, anti-spyware etc.). 5
+Computação na nuvem (cloud computing). 6 Fundamentos da Teoria Geral de Sistemas. 6.1 Camadas de
+Aplicação, processos, frontend, backend. 7 Sistemas de informação. 7.1 Fases e etapas de sistema de
+informação. 7.2 Análise de requisitos, especificação, ambientes de testes, homologação, produção e
+suporte. 8 Teoria da informação. 8.1 Conceitos de informação, dados, representação de dados, de
+conhecimentos, segurança e inteligência. 9 Banco de dados. 9.1 Base de dados, documentação e
+prototipação. 9.2 Modelagem conceitual: abstração, modelo entidade-relacionamento, análise funcional
+e administração de dados. 9.3 Dados estruturados e não estruturados. 9.4 Banco de dados relacionais:
+conceitos básicos e características. 9.5 Chaves e relacionamentos. 9.6 Noções de mineração de dados:
+conceituação e características. 9.7 Noções de aprendizado de máquina. 9.8 Noções de Big data: conceito,
+premissas e aplicação. 10 Redes de comunicação. 10.1 Introdução a redes
+(computação/telecomunicações). 10.2 Camada física, de enlace de dados e subcamada de acesso ao meio.
+10.3 Noções básicas de transmissão de dados: tipos de enlace, códigos, modos e meios de transmissão.
+11 Redes de computadores: locais, metropolitanas e de longa distância. 11.1 Terminologia e aplicações,
+topologias, modelos de arquitetura (OSI/ISO e TCP/IP) e protocolos. 11.2 Interconexão de redes, nível de
+transporte. 12 Noções de programação Python e R. 13 Metadados de arquivos. 14 Formatos de arquivos
+de intercâmbio entre sistemas biométricos: NIST, XML, JSON. 15 Testes de acurácia do NIST.GOV. 15.1
+Conceitos de falso positivo e falso negativo (FPIR e FNIR). 16 Inteligência Artificial (IA). 16.1 Conceitos de
+Machine Learning. 16.2 Principais ferramentas de mercado (Copilot, ChatGPT, META). 17 Tecnologias,
+Ferramentas e Aplicativos. 17.1 Noções de sistema operacional (ambiente Linux e Windows). 17.2 Noções
+de acesso remoto a computadores, transferência de arquivos, comunicação multimídia e colaboração
+online (Microsoft Teams). 18 Noções de Redes e Comunicação. 18.1 Conceito de Internet e Intranet. 18.2
+Noções de arquitetura e princípios de funcionamento das redes. 18.3 Tipos de redes: locais (LAN),
+metropolitanas (MAN) e de longa distância (WAN). 18.4 Modelo OSI/ISO e modelo TCP/IP: camadas,
+funções e protocolos associados. 18.5 Protocolos de comunicação: Ethernet, IP (IPv4 e IPv6), TCP, UDP,
+DNS, DHCP e SNMP. 18.6 Protocolos e mecanismos de segurança: VPN, SSL/TLS. 18.7 Redes sem fio:
+padrões IEEE 802.11, WPA/WPA2, segurança e boas práticas. 19 Noções de Computação em Nuvem. 19.1
+Definição e características das nuvens privadas e públicas. 19.2 Modelos de Serviço em Nuvem:
+Infraestrutura como Serviço (IaaS), Plataforma como Serviço (PaaS) e Software como Serviço (SaaS). 20
+Conceitos de Proteção e Segurança. 20.1 Ameaças digitais e malwares: noções de vírus, worms, trojans,
+ransomware, spyware, rootkits, botnets e outras pragas virtuais. 20.2 Ferramentas e técnicas de
+segurança: uso de antivírus, firewall, anti-spyware e autenticação multifator (MFA). 20.3 Noções de
+criptografia e proteção de dados: hash criptográfico (MD5, SHA-1, SHA-256), assinaturas digitais. 20.4
+                                       http://estrategi.ac/rj0t5p
+
+
+
+
+Noções de Controle de acesso e autenticação. 21 Dados. 21.1 Banco de dados relacionais: conceitos
+básicos e características. 21.2 Noções de linguagem SQL. 21.3 Modelagem conceitual: entidades, atributos
+e relacionamentos. 21.4 Dados estruturados e não estruturados. 21.5 Conceito de DataWarehouse,
+DataMart, DataLake, DataMesh. 21.6 Metadados. 22 Noções de análise de dados. 22.1 Mineração de
+dados: conceituação e características. 22.2 Noções de Business Intelligence: Ferramentas e aplicabilidade.
+22.3 Noções de aprendizado de máquina, inteligência artificial. 22.4 Noções de big data: conceito,
+premissas e aplicação. 23 Noções de Programação e Interoperabilidade. 23.1 Noções de programação em
+Python. 23.2 Conceito de API (Application Programming Interface). 23.3 ETL/ELT (Extract, Transform,
+Load).
+BLOCO III
+CONTABILIDADE GERAL: 1 Conceitos, objetivos e finalidades da contabilidade. 2 Patrimônio:
+componentes, equação fundamental do patrimônio, situação líquida, representação gráfica. 3 Atos e fatos
+administrativos: conceitos, fatos permutativos, modificativos e mistos. 4 Contas: conceitos, contas de
+débitos, contas de créditos e saldos. 5 Plano de contas: conceitos, elenco de contas, função e
+funcionamento das contas. 6 Escrituração: conceitos, lançamentos contábeis, elementos essenciais,
+fórmulas de lançamentos, livros de escrituração, métodos e processos, regime de competência e regime
+de caixa. 7 Contabilização de operações contábeis diversas: juros, descontos, tributos, aluguéis, variação
+monetária/ cambial, folha de pagamento, compras, vendas e provisões, depreciações e baixa de bens. 8
+Balancete de verificação: conceitos, modelos e técnicas de elaboração. 9 Balanço patrimonial: conceitos,
+objetivo, composição. 10 Demonstração de resultado de exercício: conceito, objetivo, composição. 11 Lei
+nº 6.404/1976 e suas alterações, legislação complementar e pronunciamentos do Comitê de
+Pronunciamentos Contábeis (CPC). 12 Norma Brasileira de Contabilidade - NBC TSP Estrutura Conceitual,
+de 23 de setembro de 2016.
+CARGO 17: PAPILOSCOPISTA POLICIAL FEDERAL
+BLOCO I
+LÍNGUA PORTUGUESA: 1 Compreensão e inerpreação de exos de gêneros variados. 2 Reconhecimeno
+de pos e gêneros exuais. 3 Domínio da orograa ocial. 4 Domínio dos mecanismos de coesão exual.
+4.1 Emprego de elemenos de referenciação, subsuição e repeção, de conecores e de ouros
+elemenos de sequenciação exual. 4.2 Emprego de empos e modos verbais. 5 Domínio da esruura
+morfossináca do período. 5.1 Emprego das classes de palavras. 5.2 Relações de coordenação enre
+orações e enre ermos da oração. 5.3 Relações de subordinação enre orações e enre ermos da oração.
+5.4 Emprego dos sinais de ponuação. 5.5 Concordância verbal e nominal. 5.6 Regência verbal e nominal.
+5.7 Emprego do sinal indicavo de crase. 5.8 Colocação dos pronomes áonos. 6 Reescria de frases e
+parágrafos do exo. 6.1 Signicação das palavras. 6.2 Subsuição de palavras ou de rechos de exo. 6.3
+Reorganização da esruura de orações e de períodos do exo. 6.4 Reescria de exos de diferenes
+gêneros e níveis de formalidade. 7 Correspondência ocial (conforme Manual de Redação da Presidência
+da República). 7.1 Aspecos gerais da redação ocial. 7.2 Finalidade dos expedienes ociais. 7.3
+Adequação da linguagem ao po de documeno. 7.4 Adequação do formao do exo ao gênero.
+NOÇÕES DE DIREITO ADMINISTRATIVO: 1 Noções de organização adminisrava. 1.1 Cenralização,
+descenralização, concenração e desconcenração. 1.2 Adminisração direa e indirea. 1.3 Auarquias,
+fundações, empresas públicas e sociedades de economia misa. 2 Ao adminisravo. 2.1 Conceio,
+requisios, aribuos, classicação e espécies. 3 Agenes públicos. 3.1 Legislação pernene. 3.1.1 Lei nº
+8.112/1990 e suas alerações. 3.1.2 Disposições consucionais aplicáveis. 3.2 Disposições dourinárias.
+3.2.1 Conceio. 3.2.2 Espécies. 3.2.3 Cargo, emprego e função pública. 4 Poderes adminisravos. 4.1
+Hierárquico, disciplinar, regulamenar e de polícia. 4.2 Uso e abuso do poder. 5 Liciação. 5.1 Princípios.
+

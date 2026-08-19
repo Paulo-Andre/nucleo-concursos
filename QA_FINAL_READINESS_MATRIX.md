@@ -1,7 +1,7 @@
 # Matriz Final de Prontidão — Estudos PF
 
 **Data da auditoria:** 19/08/2026  
-**Escopo:** estado atual da árvore de trabalho, após as correções de revisão, remoção de Telegram e atualização de fontes externas.  
+**Escopo:** estado atual da árvore de trabalho, após as correções de revisão, remoção de Telegram, atualização de fontes externas e separação administrativa entre alunos e questões.  
 **Ambientes verificados:** suíte automatizada, build local, servidor de desenvolvimento, página pública em desktop e mobile; a sessão autenticada não estava disponível no navegador de QA.  
 **Legenda:** `PASS` = evidência executada e aprovada; `FAIL` = evidência executada e reprovada; `BLOCKED` = validação necessária sem condição de execução; `N/A` = recurso fora do escopo atual, sem rota ou interface implementada.
 
@@ -19,11 +19,11 @@ O requisito de cobertura integral do edital permanece bloqueado. A página ofici
 
 | Área | Critério | Status | Evidência objetiva | Limitação / ação pendente |
 |---|---|---|---|---|
-| Regressão | Suíte de testes completa | PASS | `pnpm test`: **26 arquivos / 56 testes aprovados** em 19/08/2026. | Reexecutar após qualquer alteração funcional. |
+| Regressão | Suíte de testes completa | PASS | `pnpm test`: **28 arquivos / 59 testes aprovados** em 19/08/2026, incluindo fila pessoal de revisão e navegação ROOT. | Reexecutar após qualquer alteração funcional. |
 | Regressão | Build de produção | PASS | `pnpm run build` concluiu com Vite e bundle do servidor. | Aviso não bloqueador: bundle JS principal de 1,75 MB deve ser tratado como melhoria de performance. |
 | Runtime | Servidor de desenvolvimento | PASS | Reinicialização bem-sucedida; logs recentes mostram conexão Vite sem erro novo. | Um `SyntaxError` anterior relativo a `ensureDefaultKnowledgeBase` permaneceu apenas no histórico do console; não reapareceu após reinício, build e testes. |
 | Currículo | 11 disciplinas canônicas vinculadas à trilha PF | PASS | `pfCurriculumCatalog.ts` declara as 11 disciplinas como ativas e a matriz `pf-agente` as inclui integralmente. | Não substitui a conferência oficial de subitens. |
-| Currículo | Nenhum subitem obrigatório ausente do edital 2025 | BLOCKED | Fonte normativa oficial identificada e registrada em `qa_external_sources.md`. | Falta extrair e reconciliar, tópico a tópico, o anexo programático oficial. Não afirmar cobertura total antes disso. |
+| Currículo | Nenhum subitem obrigatório ausente do edital 2025 | BLOCKED | A matriz `PF_2025_AGENT_SYLLABUS_COVERAGE.md` associa os 11 blocos temáticos e seus módulos publicados, usando o programa detalhado de apoio como trilha de reconciliação. A fonte normativa oficial permanece registrada em `qa_external_sources.md`. | Falta a reconciliação literal, tópico a tópico, com o anexo oficial. Não afirmar cobertura total antes dessa conferência. |
 | Aulas | Aulas interativas para todas as unidades autorais | PASS | `pfContentCoverage.test.ts` confirma `teach` com três blocos, desafio e recordação em todas as unidades. | A avaliação humana da didática de cada aula segue recomendada. |
 | Apostilas | Apostila em toda unidade autoral | PASS | O mesmo teste confirma `apostilaByModule` ou `specialApostilaByModule` para cada unidade; 67 unidades no conjunto. | Abrir cada apostila autenticadamente no E2E antes do GO. |
 | Vídeos | Disponibilidade dos vídeos publicados | PASS | Auditoria final: 11 URLs do YouTube responderam `200`; resultado em `qa_link_audit_final.json`. | Disponibilidade não comprova correção pedagógica. |
@@ -36,6 +36,7 @@ O requisito de cobertura integral do edital permanece bloqueado. A página ofici
 | Autenticação | Login e logout locais | PASS | `auth/local-login.integration.test.ts`, `auth/localAuth.test.ts` e `auth.logout.test.ts` aprovados. | Fluxo de recuperação por e-mail é N/A: ainda depende de serviço transacional não configurado. |
 | Autorização | Conteúdo e dados isolados por usuário | PASS | `permission-boundaries.test.ts`, `study-access.test.ts`, `study-notes.behavior.test.ts` e testes de integração de notas aprovados. | Revalidar após introduzir novos papéis ou rotas. |
 | Administração | Cursos, matrículas, expiração e preservação de biblioteca | PASS | `course-deletion.integration.test.ts`, `enrollment-status.test.ts` e `root-config.test.ts` aprovados. | Testar visualmente criação e matrículas em sessão ROOT. |
+| Administração | Áreas separadas para alunos e questões | PASS | `rootAdminNavigation.test.ts` valida contratos distintos; a página expõe os acessos **ALUNOS** e **QUESTÕES**, e esta última abre a lista com busca e edição direta. | Confirmar visualmente em uma sessão ROOT real quando houver disponibilidade. |
 | Administração de usuários | Bloquear, desbloquear, remover usuário e redefinir senha | N/A | Não existem rotas nem interface administrativas específicas para bloqueio/desbloqueio/remoção de usuário. | Só implementar se este for um requisito do negócio; exigir confirmação de regra de retenção e recuperação de acesso. |
 | Auditoria | Trilhas de auditoria administrativas | PASS | Testes de curso, questão, revisão e exclusão exercitam operações auditáveis. | Revisar visualmente filtros e leitura dos registros como ROOT. |
 | Desktop | Página pública, login e cadastro responsivos | PASS | Capturas desktop da página pública concluídas no ciclo de QA. | Painel autenticado não foi acessado nesta sessão. |

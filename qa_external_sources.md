@@ -31,3 +31,11 @@ A extração textual da URL atualizada em 19/08/2026 confirmou o conteúdo insti
 Em 19/08/2026, a extração textual independente confirmou que os seguintes destinos oficiais do Planalto estão disponíveis e correspondem ao material registrado: Código de Processo Penal (Decreto-Lei nº 3.689/1941), Lei nº 13.060/2014, Lei nº 13.445/2017, Lei nº 11.343/2006, Lei nº 10.826/2003 e Lei nº 14.534/2023. As extrações mostram o título normativo e o conteúdo legislativo esperado; assim, os `AbortError` do verificador local são limitações de tempo de requisição, não prova de indisponibilidade.
 
 Também foram confirmadas em 19/08/2026 as duas substituições publicadas: o serviço oficial `gov.br` descreve o Manual de Redação da Presidência da República e o catálogo oficial da OHCHR lista instrumentos centrais, incluindo tratados contra tortura, discriminação racial e discriminação contra a mulher. Ambas correspondem aos assuntos das apostilas e receberam resultado `PASS` por disponibilidade e destino.
+
+## Confirmação de disciplinas e material detalhado do cargo de Agente
+
+Em 19/08/2026, a página institucional do Cebraspe para PF 2025 confirmou o concurso e a existência de links oficiais, mas não expôs o conteúdo programático no HTML extraído: https://www.cebraspe.org.br/concursos/pf_25 .
+
+Como confirmação textual de apoio, a página do Estratégia Concursos listou, especificamente para o cargo de Agente, as 11 disciplinas: Língua Portuguesa; Noções de Direito Administrativo; Noções de Direito Constitucional; Noções de Direito Penal e de Direito Processual Penal; Direitos Humanos; Legislação Especial; Estatística; Raciocínio Lógico; Informática; e Contabilidade Geral. Fonte: https://www.estrategiaconcursos.com.br/blog/concurso-pf-2025-o-que-estudar/ .
+
+Essa mesma fonte aponta para o arquivo de conteúdo programático detalhado de Agente: https://dhg1h5j42swfq.cloudfront.net/2025/05/22170832/conteudo-pf-agente.pdf . A extração automática retornou o fluxo binário do PDF em vez de texto estruturado; portanto, o arquivo serve como referência auxiliar de detalhamento, mas o mapa de subitens permanece marcado como pendente até transcrição verificável contra o PDF oficial da PF.
