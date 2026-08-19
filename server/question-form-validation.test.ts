@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeQuestionOptions } from "../client/src/lib/questionOptions";
-import { questionCreationSuccessMessage, questionFormValidationError } from "../client/src/lib/questionFormValidation";
+import { newQuestionFormKey, questionCreationSuccessMessage, questionFormValidationError } from "../client/src/lib/questionFormValidation";
 
 describe("validação visível do formulário de questão", () => {
   const options = normalizeQuestionOptions("A) Correta\nB) Incorreta\nC) Distrator\nD) Outra opção");
@@ -41,5 +41,10 @@ describe("validação visível do formulário de questão", () => {
 
   it("informa o identificador persistente na confirmação de criação", () => {
     expect(questionCreationSuccessMessage(42)).toBe("Questão #42 criada com identificador persistente.");
+  });
+
+  it("gera uma nova chave de formulário após uma criação para descartar o estado anterior", () => {
+    expect(newQuestionFormKey(0)).toBe("new-question-0");
+    expect(newQuestionFormKey(1)).not.toBe(newQuestionFormKey(0));
   });
 });
