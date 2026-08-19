@@ -70,6 +70,8 @@
 - [x] Abrir o dropdown de resposta correta publicado com quatro alternativas reais e registrar visualmente as opções A/B/C/D.
 - [x] Criar, vincular e salvar visualmente uma questão de teste pelo painel ROOT, confirmar o comportamento e removê-la em seguida.
 - [ ] Salvar e publicar um checkpoint posterior às validações visuais completas.
+- [ ] Salvar um checkpoint final posterior à validação #540001 e registrar seu version_id publicado.
+- [ ] Confirmar a versão final do novo checkpoint no painel ROOT publicado antes de concluir o checklist.
 - [x] Corrigir a falha de criação de questão no painel ROOT quando alternativas, resposta e conteúdos vinculados já foram preenchidos.
 - [x] Validar no painel ROOT publicado o pós-envio da criação de questão: mensagem de sucesso e aparição do item na listagem administrativa.
 - [x] Executar um ciclo único e auditável de criação e remoção de questão temporária pelo painel ROOT, sem limpeza manual no banco.
@@ -79,10 +81,19 @@
 - [x] Após criar a questão temporária no painel ROOT publicado, capturar evidência explícita do mesmo identificador aparecendo na listagem na mesma validação.
 - [x] Comprovar visualmente no painel ROOT publicado a entrada de auditoria da exclusão da questão temporária #330001, registrando o texto exibido e o identificador correspondente.
 - [x] No painel ROOT publicado, pesquisar ou rolar a listagem administrativa após a criação e capturar evidência objetiva do cartão da questão #360001.
-- [ ] Registrar no contexto uma saída do painel publicado que contenha a mensagem de sucesso e o identificador #360001 associado à listagem administrativa.
-- [ ] Após comprovar a listagem de #360001, removê-la pelo fluxo auditável do painel ROOT e registrar a evidência de exclusão correspondente.
-- [ ] No painel ROOT publicado, registrar uma única saída de DOM ou console que mostre simultaneamente a mensagem de sucesso da criação e o identificador #360001 na listagem administrativa.
-- [ ] Após excluir #360001 pelo painel ROOT, capturar evidência objetiva pós-ação: cartão ausente da listagem filtrada e auditoria “Questão 360001 excluída...” visível, ou confirmação SQL complementar.
-- [ ] Exibir o identificador persistente na confirmação de criação de questão e reinicializar o formulário após o sucesso para impedir recriações acidentais.
-- [ ] Cobrir em teste a confirmação pós-criação com identificador e a prevenção de reenvio involuntário após sucesso.
-- [ ] Validar no painel ROOT publicado uma criação única com mensagem contendo o identificador e a limpeza do formulário antes da exclusão auditável.
+- [x] Registrar no contexto uma saída do painel publicado que contenha a mensagem de sucesso e o identificador #360001 associado à listagem administrativa — validação superada pelo ciclo identificado e reinicializado #540001.
+- [x] Após comprovar a listagem de #540001, removê-la pelo fluxo auditável do painel ROOT e registrar a evidência de exclusão correspondente.
+- [x] No painel ROOT publicado, registrar uma única saída de DOM ou console que mostre simultaneamente a mensagem de sucesso da criação e o identificador #360001 na listagem administrativa — comportamento superado pela saída única de #540001.
+- [x] Após excluir #540001 pelo painel ROOT, capturar evidência objetiva pós-ação: cartão ausente da listagem filtrada e auditoria “Questão 540001 excluída...” visível, ou confirmação SQL complementar.
+- [x] Exibir o identificador persistente na confirmação de criação de questão e reinicializar o formulário após o sucesso para impedir recriações acidentais.
+- [x] Cobrir em teste a confirmação pós-criação com identificador e a prevenção de reenvio involuntário após sucesso.
+- [x] Validar no painel ROOT publicado uma criação única com mensagem contendo o identificador e a limpeza do formulário antes da exclusão auditável.
+- [x] Capturar uma única saída de DOM ou console no painel publicado que mostre simultaneamente a mensagem de sucesso e o identificador da questão recém-criada na listagem administrativa.
+- [x] Registrar evidência objetiva pós-exclusão da mesma questão criada: cartão ausente na listagem filtrada e texto de auditoria visível, ou SQL complementar referindo o mesmo identificador.
+- [x] Inspecionar e registrar o trecho final de KnowledgeBaseManager.tsx e question-form-validation.test.ts, incluindo a confirmação identificada, a reinicialização e a saída bem-sucedida de pnpm test.
+- [x] Resolver e revalidar o erro de runtime relacionado a ensureDefaultKnowledgeBase antes do checkpoint final.
+- [x] Ler e registrar o trecho final de KnowledgeBaseManager.tsx que exibe a confirmação identificada e remonta o formulário após sucesso.
+- [x] Associar a leitura final de question-form-validation.test.ts à saída aprovada de pnpm test para documentar a cobertura de confirmação e prevenção de reenvio.
+- [x] Inspecionar db.ts e rootBootstrap.ts para registrar a exportação e o uso atuais de ensureDefaultKnowledgeBase, depois revalidar uma sessão de runtime sem nova exceção.
+- [x] Registrar uma evidência de runtime isolada após reinício, sem nova ocorrência de SyntaxError ou ensureDefaultKnowledgeBase no intervalo da sessão.
+- [x] Registrar no contexto os trechos de server/db.ts e server/auth/rootBootstrap.ts que comprovam exportação e importação consistentes do bootstrap ROOT.
