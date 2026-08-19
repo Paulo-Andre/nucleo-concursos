@@ -4,6 +4,16 @@ export function filterLinkOptions<T>(items: T[], search: string, getText: (item:
   return items.filter(item => getText(item).toLocaleLowerCase().includes(normalizedSearch));
 }
 
+export function countQuestionsByContent<T extends { contentIds: number[] }>(questions: T[]) {
+  const counts = new Map<number, number>();
+  for (const question of questions) {
+    for (const contentId of question.contentIds) {
+      counts.set(contentId, (counts.get(contentId) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
 export function reviewEmptyStateMessage(hasActiveFilters: boolean) {
   return hasActiveFilters
     ? "Nenhum item corresponde aos filtros atuais. Ajuste a busca ou selecione ‘Todas as decisões’."

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reviewEmptyStateMessage, reviewFlowSteps } from "./adminUiHelpers";
+import { countQuestionsByContent, reviewEmptyStateMessage, reviewFlowSteps } from "./adminUiHelpers";
 
 describe("orientações da revisão administrativa", () => {
   it("indica como adicionar uma questão à fila quando não há pendências", () => {
@@ -13,5 +13,17 @@ describe("orientações da revisão administrativa", () => {
       "Abrir e corrigir, se necessário",
       "Aprovar, solicitar correção ou rejeitar",
     ]);
+  });
+
+  it("conta todas as questões vinculadas por conteúdo sem limitar a biblioteca a uma amostra visual", () => {
+    const questions = Array.from({ length: 60 }, (_, index) => ({
+      contentIds: index < 30 ? [101] : index < 50 ? [102] : [103],
+    }));
+    const counts = countQuestionsByContent(questions);
+
+    expect(counts.get(101)).toBe(30);
+    expect(counts.get(102)).toBe(20);
+    expect(counts.get(103)).toBe(10);
+    expect([...counts.values()].reduce((total, count) => total + count, 0)).toBe(60);
   });
 });

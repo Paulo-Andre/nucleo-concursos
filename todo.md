@@ -147,3 +147,6 @@
 - [x] Alinhar os campos editáveis de novos conteúdos a todos os elementos informativos dos cards existentes, preservando estrutura visual, formatação e design.
 - [x] Cobrir por testes e validar visualmente autenticada a exibição de questões vinculadas e os cards com imagem antes da publicação.
 - [x] Validar o alerta de runtime sobre `completeStudyReviewItem`: o código atual exporta a função, o teste integrado da fila passou e o erro não reapareceu após reinício limpo.
+- [ ] Auditar a diferença entre o total de questões do simulado e as questões visíveis por conteúdo no ROOT.
+- [ ] Importar e vincular todas as questões existentes do simulado à biblioteca ROOT de forma idempotente, preservando alternativas, explicações e histórico.
+- [ ] Validar no painel ROOT que os contadores por conteúdo e a edição direta refletem a cobertura total do banco de questões.
