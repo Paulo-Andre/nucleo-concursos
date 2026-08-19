@@ -1,28 +1,127 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
+ * Identidade principal da plataforma. Contas locais usam openId no formato
+ * `local:<nomeDeUsuario>`; contas OAuth continuam compatíveis com o modelo do template.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
+  openId: varchar("openId", { length: 128 }).notNull().unique(),
+  name: varchar("name", { length: 160 }).notNull(),
+  username: varchar("username", { length: 48 }).unique(),
+  email: varchar("email", { length: 320 }).unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }),
+  loginMethod: varchar("loginMethod", { length: 64 }).notNull().default("local"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  isBlocked: boolean("isBlocked").notNull().default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
+/** Sessões opacas: somente o hash do token é persistido. */
+export const authSessions = mysqlTable("authSessions", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("authSessions_userId_idx").on(table.userId), index("authSessions_expiresAt_idx").on(table.expiresAt)]);
 
-// TODO: Add your tables here
+/** Estado agregado necessário para XP, sequência e seleção de questões do estudante. */
+export const studyProfiles = mysqlTable("studyProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  xp: int("xp").notNull().default(0),
+  lastStudyDate: varchar("lastStudyDate", { length: 10 }),
+  studyDatesJson: text("studyDatesJson").notNull(),
+  usedQuestionIdsJson: text("usedQuestionIdsJson").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("studyProfiles_userId_unique").on(table.userId)]);
+
+/** Módulos concluídos — uma linha por estudante e módulo. */
+export const completedModules = mysqlTable("completedModules", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  moduleId: varchar("moduleId", { length: 80 }).notNull(),
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+}, table => [uniqueIndex("completedModules_user_module_unique").on(table.userId, table.moduleId), index("completedModules_userId_idx").on(table.userId)]);
+
+/** Histórico de respostas, associado exclusivamente ao estudante que respondeu. */
+export const studyAnswers = mysqlTable("studyAnswers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  questionId: varchar("questionId", { length: 80 }).notNull(),
+  correct: boolean("correct").notNull(),
+  answeredAt: timestamp("answeredAt").defaultNow().notNull(),
+}, table => [index("studyAnswers_userId_idx").on(table.userId), index("studyAnswers_user_question_idx").on(table.userId, table.questionId)]);
+
+/** Resultados de simulados, com recortes por disciplina e bloco serializados em JSON. */
+export const simulationRecords = mysqlTable("simulationRecords", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+  total: int("total").notNull(),
+  correct: int("correct").notNull(),
+  errors: int("errors").notNull(),
+  elapsedSeconds: int("elapsedSeconds").notNull(),
+  byDisciplineJson: text("byDisciplineJson").notNull(),
+  byBlockJson: text("byBlockJson").notNull(),
+}, table => [index("simulationRecords_userId_idx").on(table.userId)]);
+
+/** Anotações privadas do estudante por módulo. */
+export const studyNotes = mysqlTable("studyNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  moduleId: varchar("moduleId", { length: 80 }).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("studyNotes_user_module_unique").on(table.userId, table.moduleId), index("studyNotes_userId_idx").on(table.userId)]);
+
+/** Registro imutável das ações administrativas relevantes. */
+export const adminAuditLogs = mysqlTable("adminAuditLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  actorUserId: int("actorUserId").notNull(),
+  affectedUserId: int("affectedUserId"),
+  action: varchar("action", { length: 80 }).notNull(),
+  detail: text("detail").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("adminAudit_actor_idx").on(table.actorUserId), index("adminAudit_affected_idx").on(table.affectedUserId)]);
+
+/** Cursos administráveis, associados às matrizes reutilizáveis de conteúdo. */
+export const courses = mysqlTable("courses", {
+  id: varchar("id", { length: 80 }).primaryKey(),
+  title: varchar("title", { length: 180 }).notNull(),
+  track: varchar("track", { length: 32 }).notNull(),
+  description: text("description"),
+  isActive: boolean("isActive").notNull().default(true),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("courses_active_idx").on(table.isActive)]);
+
+/** Matrícula individual: uma conta pode ter cursos diferentes e renová-los por período. */
+export const courseEnrollments = mysqlTable("courseEnrollments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  courseId: varchar("courseId", { length: 80 }).notNull(),
+  startAt: timestamp("startAt").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  status: mysqlEnum("status", ["active", "revoked"]).notNull().default("active"),
+  createdByUserId: int("createdByUserId").notNull(),
+  revokedAt: timestamp("revokedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("courseEnrollments_user_course_unique").on(table.userId, table.courseId),
+  index("courseEnrollments_user_idx").on(table.userId),
+  index("courseEnrollments_expiry_idx").on(table.expiresAt),
+]);
+
+export type User = typeof users.$inferSelect;
+export type Course = typeof courses.$inferSelect;
+export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type StudyProfile = typeof studyProfiles.$inferSelect;

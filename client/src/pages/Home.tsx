@@ -1,33 +1,329 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
-
+/* Estudos PF — Arquivo Operacional: painel assimétrico, foco em progresso mensurável e disciplina. */
 /**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
+ * Estilo Arquivo Operacional: dossiê institucional contemporâneo, com papel mineral,
+ * filetes, códigos e progresso apresentado como registro de treinamento — não como dashboard SaaS.
  */
-export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+import { useEffect, useMemo, useState } from "react";
+import {
+  Award, BarChart3, BookOpen, Brain, Check, ChevronRight, CircleHelp, Clock3, Flame, Gauge,
+  GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, RotateCcw, ShieldCheck,
+  Sparkles, Target, Trophy, X, Zap,
+} from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { blocks, questionBank, StudyQuestion } from "@/data/pfStudyData";
+import { completeStudyModules as baseStudyModules, DetailedStudyModule as StudyModule } from "@/data/pfCompleteStudyData";
+import { apostilaByModule as baseApostilaByModule } from "@/data/pfApostilaData";
+import { specialLegislationModules, specialApostilaByModule } from "@/data/pfSpecialLegislationModules";
+import { activeContestId, contestCatalog, getContestById, getDisciplineById, getDisciplineIdForModule, getDisciplinesForContest } from "@/data/pfCurriculumCatalog";
+import type { ContestId } from "@/data/pfCurriculumCatalog";
+import { ApostilaModulePanel } from "@/components/ApostilaModulePanel";
+import { AnswerRecord, currentStreak, emptyState, levelFromXp, selectSimulationQuestions, SimulationRecord, StudyState } from "@/lib/studyEngine";
+import { useAuth } from "@/_core/hooks/useAuth";
+import AccessGate from "@/pages/AccessGate";
+import { trpc } from "@/lib/trpc";
+import { AccountPanel } from "@/components/AccountPanel";
+import { AdminPanel } from "@/components/AdminPanel";
+import { CourseAccessRequired } from "@/components/CourseAccessRequired";
+import { Textarea } from "@/components/ui/textarea";
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+type View = "Painel" | "Conteúdo" | "Simulados" | "Revisar" | "Histórico";
+type ActiveSimulation = { questions: StudyQuestion[]; index: number; answers: Record<string, boolean>; startedAt: number } | null;
+
+const navigation: { label: View; icon: typeof LayoutDashboard }[] = [
+  { label: "Painel", icon: LayoutDashboard }, { label: "Conteúdo", icon: BookOpen }, { label: "Simulados", icon: Play }, { label: "Revisar", icon: RotateCcw }, { label: "Histórico", icon: History },
+];
+
+const studyModules: StudyModule[] = [...baseStudyModules, ...specialLegislationModules];
+const allApostilaByModule = { ...baseApostilaByModule, ...specialApostilaByModule };
+
+const imageUrls = {
+  mark: "/manus-storage/estudos-pf-mark_d22c4173.png",
+  desk: "/manus-storage/estudos-pf-desk_0c4ed447.jpg",
+  statistics: "/manus-storage/estudos-pf-statistics_94d69e91.jpg",
+  training: "/manus-storage/estudos-pf-training_9d304fd0.jpg",
+};
+
+function formatTime(seconds: number) {
+  const min = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const sec = Math.max(0, seconds % 60).toString().padStart(2, "0");
+  return `${min}:${sec}`;
+}
+
+function percentage(numerator: number, denominator: number) { return denominator ? Math.round((numerator / denominator) * 100) : 0; }
+
+function getDisciplinePerformance(state: StudyState) {
+  const answersById = new Map(questionBank.map((question) => [question.id, question]));
+  const record: Record<string, { correct: number; total: number }> = {};
+  state.answers.forEach((answer) => {
+    const question = answersById.get(answer.questionId);
+    if (!question) return;
+    record[question.discipline] ??= { correct: 0, total: 0 };
+    record[question.discipline].total += 1;
+    if (answer.correct) record[question.discipline].correct += 1;
+  });
+  return record;
+}
+
+export default function Home() {
+  // The useAuth hook reads the local session created by the cadastro/login screen.
+  const { user, loading, isAuthenticated, logout } = useAuth();
+
+  if (loading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Carregando credencial...</div>;
+  if (!isAuthenticated) return <AccessGate onAuthenticated={() => window.location.reload()} />;
+
+  return <StudyWorkspace user={user!} logout={logout} />;
+}
+
+function StudyWorkspace({ user, logout }: { user: { name: string; username: string | null; email: string | null; role: "user" | "admin" }; logout: () => Promise<void> }) {
+
+  const [state, setState] = useState<StudyState>(emptyState);
+  const [view, setView] = useState<View>("Painel");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [contestId, setContestId] = useState<ContestId>(() => {
+    const stored = window.localStorage.getItem("estudos-pf-active-contest") as ContestId | null;
+    return stored && contestCatalog.some((contest) => contest.id === stored) ? stored : activeContestId;
+  });
+  const [openedModule, setOpenedModule] = useState<StudyModule | null>(() => studyModules.find((module) => module.id === new URLSearchParams(window.location.search).get("aula")) ?? null);
+  const [quickQuestion, setQuickQuestion] = useState<StudyQuestion>(questionBank[0]);
+  const [quickAnswer, setQuickAnswer] = useState<boolean | null>(null);
+  const [simulation, setSimulation] = useState<ActiveSimulation>(null);
+  const [simulationResult, setSimulationResult] = useState<SimulationRecord | null>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const accessQuery = trpc.study.access.useQuery(undefined, { refetchOnWindowFocus: false });
+  const permittedContestIds = useMemo<ContestId[]>(() => {
+    if (user.role === "admin") return contestCatalog.map((contest) => contest.id);
+    return (accessQuery.data ?? []).map((enrollment) => enrollment.courseId).filter((courseId): courseId is ContestId => contestCatalog.some((contest) => contest.id === courseId));
+  }, [accessQuery.data, user.role]);
+  const effectiveContestId = permittedContestIds.includes(contestId) ? contestId : (permittedContestIds[0] ?? activeContestId);
+  const activeContest = getContestById(effectiveContestId) ?? contestCatalog[0];
+  const unlockedDisciplineIds = useMemo(() => new Set(getDisciplinesForContest(effectiveContestId).map((discipline) => discipline.id)), [effectiveContestId]);
+  const availableModules = useMemo(() => studyModules.filter((module) => {
+    const disciplineId = getDisciplineIdForModule(module);
+    return disciplineId ? unlockedDisciplineIds.has(disciplineId) : false;
+  }), [unlockedDisciplineIds]);
+  const availableModuleIds = useMemo(() => new Set(availableModules.map((module) => module.id)), [availableModules]);
+
+  useEffect(() => {
+    if (permittedContestIds.length && !permittedContestIds.includes(contestId)) setContestId(permittedContestIds[0]);
+  }, [contestId, permittedContestIds]);
+
+  useEffect(() => {
+    window.localStorage.setItem("estudos-pf-active-contest", contestId);
+  }, [contestId]);
+
+  const privateState = trpc.study.state.useQuery(undefined, { refetchOnWindowFocus: false });
+  const answerMutation = trpc.study.answer.useMutation();
+  const moduleMutation = trpc.study.completeModule.useMutation();
+  const simulationMutation = trpc.study.submitSimulation.useMutation();
+
+  useEffect(() => {
+    if (privateState.data) setState(privateState.data as StudyState);
+  }, [privateState.data]);
+
+  const level = levelFromXp(state.xp);
+  const totalAnswers = state.answers.length;
+  const totalCorrect = state.answers.filter((answer) => answer.correct).length;
+  const overallScore = percentage(totalCorrect, totalAnswers);
+  const streak = currentStreak(state.studyDates);
+  const disciplinePerformance = useMemo(() => getDisciplinePerformance(state), [state]);
+  const studiedPercent = percentage(state.completedModules.filter((moduleId) => availableModuleIds.has(moduleId)).length, availableModules.length);
+  const focus = useMemo(() => {
+    const entries = Object.entries(disciplinePerformance).filter(([, metric]) => metric.total >= 2);
+    if (!entries.length) return { label: "Inicie um diagnóstico", detail: "Responda questões para liberar uma recomendação baseada no seu desempenho." };
+    const [label, metric] = entries.sort((a, b) => (a[1].correct / a[1].total) - (b[1].correct / b[1].total))[0];
+    return { label, detail: `Seu aproveitamento atual é ${percentage(metric.correct, metric.total)}%. Revise esse eixo antes de avançar.` };
+  }, [disciplinePerformance]);
+  const historyChart = state.simulations.slice(-6).map((sim, index) => ({ label: `S${state.simulations.length - 5 + index}`, score: percentage(sim.correct, sim.total) }));
+
+  if (user.role !== "admin" && accessQuery.isLoading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Verificando matrícula...</div>;
+  if (user.role !== "admin" && !accessQuery.data?.length) return <CourseAccessRequired userName={user.name} onLogout={logout} />;
+
+  function updateState(updater: (current: StudyState) => StudyState) { setState((current) => updater(current)); }
+
+  function registerAnswer(question: StudyQuestion, correct: boolean) {
+    const today = new Date().toISOString().slice(0, 10);
+    updateState((current) => ({
+      ...current,
+      xp: current.xp + (correct ? 8 : 2),
+      answers: [...current.answers, { questionId: question.id, correct, answeredAt: new Date().toISOString() }],
+      studyDates: current.studyDates.includes(today) ? current.studyDates : [...current.studyDates, today],
+      lastStudyDate: today,
+    }));
+    answerMutation.mutate({ questionId: question.id, correct }, { onSuccess: serverState => setState(serverState as StudyState) });
+  }
+
+  function completeModule(module: StudyModule) {
+    if (state.completedModules.includes(module.id)) return;
+    const today = new Date().toISOString().slice(0, 10);
+    updateState((current) => ({ ...current, completedModules: [...current.completedModules, module.id], xp: current.xp + 20, studyDates: current.studyDates.includes(today) ? current.studyDates : [...current.studyDates, today], lastStudyDate: today }));
+    moduleMutation.mutate({ moduleId: module.id }, { onSuccess: serverState => setState(serverState as StudyState) });
+  }
+
+  function startSimulation(total: number) {
+    setSimulationResult(null);
+    setSimulation({ questions: selectSimulationQuestions(questionBank, total, state.usedQuestionIds), index: 0, answers: {}, startedAt: Date.now() });
+  }
+
+  function submitSimulationAnswer(answer: boolean) {
+    if (!simulation) return;
+    const question = simulation.questions[simulation.index];
+    const nextAnswers = { ...simulation.answers, [question.id]: answer };
+    if (simulation.index < simulation.questions.length - 1) {
+      setSimulation({ ...simulation, index: simulation.index + 1, answers: nextAnswers });
+      return;
+    }
+    const byDiscipline: SimulationRecord["byDiscipline"] = {};
+    const byBlock: SimulationRecord["byBlock"] = { I: { correct: 0, total: 0 }, II: { correct: 0, total: 0 }, III: { correct: 0, total: 0 } };
+    const answerRecords: AnswerRecord[] = [];
+    let correct = 0;
+    simulation.questions.forEach((item) => {
+      const isCorrect = nextAnswers[item.id] === item.answer;
+      if (isCorrect) correct += 1;
+      byDiscipline[item.discipline] ??= { correct: 0, total: 0 };
+      byDiscipline[item.discipline].total += 1;
+      if (isCorrect) byDiscipline[item.discipline].correct += 1;
+      byBlock[item.block].total += 1;
+      if (isCorrect) byBlock[item.block].correct += 1;
+      answerRecords.push({ questionId: item.id, correct: isCorrect, answeredAt: new Date().toISOString() });
+    });
+    const result: SimulationRecord = { id: `sim-${Date.now()}`, date: new Date().toISOString(), total: simulation.questions.length, correct, errors: simulation.questions.length - correct, elapsedSeconds: Math.round((Date.now() - simulation.startedAt) / 1000), byDiscipline, byBlock };
+    const today = new Date().toISOString().slice(0, 10);
+    updateState((current) => ({ ...current, xp: current.xp + correct * 8 + 15, simulations: [...current.simulations, result], answers: [...current.answers, ...answerRecords], usedQuestionIds: Array.from(new Set([...current.usedQuestionIds, ...simulation.questions.map((item) => item.id)])), studyDates: current.studyDates.includes(today) ? current.studyDates : [...current.studyDates, today], lastStudyDate: today }));
+    simulationMutation.mutate({ id: result.id, total: result.total, correct: result.correct, errors: result.errors, elapsedSeconds: result.elapsedSeconds, byDiscipline: result.byDiscipline, byBlock: result.byBlock, answers: answerRecords.map(answer => ({ questionId: answer.questionId, correct: answer.correct })), questionIds: simulation.questions.map(item => item.id) }, { onSuccess: serverState => setState(serverState as StudyState) });
+    setSimulation(null);
+    setSimulationResult(result);
+  }
+
+  const currentQuestion = simulation?.questions[simulation.index];
+  const quickCorrect = quickAnswer === null ? null : quickAnswer === quickQuestion.answer;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
+    <div className="min-h-screen bg-[#f5f1e8] text-[#152d38] lg:flex">
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-[272px] flex-col border-r border-white/10 bg-[#152d38] px-4 py-6 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="mb-10 flex items-center gap-3 px-2">
+          <img src={imageUrls.mark} alt="Símbolo Estudos PF" className="h-11 w-11 rounded-xl bg-[#e8e4d9] p-1.5" />
+          <div><p className="font-display text-lg font-extrabold tracking-tight text-[#fffdf7]">ESTUDOS <span className="text-[#82cfbf]">PF</span></p><p className="text-[9px] font-bold tracking-[0.22em] text-[#8fa7ae]">ARQUIVO OPERACIONAL</p></div>
+        </div>
+        <div className="mb-5 border-y border-white/10 px-3 py-3"><p className="text-[9px] font-bold tracking-[0.2em] text-[#8faeb5]">REGISTRO DE PREPARO</p><p className="font-display mt-1 text-sm font-bold text-white">{activeContest.role}</p></div>
+        <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7e99a1]">Áreas do arquivo</p>
+        <nav className="space-y-1">{navigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}</nav>
+        <a href="https://t.me/POLICIAFEDERALCONCURSO" target="_blank" rel="noreferrer" className="mt-4 flex items-center gap-2 rounded-xl border border-[#82cfbf]/35 bg-white/5 px-3 py-2 text-[10px] font-bold tracking-wide text-[#b6e5dc] hover:bg-white/10">CANAL OFICIAL · TELEGRAM</a>
+        <div className="mt-auto border-t border-white/10 pt-5">
+          <div className="flex gap-4 px-2"><div className="relative h-32 w-3 border border-white/15 bg-[#102833]"><span className="absolute inset-x-0 top-1/4 h-px bg-white/35" /><span className="absolute inset-x-0 top-1/2 h-px bg-white/35" /><span className="absolute inset-x-0 top-3/4 h-px bg-white/35" /><div className="absolute bottom-0 w-full bg-[#8ad2c3] transition-all duration-300" style={{ height: `${level.progress}%` }} /></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#97b1b6]">Credencial</span><span className="border border-[#82cfbf]/50 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-[#a7ded2]">REG-01</span></div><p className="font-display mt-2 text-sm font-bold text-white">Nível {level.index}</p><p className="text-xs text-[#a8c1c3]">{level.label}</p><p className="mt-2 text-[10px] text-[#85a6aa]">{level.current} / {level.next} XP</p><p className="mt-1 text-[9px] font-bold tracking-[0.14em] text-[#6f9298]">MARCO DE TREINAMENTO</p></div><div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-[#82cfbf] text-center"><span className="font-display text-sm font-extrabold text-white">{state.xp}</span><span className="-mt-1 text-[7px] font-bold tracking-wider text-[#9edbcf]">XP</span></div></div>
+        </div>
+      </aside>
+      {menuOpen && <button aria-label="Fechar navegação" className="fixed inset-0 z-30 bg-[#152d38]/45 lg:hidden" onClick={() => setMenuOpen(false)} />}
+      <main className="min-h-screen min-w-0 flex-1">
+        <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-[#dcd6ca] bg-[#f5f1e8]/90 px-4 backdrop-blur-md sm:px-7 lg:px-10">
+          <div className="flex items-center gap-3"><button className="grid h-10 w-10 place-items-center rounded-xl border border-[#d5cdbd] bg-[#fffdf8] lg:hidden" onClick={() => setMenuOpen(true)}><Menu className="h-5 w-5" /></button><div><p className="eyebrow">CONCURSO · {activeContest.name.toUpperCase()}</p><h1 className="font-display text-base font-bold text-[#183542]">{view}</h1></div></div>
+          <div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button>{user.role === "admin" && <button onClick={() => setAdminOpen(true)} className="hidden border border-[#8ab9b0] bg-[#e8f3f0] px-2.5 py-2 text-[10px] font-bold tracking-wide text-[#0e5a70] sm:block">ROOT</button>}<button onClick={() => void logout()} className="border border-[#d6cfc2] bg-[#fffdf8] px-2.5 py-2 text-[10px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3]">SAIR</button><button onClick={() => setAccountOpen(true)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white">{level.index}</button></div>
+        </header>
+        <div className="mx-auto max-w-[1540px] p-4 sm:p-7 lg:p-10"><ContestSelector contestId={effectiveContestId} allowedContestIds={permittedContestIds} onChange={setContestId} />{simulation ? <SimulationScreen simulation={simulation} onAnswer={submitSimulationAnswer} onExit={() => setSimulation(null)} /> : simulationResult ? <SimulationResult result={simulationResult} onAgain={() => startSimulation(simulationResult.total)} onClose={() => { setSimulationResult(null); setView("Histórico"); }} /> : <>
+          {view === "Painel" && <Dashboard state={state} modules={availableModules} contestName={activeContest.name} level={level} totalAnswers={totalAnswers} overallScore={overallScore} streak={streak} studiedPercent={studiedPercent} focus={focus} historyChart={historyChart} onStudy={() => setView("Conteúdo")} onSimulate={() => setView("Simulados")} />}
+          {view === "Conteúdo" && <StudyArea state={state} modules={availableModules} contestName={activeContest.name} onOpen={setOpenedModule} />}
+          {view === "Simulados" && <Simulations onStart={startSimulation} state={state} />}
+          {view === "Revisar" && <ReviewArea state={state} modules={availableModules} onStartQuestion={(question) => { setQuickQuestion(question); setQuickAnswer(null); setView("Painel"); }} />}
+          {view === "Histórico" && <HistoryArea state={state} />}
+        </>}</div>
       </main>
+      {view === "Painel" && !simulation && !simulationResult && <QuickCheck question={quickQuestion} answer={quickAnswer} correct={quickCorrect} onAnswer={(answer) => { setQuickAnswer(answer); registerAnswer(quickQuestion, answer === quickQuestion.answer); }} onNext={() => { const currentIndex = questionBank.findIndex((item) => item.id === quickQuestion.id); setQuickQuestion(questionBank[(currentIndex + 1) % questionBank.length]); setQuickAnswer(null); }} />}
+      {openedModule && <ModulePanel module={openedModule} completed={state.completedModules.includes(openedModule.id)} onComplete={() => completeModule(openedModule)} onClose={() => setOpenedModule(null)} />}
+      {accountOpen && <AccountPanel user={user} onClose={() => setAccountOpen(false)} />}
+      {adminOpen && user.role === "admin" && <AdminPanel onClose={() => setAdminOpen(false)} />}
     </div>
   );
 }
+
+function ContestSelector({ contestId, allowedContestIds, onChange }: { contestId: ContestId; allowedContestIds: ContestId[]; onChange: (contestId: ContestId) => void }) {
+  const contest = getContestById(contestId) ?? contestCatalog[0];
+  const disciplines = getDisciplinesForContest(contestId);
+  return <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#c8dcd6] bg-[#e8f3f0] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"><div><p className="eyebrow text-[#176a5a]">MATRIZ DE ESTUDO</p><p className="font-display mt-1 text-lg font-bold text-[#173d4a]">{contest.name} · {contest.role}</p><p className="mt-1 text-xs leading-5 text-[#52716f]">A seleção define quais disciplinas do catálogo ficam visíveis nesta trilha. O conteúdo pode ser compartilhado com outros concursos sem duplicação; matrizes futuras permanecem em revisão até serem ativadas.</p></div><div className="flex items-center gap-3"><span className="hidden text-right text-[10px] font-bold uppercase tracking-wider text-[#52716f] sm:block">{disciplines.length} disciplinas</span><select aria-label="Selecionar concurso" value={contestId} onChange={(event) => onChange(event.target.value as ContestId)} className="min-w-[220px] rounded-xl border border-[#a9cfc4] bg-[#fffdf8] px-3 py-2 text-sm font-bold text-[#173d4a] outline-none focus:ring-2 focus:ring-[#82cfbf]">{contestCatalog.map((item) => <option key={item.id} value={item.id} disabled={!allowedContestIds.includes(item.id)}>{item.name} · {item.role}{item.status === "planned" ? " · em preparação" : ""}{!allowedContestIds.includes(item.id) ? " · não liberado" : ""}</option>)}</select></div></section>;
+}
+
+function Dashboard({ state, modules, contestName, level, totalAnswers, overallScore, streak, studiedPercent, focus, historyChart, onStudy, onSimulate }: { state: StudyState; modules: StudyModule[]; contestName: string; level: ReturnType<typeof levelFromXp>; totalAnswers: number; overallScore: number; streak: number; studiedPercent: number; focus: { label: string; detail: string }; historyChart: { label: string; score: number }[]; onStudy: () => void; onSimulate: () => void }) {
+  const remaining = modules.filter((module) => !state.completedModules.includes(module.id));
+  const contentModules = modules.filter((module) => allApostilaByModule[module.id]);
+  const contentSectionCount = contentModules.reduce((total, module) => total + (allApostilaByModule[module.id]?.secoes.length ?? 0), 0);
+  return <div className="space-y-7">
+    <section className="relative overflow-hidden rounded-md border border-[#0c3442] bg-[#183542] px-6 py-8 text-white sm:px-9 sm:py-11" style={{ backgroundImage: `linear-gradient(90deg, rgba(21,45,56,.98) 0%, rgba(21,45,56,.9) 45%, rgba(21,45,56,.44) 100%), url(${imageUrls.desk})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+      <div className="absolute left-0 top-0 h-full w-1 bg-[#82cfbf]" /><div className="relative max-w-2xl"><div className="mb-4 flex items-center gap-3"><p className="text-[10px] font-bold tracking-[0.22em] text-[#9edbcf]">OPERAÇÃO DE HOJE · {contestName.toUpperCase()}</p><span className="h-px w-12 bg-[#82cfbf]/60" /><span className="text-[9px] font-bold tracking-[0.14em] text-[#cceae2]">DOSSIÊ / ABERTO</span></div><h2 className="font-display text-3xl font-extrabold leading-tight sm:text-5xl">Preparação é evidência acumulada.</h2><p className="mt-4 max-w-xl text-sm leading-6 text-[#d4e0df] sm:text-base">Leia a teoria, entenda os conceitos, veja exemplos resolvidos e pratique no ritmo da sua preparação.</p><div className="mt-7 flex flex-wrap gap-3"><button className="action-button bg-[#8ad2c3] text-[#17343e] hover:bg-[#b3e7db]" onClick={onStudy}><BookOpen className="h-4 w-4" />Abrir conteúdo</button><button className="ghost-button border-white/30 bg-white/10 text-white hover:bg-white/15 hover:text-white" onClick={onSimulate}><Play className="h-4 w-4" />Iniciar simulado</button></div></div>
+      <div className="absolute right-5 top-5 hidden border border-white/20 bg-[#0f2a34]/80 px-3 py-2 text-[10px] font-bold tracking-wider text-[#cceae2] sm:block">BIBLIOTECA / {modules.length} AULAS</div>
+    </section>
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><Metric icon={Zap} label="XP ACUMULADO" value={state.xp.toString()} detail={`Nível ${level.index} · ${level.label}`} color="teal" /><Metric icon={Gauge} label="DOMÍNIO GERAL" value={`${overallScore}%`} detail={`${totalAnswers} questões respondidas`} color="blue" /><Metric icon={BookOpen} label="AULAS CONCLUÍDAS" value={`${studiedPercent}%`} detail={`${state.completedModules.filter((moduleId) => modules.some((module) => module.id === moduleId)).length}/${modules.length} aulas de conteúdo`} color="amber" /><Metric icon={Flame} label="SEQUÊNCIA" value={`${streak} dia${streak === 1 ? "" : "s"}`} detail="Constância registrada" color="orange" /></section>
+    <section className="grid gap-4 xl:grid-cols-[.78fr_1.22fr]">
+      <div className="relative min-h-[230px] overflow-hidden rounded-md border border-[#c9dbd6] bg-[#e6f1ee] p-6" style={{ backgroundImage: `linear-gradient(135deg, rgba(230,241,238,.96), rgba(230,241,238,.72)), url(${imageUrls.statistics})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+        <div className="relative flex h-full flex-col justify-between"><div><p className="eyebrow text-[#19705d]">COMO ESTUDAR AQUI</p><h3 className="font-display mt-2 max-w-sm text-2xl font-extrabold text-[#173d4a]">Conteúdo que vira repertório.</h3><p className="mt-3 max-w-sm text-sm leading-6 text-[#41635f]">Você não precisa começar por uma lista de cobranças. Comece pela explicação, conecte os conceitos e só depois teste a retenção.</p></div><div className="mt-6 flex flex-wrap gap-2"><span className="rounded-full border border-[#a9d0c5] bg-white/75 px-3 py-1.5 text-[10px] font-bold text-[#176a5a]">{contentModules.length} AULAS</span><span className="rounded-full border border-[#a9d0c5] bg-white/75 px-3 py-1.5 text-[10px] font-bold text-[#176a5a]">{contentSectionCount} NÚCLEOS</span></div></div>
+      </div>
+      <div className="shell-card p-5 sm:p-6"><div className="mb-5 flex items-end justify-between gap-3"><div><p className="eyebrow">ESTRUTURA DE CADA AULA</p><h3 className="font-display mt-1 text-xl font-bold">Leia, aplique e recupere.</h3></div><BookOpen className="h-5 w-5 text-[#0e5a70]" /></div><div className="grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-[#d8e6e1] bg-[#f5fbf9] p-4"><BookOpen className="h-5 w-5 text-[#19705d]" /><p className="mt-3 font-display text-sm font-bold text-[#23424d]">Teoria guiada</p><p className="mt-2 text-xs leading-5 text-[#60757a]">Explicações em linguagem direta, com conceitos-chave e conexão entre os temas.</p></div><div className="rounded-2xl border border-[#efdbb8] bg-[#fff8ed] p-4"><Target className="h-5 w-5 text-[#a36b23]" /><p className="mt-3 font-display text-sm font-bold text-[#674d2a]">Exemplo resolvido</p><p className="mt-2 text-xs leading-5 text-[#786544]">Situações práticas para enxergar como o conhecimento aparece em uma questão.</p></div><div className="rounded-2xl border border-[#d3e0eb] bg-[#f4f9fd] p-4"><Brain className="h-5 w-5 text-[#245c70]" /><p className="mt-3 font-display text-sm font-bold text-[#23424d]">Prática ativa</p><p className="mt-2 text-xs leading-5 text-[#60717a]">Desafio, revisão sem consulta e anotação privada para consolidar a memória.</p></div></div></div>
+    </section>
+    <section className="grid gap-5 xl:grid-cols-[1.32fr_.68fr]">
+      <div className="shell-card p-5 sm:p-6"><div className="mb-6 flex items-start justify-between"><div><p className="eyebrow">TRAJETÓRIA</p><h3 className="font-display mt-1 text-xl font-bold">Evolução nos simulados</h3></div><BarChart3 className="h-5 w-5 text-[#0e5a70]" /></div>{historyChart.length ? <div className="h-[210px]"><ResponsiveContainer width="100%" height="100%"><AreaChart data={historyChart} margin={{ top: 8, right: 5, left: -24, bottom: 0 }}><defs><linearGradient id="trajectory" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#0e5a70" stopOpacity={.25} /><stop offset="100%" stopColor="#0e5a70" stopOpacity={0} /></linearGradient></defs><CartesianGrid vertical={false} stroke="#e6e0d5" /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#6d7880", fontSize: 11 }} /><YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: "#6d7880", fontSize: 11 }} /><Tooltip formatter={(value) => [`${value}%`, "Aproveitamento"]} contentStyle={{ borderRadius: 12, border: "1px solid #d9d3c5", fontSize: 12 }} /><Area type="monotone" dataKey="score" stroke="#0e5a70" strokeWidth={3} fill="url(#trajectory)" /></AreaChart></ResponsiveContainer></div> : <EmptyState icon={BarChart3} title="Ainda não há dados de simulado" text="Complete seu primeiro simulado para transformar desempenho em uma trajetória visual." />}</div>
+      <div className="shell-card overflow-hidden"><div className="relative h-28 bg-[#d4e5e1]" style={{ backgroundImage: `linear-gradient(90deg, rgba(14,90,112,.2), rgba(14,90,112,.02)), url(${imageUrls.training})`, backgroundSize: "cover", backgroundPosition: "center" }} /><div className="p-5"><p className="eyebrow">PRÓXIMA LEITURA</p><h3 className="font-display mt-1 text-lg font-bold">{focus.label}</h3><p className="mt-2 text-sm leading-5 text-[#60717a]">{focus.detail}</p><button onClick={onStudy} className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[#0e5a70]">Abrir conteúdos <ChevronRight className="h-4 w-4" /></button></div></div>
+    </section>
+    <section className="shell-card p-5 sm:p-6"><div className="mb-5 flex items-center justify-between"><div><p className="eyebrow">PRÓXIMAS AULAS</p><h3 className="font-display mt-1 text-xl font-bold">Seu roteiro de leitura</h3></div><Trophy className="h-5 w-5 text-[#be862b]" /></div><div className="grid gap-3 md:grid-cols-3">{remaining.slice(0, 3).map((module, index) => <div key={module.id} className="rounded-2xl border border-[#e4ddd0] bg-[#fffdf8] p-4"><div className="mb-4 flex items-center justify-between"><span className="rounded-lg bg-[#e7f0ee] px-2 py-1 text-[10px] font-bold tracking-wider text-[#0e5a70]">{module.code}</span><span className="text-xs font-bold text-[#8a7561]">0{index + 1}</span></div><p className="font-display text-sm font-bold">{module.title}</p><p className="mt-2 line-clamp-2 text-xs leading-5 text-[#687780]">{module.summary}</p></div>)}{!remaining.length && <p className="text-sm text-[#60717a]">Todo o conteúdo foi concluído. Faça uma revisão ou um simulado para consolidar o domínio.</p>}</div></section>
+  </div>;
+}
+
+function Metric({ icon: Icon, label, value, detail, color }: { icon: typeof Zap; label: string; value: string; detail: string; color: "teal" | "blue" | "amber" | "orange" }) { const styles = { teal: "border-[#9bcabc] text-[#0e5a70]", blue: "border-[#9dbdc8] text-[#245c70]", amber: "border-[#dfc08c] text-[#a36b23]", orange: "border-[#dfb090] text-[#b45e2d]" }; return <div className="relative border border-[#d5cdbd] bg-[#fffdf8] p-5 shadow-[0_8px_18px_-20px_rgba(21,45,56,.7)]"><span className={`absolute right-4 top-4 border px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${styles[color]}`}>REG</span><div><p className="text-[10px] font-bold tracking-[0.16em] text-[#6f7d83]">{label}</p><p className="font-display mt-2 text-3xl font-extrabold tracking-tight text-[#17343e]">{value}</p></div><div className="mt-4 flex items-center gap-2 border-t border-[#ebe4d8] pt-3"><Icon className={`h-3.5 w-3.5 ${styles[color].split(" ")[1]}`} /><p className="text-xs text-[#6f7d83]">{detail}</p></div></div>; }
+
+function StudyArea({ state, modules, contestName, onOpen }: { state: StudyState; modules: StudyModule[]; contestName: string; onOpen: (module: StudyModule) => void }) {
+  const byDiscipline = modules.reduce<Record<string, StudyModule[]>>((groups, module) => {
+    const disciplineId = getDisciplineIdForModule(module);
+    const discipline = disciplineId ? getDisciplineById(disciplineId)?.name ?? module.discipline : module.discipline;
+    (groups[discipline] ??= []).push(module);
+    return groups;
+  }, {});
+  return <div className="space-y-7">
+    <section className="flex flex-col justify-between gap-4 border-b border-[#d7cfc1] pb-6 sm:flex-row sm:items-end">
+      <div><p className="eyebrow">BIBLIOTECA DE CONTEÚDO · {contestName.toUpperCase()}</p><h2 className="font-display mt-2 text-3xl font-extrabold">Estude o conteúdo sem atalhos.</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-[#62727a]">Cada aula combina explicação autoral, conceitos-chave, exemplo resolvido, atenção de prova e prática ativa. O mapa do edital aparece como referência; a prioridade aqui é entender e recuperar o conteúdo.</p></div>
+      <div className="rounded-xl border border-[#d5cdbd] bg-[#fffdf8] px-4 py-3 text-sm"><span className="font-bold text-[#0e5a70]">{state.completedModules.filter((moduleId) => modules.some((module) => module.id === moduleId)).length}</span> de {modules.length} aulas concluídas</div>
+    </section>
+    {Object.entries(byDiscipline).map(([discipline, modules]) => {
+      const contentCount = modules.reduce((total, module) => total + (allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length), 0);
+      return <section key={discipline}>
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1"><span className="font-display text-sm font-bold text-[#0e5a70]">{discipline}</span><span className="h-px min-w-8 flex-1 bg-[#d7cfc1]" /><span className="text-[10px] font-bold tracking-wider text-[#8a7561]">BLOCO {modules[0].block} · {modules.length} AULAS · {contentCount} NÚCLEOS DE CONTEÚDO</span></div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{modules.map((module) => {
+          const done = state.completedModules.includes(module.id);
+          return <button key={module.id} onClick={() => onOpen(module)} className="group text-left shell-card relative overflow-hidden p-5 transition hover:-translate-y-0.5 hover:shadow-[0_20px_35px_-28px_rgba(14,90,112,.8)]">
+            <div className="mb-4 flex items-start justify-between"><span className="rounded-lg bg-[#e8f0ee] px-2 py-1 text-[10px] font-bold tracking-wider text-[#0e5a70]">{module.code}</span>{done ? <span className="flex items-center gap-1 text-[10px] font-bold text-[#16806b]"><Check className="h-3.5 w-3.5" />REGISTRADO</span> : <span className="text-[10px] font-bold text-[#ad8a58]">+20 XP</span>}</div>
+            <h3 className="font-display text-base font-bold">{module.title}</h3><p className="mt-2 line-clamp-2 text-sm leading-5 text-[#67767d]">{module.summary}</p>
+            <div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1 text-[10px] font-bold tracking-wide text-[#76848a]"><Clock3 className="h-3.5 w-3.5" />{module.estimatedMinutes} MIN</span><span className="text-[10px] font-bold text-[#0e5a70]">{allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length} NÚCLEOS DE CONTEÚDO</span></div>
+            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-[#0e5a70]">Ler aula completa <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" /></div>
+          </button>;
+        })}</div>
+      </section>;
+    })}
+  </div>;
+}
+function ModulePanel({ module, completed, onComplete, onClose }: { module: StudyModule; completed: boolean; onComplete: () => void; onClose: () => void }) {
+  const [challengeAnswer, setChallengeAnswer] = useState<number | null>(null);
+  const [revealRecall, setRevealRecall] = useState(false);
+  const chapter = allApostilaByModule[module.id];
+  if (chapter) return <><ApostilaModulePanel module={module} chapter={chapter} completed={completed} onComplete={onComplete} onClose={onClose} /><StudyNotePanel moduleId={module.id} /></>;
+  const isCorrect = challengeAnswer === module.lesson.challenge.correct;
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-[#152d38]/55 p-3 backdrop-blur-sm"><div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[1.35rem] bg-[#fffdf8] shadow-2xl"><div className="sticky top-0 flex items-start justify-between border-b border-[#e6ded1] bg-[#fffdf8]/95 p-5 backdrop-blur"><div><p className="eyebrow">AULA INTERATIVA · {module.code} · BLOCO {module.block} · {module.estimatedMinutes} MIN</p><h2 className="font-display mt-1 text-xl font-bold">{module.title}</h2></div><button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-xl border border-[#ded6c9]"><X className="h-4 w-4" /></button></div><div className="space-y-6 p-5 sm:p-7"><section className="rounded-2xl border border-[#b8d6d0] bg-[#edf7f4] p-5"><p className="eyebrow text-[#19705d]">O QUE VOCÊ VAI APRENDER</p><p className="mt-2 text-[15px] leading-7 text-[#285d55]">{module.summary}</p></section><section><div className="mb-3 flex items-center justify-between"><p className="eyebrow">EXPLICAÇÃO GUIADA</p><span className="text-[10px] font-bold tracking-wider text-[#76848a]">LEIA · CONECTE · APLIQUE</span></div><div className="space-y-3">{module.lesson.teach.map((paragraph, index) => <article key={paragraph} className="relative overflow-hidden rounded-2xl border border-[#e7dfd2] bg-[#faf7f0] p-5"><span className="absolute left-0 top-0 h-full w-1 bg-[#0e5a70]" /><div className="flex gap-4"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#dceee9] font-display text-sm font-bold text-[#0e5a70]">{index + 1}</span><p className="text-[15px] leading-7 text-[#405861]">{paragraph}</p></div></article>)}</div></section><section className="grid gap-3 md:grid-cols-[1fr_.8fr]"><div className="rounded-2xl border border-[#f0d5ab] bg-[#fff4e5] p-5"><p className="eyebrow text-[#9a6427]">ATENÇÃO DE PROVA</p><ul className="mt-3 space-y-2 text-sm leading-6 text-[#6d542f]">{module.attention.map((item) => <li key={item} className="flex gap-2"><span>•</span><span>{item}</span></li>)}</ul></div><div className="rounded-2xl bg-[#183542] p-5 text-[#eef5f3]"><p className="text-[10px] font-bold tracking-[0.18em] text-[#93d6c6]">GANCHO DE MEMÓRIA</p><p className="font-display mt-3 text-lg font-bold leading-7">{module.mnemonic}</p><p className="mt-3 text-xs leading-5 text-[#c8d9d8]">Diga o gatilho em voz alta e explique-o sem olhar antes de seguir.</p></div></section><section className="rounded-2xl border border-[#c8ddd7] bg-[#f7fcfa] p-5"><div className="flex items-center gap-2"><Brain className="h-5 w-5 text-[#0e5a70]" /><div><p className="eyebrow">DESAFIO DE 30 SEGUNDOS</p><h3 className="font-display mt-1 text-lg font-bold text-[#173d4a]">Teste agora o que acabou de aprender.</h3></div></div><p className="mt-4 text-[15px] leading-7 text-[#2c515c]">{module.lesson.challenge.prompt}</p><div className="mt-4 grid gap-3 sm:grid-cols-2">{module.lesson.challenge.options.map((option, index) => <button key={option} onClick={() => setChallengeAnswer(index)} className={`rounded-xl border-2 p-4 text-left text-sm font-bold transition ${challengeAnswer === index ? isCorrect === (index === module.lesson.challenge.correct) ? "border-[#16806b] bg-[#e4f3ed] text-[#17644e]" : "border-[#c5663e] bg-[#f8e8de] text-[#913f22]" : "border-[#d8d0c3] bg-white text-[#36505a] hover:border-[#0e5a70]"}`}><span className="text-[10px] tracking-wider text-[#718087]">ALTERNATIVA {index + 1}</span><span className="mt-1 block">{option}</span></button>)}</div>{challengeAnswer !== null && <div className={`mt-4 rounded-xl p-4 text-sm leading-6 ${isCorrect ? "bg-[#e4f3ed] text-[#17644e]" : "bg-[#f8e8de] text-[#913f22]"}`}><strong>{isCorrect ? "Boa! " : "Quase lá. "}</strong>{module.lesson.challenge.feedback}</div>}</section><section className="rounded-2xl border border-[#d8cec0] bg-[#faf7f0] p-5"><p className="eyebrow">REVISÃO ATIVA · SEM CONSULTAR</p><p className="font-display mt-2 text-lg font-bold text-[#25434e]">{module.lesson.recall.prompt}</p>{revealRecall ? <div className="mt-4 rounded-xl bg-[#e8f0ee] p-4 text-sm leading-6 text-[#285d55]"><strong>Resposta:</strong> {module.lesson.recall.answer}</div> : <button onClick={() => setRevealRecall(true)} className="ghost-button mt-4"><Sparkles className="h-4 w-4" />Ver resposta e conferir</button>}</section><section><p className="eyebrow mb-3">MAPA DO EDITAL NESTA AULA</p><div className="grid gap-2 sm:grid-cols-2">{module.checklist.map((item) => <div key={item} className="flex gap-2 rounded-xl border border-[#e7dfd2] bg-[#fffdf8] px-3 py-3 text-sm leading-5 text-[#415a62]"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16806b]" /><span>{item}</span></div>)}</div></section><section className="rounded-2xl bg-[#183542] p-5 text-[#eef5f3]"><p className="text-[10px] font-bold tracking-[0.18em] text-[#93d6c6]">EXEMPLO COMPLEMENTAR</p><p className="mt-2 text-sm leading-6">{module.example}</p></section><StudyNotePanel moduleId={module.id} /><p className="text-xs text-[#79848a]">Fonte: {module.source}</p><div className="flex flex-col-reverse gap-3 border-t border-[#e6ded1] pt-5 sm:flex-row sm:justify-end"><button onClick={onClose} className="ghost-button">Voltar ao mapa</button><button onClick={() => { onComplete(); onClose(); }} disabled={completed} className="action-button disabled:cursor-default disabled:bg-[#6e969c]">{completed ? <><Check className="h-4 w-4" />Aula concluída</> : <><Award className="h-4 w-4" />Concluir aula · +20 XP</>}</button></div></div></div></div>;
+}
+
+function StudyNotePanel({ moduleId }: { moduleId: string }) {
+  const noteQuery = trpc.study.note.useQuery({ moduleId }, { refetchOnWindowFocus: false });
+  const [content, setContent] = useState("");
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { if (noteQuery.data) setContent(noteQuery.data.content); }, [noteQuery.data]);
+  const save = trpc.study.saveNote.useMutation({ onSuccess: () => { setSaved(true); void noteQuery.refetch(); } });
+  return <section className="rounded-2xl border border-[#bdcec9] bg-[#edf7f4] p-5"><div className="flex items-start justify-between gap-3"><div className="flex gap-3"><MessageSquareText className="mt-0.5 h-5 w-5 text-[#0e5a70]"/><div><p className="eyebrow text-[#176a5a]">ANOTAÇÃO PRIVADA</p><h3 className="font-display mt-1 text-lg font-bold text-[#173d4a]">Seu resumo desta aula</h3><p className="mt-1 text-xs leading-5 text-[#55736f]">Visível somente para a sua conta e vinculada a este módulo.</p></div></div><span className="border border-[#a5cfc5] bg-white px-2 py-1 text-[9px] font-bold tracking-wide text-[#176a5a]">PRIVADA</span></div><Textarea value={content} onChange={event => { setContent(event.target.value); setSaved(false); }} maxLength={12000} placeholder="Registre conceitos, erros recorrentes, atalhos de memória e pontos para revisar." className="mt-4 min-h-32 resize-y border-[#b9cec8] bg-white text-sm leading-6"/><div className="mt-3 flex items-center justify-between gap-3"><p className="text-[10px] text-[#6c8381]">{content.length}/12000 caracteres{saved ? " · Salvo" : ""}</p><button disabled={save.isPending} onClick={() => save.mutate({ moduleId, content })} className="action-button px-4 py-2 text-xs disabled:opacity-60">{save.isPending ? "Salvando..." : "Salvar anotação"}</button></div>{save.error && <p className="mt-2 text-xs font-semibold text-[#99462e]">{save.error.message}</p>}</section>;
+}
+
+function QuickCheck({ question, answer, correct, onAnswer, onNext }: { question: StudyQuestion; answer: boolean | null; correct: boolean | null; onAnswer: (answer: boolean) => void; onNext: () => void }) { return <div className="fixed bottom-4 right-4 z-20 w-[calc(100%-2rem)] max-w-md rounded-[1.2rem] border border-[#d5cdbd] bg-[#fffdf8] p-4 shadow-[0_20px_45px_-25px_rgba(21,45,56,.55)] sm:bottom-7 sm:right-7"><div className="mb-3 flex items-center justify-between"><span className="eyebrow">CHECAGEM RÁPIDA · {question.discipline}</span><Brain className="h-4 w-4 text-[#0e5a70]" /></div><p className="text-sm font-medium leading-6 text-[#2c4652]">{question.statement}</p>{answer === null ? <div className="mt-4 flex gap-2"><button className="ghost-button flex-1" onClick={() => onAnswer(true)}>CERTO</button><button className="ghost-button flex-1" onClick={() => onAnswer(false)}>ERRADO</button></div> : <div className={`mt-4 rounded-xl p-3 ${correct ? "bg-[#e2f2eb] text-[#17644e]" : "bg-[#f7e6dc] text-[#9b4b25]"}`}><div className="flex items-center gap-2 text-xs font-bold">{correct ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}{correct ? "Registro correto · +8 XP" : "Revise a evidência · +2 XP"}</div><p className="mt-1 text-xs leading-5">{question.explanation}</p><button onClick={onNext} className="mt-2 inline-flex items-center gap-1 text-xs font-bold underline">Próxima checagem <ChevronRight className="h-3.5 w-3.5" /></button></div>}</div>; }
+
+function Simulations({ onStart, state }: { onStart: (size: number) => void; state: StudyState }) { return <div className="space-y-7"><section className="rounded-[1.35rem] bg-[#183542] p-7 text-white sm:p-9"><p className="text-[10px] font-bold tracking-[0.22em] text-[#9edbcf]">SALA DE PROVA</p><h2 className="font-display mt-2 text-3xl font-extrabold">Simulado por proporção oficial.</h2><p className="mt-3 max-w-3xl text-sm leading-6 text-[#c8d9d8]">A matriz do Agente PF tem 120 itens: <strong>60 no Bloco I</strong>, <strong>36 no Bloco II</strong> e <strong>24 no Bloco III</strong>. Cada simulado mantém exatamente a proporção de 50% / 30% / 20%.</p><div className="mt-6 flex flex-wrap gap-3">{[10, 20, 60].map((size) => <button key={size} onClick={() => onStart(size)} className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-left transition hover:bg-[#8ad2c3] hover:text-[#17343e]"><p className="font-display text-lg font-bold">{size} itens</p><p className="mt-1 text-[10px] font-bold tracking-wider text-inherit opacity-75">INICIAR AGORA</p></button>)}</div></section><section className="grid gap-4 md:grid-cols-3">{blocks.map((block) => <div className="shell-card p-5" key={block.id}><p className="eyebrow">{block.label}</p><p className="font-display mt-2 text-2xl font-extrabold">{block.ratio * 100}%</p><p className="mt-1 text-sm text-[#65757d]">{block.items} itens no edital · {block.description}</p></div>)}</section><section className="shell-card p-5 sm:p-6"><div className="flex items-start justify-between"><div><p className="eyebrow">BANCO OPERACIONAL</p><h3 className="font-display mt-1 text-xl font-bold">Questões Cebraspe de treino</h3><p className="mt-2 text-sm text-[#64757e]">{questionBank.length} itens autorais em formato CERTO/ERRADO, cada um com explicação e dica de revisão.</p></div><div className="rounded-xl bg-[#e5f0ee] px-3 py-2 text-right"><p className="font-display text-lg font-bold text-[#0e5a70]">{state.simulations.length}</p><p className="text-[9px] font-bold tracking-wider text-[#56808a]">SIMULADOS</p></div></div></section></div>; }
+
+function SimulationScreen({ simulation, onAnswer, onExit }: { simulation: NonNullable<ActiveSimulation>; onAnswer: (answer: boolean) => void; onExit: () => void }) { const question = simulation.questions[simulation.index]; const progress = ((simulation.index + 1) / simulation.questions.length) * 100; return <div className="mx-auto max-w-4xl"><div className="mb-7 flex items-center justify-between"><div><p className="eyebrow">SIMULADO EM ANDAMENTO</p><p className="font-display mt-1 text-lg font-bold">Item {simulation.index + 1} de {simulation.questions.length}</p></div><button className="ghost-button" onClick={onExit}><X className="h-4 w-4" />Abandonar</button></div><div className="mb-8 h-2 overflow-hidden rounded-full bg-[#ddd5c7]"><div className="h-full bg-[#0e5a70] transition-all duration-300" style={{ width: `${progress}%` }} /></div><article className="shell-card mt-5 p-6 sm:p-10"><div className="mb-8 flex flex-wrap gap-2"><span className="rounded-lg bg-[#e4efed] px-2 py-1 text-[10px] font-bold tracking-wider text-[#0e5a70]">BLOCO {question.block}</span><span className="rounded-lg bg-[#f4ecdd] px-2 py-1 text-[10px] font-bold tracking-wider text-[#91713d]">{question.discipline}</span><span className="rounded-lg border border-[#e4ddd0] px-2 py-1 text-[10px] font-bold tracking-wider text-[#718087]">{question.difficulty}</span></div><p className="font-display text-xl font-bold leading-9 text-[#1c3945] sm:text-2xl">{question.statement}</p><p className="mt-5 text-sm text-[#718087]">Julgue o item como <strong>CERTO</strong> ou <strong>ERRADO</strong>.</p><div className="mt-9 grid gap-3 sm:grid-cols-2"><button onClick={() => onAnswer(true)} className="rounded-2xl border-2 border-[#b9d4d0] bg-[#f2f8f6] px-6 py-5 text-left transition hover:border-[#0e5a70] hover:bg-[#e0f0ec]"><span className="font-display text-lg font-extrabold text-[#0e5a70]">CERTO</span><span className="mt-1 block text-xs text-[#54717a]">O item está correto.</span></button><button onClick={() => onAnswer(false)} className="rounded-2xl border-2 border-[#dccfc0] bg-[#fdf8f0] px-6 py-5 text-left transition hover:border-[#aa683b] hover:bg-[#f5eadf]"><span className="font-display text-lg font-extrabold text-[#9d5b31]">ERRADO</span><span className="mt-1 block text-xs text-[#7a6554]">O item contém incorreção.</span></button></div></article></div>; }
+
+function SimulationResult({ result, onAgain, onClose }: { result: SimulationRecord; onAgain: () => void; onClose: () => void }) { const score = percentage(result.correct, result.total); const weak = Object.entries(result.byDiscipline).sort((a, b) => percentage(a[1].correct, a[1].total) - percentage(b[1].correct, b[1].total))[0]; return <div className="mx-auto max-w-5xl space-y-6"><section className="rounded-[1.35rem] bg-[#183542] p-7 text-white sm:p-9"><p className="text-[10px] font-bold tracking-[0.22em] text-[#9edbcf]">DEBRIEFING CONCLUÍDO</p><div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-display text-4xl font-extrabold">{score}% de aproveitamento</h2><p className="mt-2 text-sm text-[#d1dfdc]">{result.correct} acertos · {result.errors} erros · {result.total} itens · {formatTime(result.elapsedSeconds)}</p></div><div className="rounded-2xl bg-white/10 p-4"><p className="text-[10px] font-bold tracking-wider text-[#9edbcf]">REGISTRO</p><p className="font-display mt-1 text-lg font-bold">+{result.correct * 8 + 15} XP</p></div></div></section><section className="grid gap-4 md:grid-cols-3">{blocks.map((block) => { const metric = result.byBlock[block.id]; return <div className="shell-card p-5" key={block.id}><p className="eyebrow">{block.label}</p><p className="font-display mt-2 text-2xl font-extrabold">{percentage(metric.correct, metric.total)}%</p><p className="mt-1 text-sm text-[#64757e]">{metric.correct}/{metric.total} acertos</p></div>; })}</section><section className="shell-card p-6"><p className="eyebrow">PRÓXIMA AÇÃO</p><h3 className="font-display mt-2 text-xl font-bold">{weak ? `Revise ${weak[0]}` : "Mantenha o ritmo"}</h3><p className="mt-2 text-sm text-[#64757e]">{weak ? `Seu aproveitamento neste eixo foi de ${percentage(weak[1].correct, weak[1].total)}%. Retorne aos módulos e às questões erradas antes da próxima tentativa.` : "O resultado ficará registrado no seu histórico."}</p><div className="mt-6 flex flex-wrap gap-3"><button onClick={onAgain} className="action-button"><RotateCcw className="h-4 w-4" />Nova tentativa</button><button onClick={onClose} className="ghost-button">Ver histórico</button></div></section></div>; }
+
+function ReviewArea({ state, modules, onStartQuestion }: { state: StudyState; modules: StudyModule[]; onStartQuestion: (question: StudyQuestion) => void }) { const latestRecords = new Map<string, AnswerRecord>(); state.answers.forEach((answer) => latestRecords.set(answer.questionId, answer)); const incorrect = Array.from(latestRecords.values()).filter((answer) => !answer.correct).map((answer) => questionBank.find((question) => question.id === answer.questionId)).filter(Boolean) as StudyQuestion[]; const untouchedModules = modules.filter((module) => !state.completedModules.includes(module.id)); const performance = getDisciplinePerformance(state); const weak = Object.entries(performance).filter(([, item]) => item.total > 0).sort((a, b) => percentage(a[1].correct, a[1].total) - percentage(b[1].correct, b[1].total)); return <div className="space-y-7"><section><p className="eyebrow">REVISÃO INTELIGENTE</p><h2 className="font-display mt-2 text-3xl font-extrabold">Recupere pontos onde eles importam.</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-[#62727a]">A prioridade combina erros registrados, módulos ainda abertos e a matriz oficial do edital.</p></section><div className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]"><section className="shell-card p-6"><div className="flex items-center justify-between"><div><p className="eyebrow">ITENS PARA REVISAR</p><h3 className="font-display mt-1 text-xl font-bold">Questões que exigem retorno</h3></div><RotateCcw className="h-5 w-5 text-[#0e5a70]" /></div>{incorrect.length ? <div className="mt-5 divide-y divide-[#e7dfd2]">{incorrect.slice(0, 6).map((question) => <div key={question.id} className="flex items-center justify-between gap-4 py-4"><div><p className="text-[10px] font-bold tracking-wider text-[#a06432]">{question.discipline} · {question.subject}</p><p className="mt-1 line-clamp-2 text-sm leading-5 text-[#536872]">{question.statement}</p></div><button onClick={() => onStartQuestion(question)} className="shrink-0 rounded-lg border border-[#d4cbc0] p-2 text-[#0e5a70]"><ChevronRight className="h-4 w-4" /></button></div>)}</div> : <EmptyState icon={ShieldCheck} title="Nenhum erro registrado" text="Responda uma checagem ou simulado; seus erros aparecerão aqui para revisão dirigida." />}</section><section className="shell-card p-6"><p className="eyebrow">MAPA DE FRAGILIDADES</p><h3 className="font-display mt-1 text-xl font-bold">Desempenho por disciplina</h3>{weak.length ? <div className="mt-5 space-y-4">{weak.map(([discipline, metric]) => <div key={discipline}><div className="flex justify-between gap-3 text-sm"><span className="font-medium">{discipline}</span><span className="font-bold text-[#0e5a70]">{percentage(metric.correct, metric.total)}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#ece5d8]"><div className="h-full rounded-full bg-[#0e5a70]" style={{ width: `${percentage(metric.correct, metric.total)}%` }} /></div></div>)}</div> : <EmptyState icon={Target} title="Diagnóstico pendente" text="São necessárias respostas registradas para calcular suas prioridades." />}</section></div><section className="shell-card p-6"><p className="eyebrow">CONTEÚDOS NÃO REGISTRADOS</p><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{untouchedModules.map((module) => <div key={module.id} className="rounded-xl border border-[#e6ded1] bg-[#fffdf8] p-4"><p className="text-[10px] font-bold tracking-wider text-[#0e5a70]">{module.code}</p><p className="font-display mt-1 text-sm font-bold">{module.title}</p><p className="mt-1 text-xs text-[#718087]">{module.discipline}</p></div>)}{!untouchedModules.length && <p className="text-sm text-[#63747b]">Todos os módulos foram marcados como estudados.</p>}</div></section></div>; }
+
+function HistoryArea({ state }: { state: StudyState }) { return <div className="space-y-7"><section className="flex flex-col justify-between gap-4 border-b border-[#d7cfc1] pb-6 sm:flex-row sm:items-end"><div><p className="eyebrow">REGISTRO PERMANENTE</p><h2 className="font-display mt-2 text-3xl font-extrabold">Histórico de simulados</h2><p className="mt-2 text-sm text-[#62727a]">Seus resultados ficam salvos com segurança na sua conta privada.</p></div><div className="rounded-xl bg-[#e4efed] px-4 py-3 text-sm font-bold text-[#0e5a70]">{state.simulations.length} simulado{state.simulations.length === 1 ? "" : "s"} registrado{state.simulations.length === 1 ? "" : "s"}</div></section>{state.simulations.length ? <section className="shell-card overflow-hidden"><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left"><thead className="border-b border-[#e3dccf] bg-[#faf7f0] text-[10px] tracking-[0.15em] text-[#6c7b81]"><tr><th className="px-5 py-4">DATA</th><th className="px-5 py-4">ITENS</th><th className="px-5 py-4">ACERTOS</th><th className="px-5 py-4">APROVEITAMENTO</th><th className="px-5 py-4">TEMPO</th><th className="px-5 py-4">STATUS</th></tr></thead><tbody>{[...state.simulations].reverse().map((sim) => { const score = percentage(sim.correct, sim.total); return <tr key={sim.id} className="border-b border-[#eee8dd] last:border-0"><td className="px-5 py-4 text-sm">{new Date(sim.date).toLocaleDateString("pt-BR")}</td><td className="px-5 py-4 text-sm">{sim.total}</td><td className="px-5 py-4 text-sm font-bold">{sim.correct} / {sim.total}</td><td className="px-5 py-4"><span className="rounded-full bg-[#e4efed] px-2.5 py-1 text-xs font-bold text-[#0e5a70]">{score}%</span></td><td className="px-5 py-4 text-sm">{formatTime(sim.elapsedSeconds)}</td><td className="px-5 py-4"><span className="flex w-fit items-center gap-1 text-xs font-bold text-[#16705e]"><Check className="h-3.5 w-3.5" />Concluído</span></td></tr>; })}</tbody></table></div></section> : <section className="shell-card"><EmptyState icon={History} title="Seu histórico começa no primeiro simulado" text="O resultado, o tempo e o desempenho por bloco serão preservados na sua conta." /></section>}</div>; }
+
+function EmptyState({ icon: Icon, title, text }: { icon: typeof History; title: string; text: string }) { return <div className="flex min-h-[170px] flex-col items-center justify-center p-6 text-center"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#e8f0ee] text-[#0e5a70]"><Icon className="h-5 w-5" /></div><p className="font-display mt-3 text-sm font-bold">{title}</p><p className="mt-1 max-w-sm text-xs leading-5 text-[#748188]">{text}</p></div>; }

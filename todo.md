@@ -1,0 +1,27 @@
+# Project TODO
+
+- [x] Importar a base do repositório Paulo-Andre/estudos-pf no commit d769b8f, sem arquivos de build ou credenciais.
+- [x] Remover toda rota, SDK, cookie, botão e redirecionamento de autenticação OAuth/Manus.
+- [x] Implementar registro, login e logout exclusivamente locais com senha derivada por scrypt e cookie de sessão httpOnly.
+- [x] Criar ou migrar a conta ROOT `paulo` a partir de ROOT_INITIAL_PASSWORD, preservando o mesmo userId do proprietário quando existir.
+- [x] Garantir que ROOT/admin acesse todas as rotas study.* sem matrícula ativa.
+- [x] Aplicar bloqueio de alunos sem matrícula vigente no middleware enrollmentRequiredProcedure e no componente CourseAccessRequired.
+- [x] Manter a tabela courseEnrollments com período obrigatório, status active/revoked, unicidade por usuário+curso e índices de expiração.
+- [x] Aplicar o schema e as migrações da nova instância pelo banco gerenciado.
+- [x] Disponibilizar o painel ROOT para criar cursos, conceder e revogar matrículas e consultar auditoria administrativa.
+- [x] Manter a arquitetura de disciplinas e módulos reutilizável entre PF, PRF e PM.
+- [x] Disponibilizar módulos didáticos do concurso de Agente PF 2025, sem copiar integralmente apostilas de terceiros.
+- [x] Manter simulados, histórico de respostas e questões já utilizadas por aluno.
+- [x] Manter perfil de estudo persistente com XP, sequência e módulos concluídos.
+- [x] Manter anotações privadas por módulo e o link autorizado do Telegram.
+- [x] Adicionar ou atualizar testes Vitest para autenticação, ROOT, matrícula e limites de acesso.
+- [x] Validar ou implementar no painel ROOT a criação persistente de cursos, além da seleção do catálogo reutilizável.
+- [x] Validar ou implementar a visualização de auditoria administrativa baseada em adminAuditLogs.
+- [x] Validar no cliente as anotações privadas por módulo e disponibilizar o link fixo do Telegram autorizado.
+- [x] Substituir o seletor estático do painel ROOT por cursos persistentes e permitir a criação de cursos administrativos.
+- [x] Expor CourseAccessRequired como componente reutilizável no cliente, mantendo o bloqueio de matrícula.
+- [x] Comprovar ou completar anotações privadas por módulo no cliente e no servidor, preservando o isolamento por usuário.
+- [x] Validar criação, edição, persistência e recuperação de anotações privadas por módulo.
+- [x] Validar compilação, banco, interface desktop/mobile e fluxos de login local antes da publicação.
+- [x] Confirmar após reinício que o runtime não registra erros de schema, exports ou bootstrap ROOT.
+- [ ] Salvar checkpoint e orientar o usuário a publicar a nova URL no painel.
