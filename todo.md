@@ -97,3 +97,8 @@
 - [x] Inspecionar db.ts e rootBootstrap.ts para registrar a exportação e o uso atuais de ensureDefaultKnowledgeBase, depois revalidar uma sessão de runtime sem nova exceção.
 - [x] Registrar uma evidência de runtime isolada após reinício, sem nova ocorrência de SyntaxError ou ensureDefaultKnowledgeBase no intervalo da sessão.
 - [x] Registrar no contexto os trechos de server/db.ts e server/auth/rootBootstrap.ts que comprovam exportação e importação consistentes do bootstrap ROOT.
+- [x] Avaliar hospedagens gratuitas com deploy automático a partir do Git para a aplicação Node, React e banco de dados.
+- [x] Definir uma estratégia de backup e recuperação que preserve código, banco, variáveis de ambiente e domínio fora de uma única plataforma.
+- [x] Documentar um runbook de backup e recuperação cobrindo repositório GitHub, exportação periódica do banco, armazenamento externo dos dumps, checklist de variáveis e restauração.
+- [x] Definir a estratégia de domínio fora da plataforma de hospedagem, com registrador e DNS independentes e procedimento de redirecionamento em caso de migração.
+- [x] Registrar periodicidade, local de armazenamento, responsável e ordem operacional de recuperação para código, banco, segredos e domínio.
