@@ -6,7 +6,7 @@
 
 ## Método e limite da evidência
 
-O edital da Polícia Federal é a referência normativa. A página do Cebraspe confirma o certame PF 2025, porém não expõe o conteúdo programático no HTML acessível. Para permitir a leitura dos tópicos, foi usado um arquivo detalhado de apoio do cargo de Agente indicado por fonte de preparação, extraído localmente apenas como texto. A página de apoio também lista as mesmas 11 disciplinas do cargo de Agente.[1] [2] [3]
+O edital da Polícia Federal é a referência normativa. Em 19/08/2026, o texto integral do **Edital nº 1 — PF Policial, de 20 de maio de 2025**, publicado no Diário Oficial da União, foi consultado diretamente: o trecho do Cargo 16 contém os blocos e subitens de Língua Portuguesa, Direitos, Legislação Especial, Estatística, Raciocínio Lógico, Informática e Contabilidade Geral.[1] A página do Cebraspe confirma o certame PF 2025.[2] A fonte de preparação detalhada permanece somente como apoio de leitura e nomenclatura, nunca como substituta da fonte normativa.[3]
 
 > **Leitura correta deste documento:** “coberto por módulo” demonstra que há unidade didática publicada cujo checklist aborda o grupo temático indicado. Isso não substitui uma conferência jurídica literal de cada edição normativa e de cada subitem contra o PDF oficial da Polícia Federal.
 
@@ -17,7 +17,7 @@ O edital da Polícia Federal é a referência normativa. A página do Cebraspe c
 | Direito Constitucional | DC-01 a DC-03 | direitos e garantias, direitos sociais/políticos e segurança/ordem social | Coberto por módulos |
 | Direito Penal e Processual Penal | DPP-01 a DPP-06 | lei penal, teoria do crime, crimes, inquérito, provas e flagrante | Coberto por módulos |
 | Direitos Humanos | DH-01 a DH-04 | sistema de proteção, tratados, tortura/custódia e uso da força | Coberto por módulos |
-| Legislação Especial | LE-01 a LE-04, mais módulos complementares LE | segurança privada, migração, drogas, tortura, ECA, armas, ambiente, identificação e crime cibernético | Coberto por módulos |
+| Legislação Especial | LE-01 a LE-04, mais módulos complementares LE | segurança privada, produtos químicos, migração, drogas, tortura, ECA, armas, ambiente, identificação civil e crime cibernético | Cobertura parcial: confirmar diploma por diploma |
 | Estatística | EST-01 a EST-07 | descritiva, probabilidade, distribuições, amostragem, inferência e regressão | Coberto por módulos |
 | Raciocínio Lógico | RL-01 a RL-04 | argumentação, proposições, primeira ordem, conjuntos, contagem e problemas | Coberto por módulos |
 | Informática | INF-01 a INF-08 | internet, produtividade, redes, IP, segurança, nuvem, sistemas, dados e IA | Coberto por módulos |
@@ -42,10 +42,10 @@ O edital da Polícia Federal é a referência normativa. A página do Cebraspe c
 
 A trilha ativa do Agente PF contém as 11 disciplinas confirmadas para o cargo e apresenta módulos correspondentes a todos os grupos temáticos de alto nível. A decisão para **cobertura estrutural** é **APROVADA**.
 
-A decisão para **certificação literal de cada subitem do edital oficial** permanece **PENDENTE**. Essa etapa exige comparar, em revisão humana, o texto completo do Anexo II do PDF oficial da Polícia Federal contra os checklists das unidades e registrar versões de leis, decretos e tratados. Nenhum material deve ser anunciado como “100% aderente ao edital” até essa conferência.
+A decisão para **certificação literal de cada subitem do edital oficial** permanece **PENDENTE**. Embora a fonte oficial já tenha sido localizada e lida, a reconciliação de cada inciso profundo — sobretudo em Estatística, Informática, diplomas específicos de Legislação Especial e Contabilidade — requer comparar o texto contra a granularidade efetiva de cada aula, apostila e questão. Nenhum material deve ser anunciado como “100% aderente ao edital” até essa conferência.
 
 ## Referências
 
-[1]: https://www.gov.br/pf/pt-br/acesso-a-informacao/servidores/concursos/edital/carreira-policial-2025/editais/edital-no-2_2025-dgp-pf.pdf "Polícia Federal — Edital nº 2/2025-DGP/PF"
+[1]: https://www.in.gov.br/en/web/dou/-/edital-n-1-pf-policial-de-20-de-maio-de-2025-630929086 "Diário Oficial da União — Edital nº 1 — PF Policial, de 20 de maio de 2025"
 [2]: https://www.cebraspe.org.br/concursos/pf_25 "Cebraspe — PF 25"
 [3]: https://www.estrategiaconcursos.com.br/blog/concurso-pf-2025-o-que-estudar/ "Estratégia Concursos — Conteúdo programático PF 2025"

@@ -13,7 +13,7 @@ O produto mantém arquitetura de disciplinas reaproveitáveis: as 11 disciplinas
 
 Foram removidas todas as referências funcionais ao Telegram do cliente e do servidor. O fluxo de revisão passou a exibir instruções operacionais, acesso direto à questão pendente e ações de decisão. As duas referências externas que não apresentavam confirmação automatizada satisfatória foram substituídas por destinos oficiais atuais: o serviço `gov.br` do Manual de Redação e a lista de instrumentos da OHCHR.
 
-O requisito de cobertura integral do edital permanece bloqueado. A página oficial do concurso foi identificada, mas o PDF do edital não pôde ser convertido de forma confiável no ambiente; por integridade, não foi declarada equivalência completa tópico a tópico apenas com base nos nomes de disciplinas. A verificação visual autenticada também depende de uma sessão local válida de aluno e de ROOT.
+O requisito de cobertura integral do edital permanece bloqueado. O conteúdo oficial do Cargo 16 foi extraído diretamente da publicação do Diário Oficial, inclusive os subitens de todos os blocos, e foi vinculado à matriz curricular. Ainda assim, não foi declarada equivalência completa tópico a tópico: falta demonstrar, em registro granular, a correspondência de cada inciso com aula, apostila ou questão. A verificação visual autenticada também depende de uma sessão local válida de aluno e de ROOT.
 
 ## Matriz de critérios de aceite
 
@@ -23,7 +23,7 @@ O requisito de cobertura integral do edital permanece bloqueado. A página ofici
 | Regressão | Build de produção | PASS | `pnpm run build` concluiu com Vite e bundle do servidor. | Aviso não bloqueador: bundle JS principal de 1,75 MB deve ser tratado como melhoria de performance. |
 | Runtime | Servidor de desenvolvimento | PASS | Reinicialização bem-sucedida; logs recentes mostram conexão Vite sem erro novo. | Um `SyntaxError` anterior relativo a `ensureDefaultKnowledgeBase` permaneceu apenas no histórico do console; não reapareceu após reinício, build e testes. |
 | Currículo | 11 disciplinas canônicas vinculadas à trilha PF | PASS | `pfCurriculumCatalog.ts` declara as 11 disciplinas como ativas e a matriz `pf-agente` as inclui integralmente. | Não substitui a conferência oficial de subitens. |
-| Currículo | Nenhum subitem obrigatório ausente do edital 2025 | BLOCKED | A matriz `PF_2025_AGENT_SYLLABUS_COVERAGE.md` associa os 11 blocos temáticos e seus módulos publicados, usando o programa detalhado de apoio como trilha de reconciliação. A fonte normativa oficial permanece registrada em `qa_external_sources.md`. | Falta a reconciliação literal, tópico a tópico, com o anexo oficial. Não afirmar cobertura total antes dessa conferência. |
+| Currículo | Nenhum subitem obrigatório ausente do edital 2025 | BLOCKED | O texto oficial do Cargo 16 no Diário Oficial foi lido e a matriz `PF_2025_AGENT_SYLLABUS_COVERAGE.md` associa os 11 blocos e módulos publicados. | Falta evidência granular de cada subitem contra aula, apostila ou questão. Não afirmar cobertura total antes dessa conferência. |
 | Aulas | Aulas interativas para todas as unidades autorais | PASS | `pfContentCoverage.test.ts` confirma `teach` com três blocos, desafio e recordação em todas as unidades. | A avaliação humana da didática de cada aula segue recomendada. |
 | Apostilas | Apostila em toda unidade autoral | PASS | O mesmo teste confirma `apostilaByModule` ou `specialApostilaByModule` para cada unidade; 67 unidades no conjunto. | Abrir cada apostila autenticadamente no E2E antes do GO. |
 | Vídeos | Disponibilidade dos vídeos publicados | PASS | Auditoria final: 11 URLs do YouTube responderam `200`; resultado em `qa_link_audit_final.json`. | Disponibilidade não comprova correção pedagógica. |
@@ -56,7 +56,7 @@ O requisito de cobertura integral do edital permanece bloqueado. A página ofici
 | Apostilas com fonte oficial quando aplicável | Sim | `pfApostilaData.ts` e `pfSpecialLegislationModules.ts`. |
 | Vídeos declarados | 11 | `pfCuratedVideos.ts`; todas as URLs retornaram 200 no verificador de disponibilidade. |
 
-O catálogo cobre as áreas previstas na trilha atual, mas a regra de aceite solicitada é mais forte: exige que **cada subitem obrigatório do edital** esteja explícito em aula, módulo, apostila ou questão. Para evitar uma conclusão enganosa, este ponto continua `BLOCKED` até que o programa de conhecimentos específico seja transcrito do documento oficial, normalizado e cruzado contra cada código de módulo.
+O catálogo cobre as áreas previstas na trilha atual, mas a regra de aceite solicitada é mais forte: exige que **cada subitem obrigatório do edital** esteja explícito em aula, módulo, apostila ou questão. O programa de conhecimentos oficial do Cargo 16 já foi obtido e lido; para evitar uma conclusão enganosa, este ponto continua `BLOCKED` até sua normalização e cruzamento contra cada código de módulo.
 
 ### Fontes e links
 
@@ -76,7 +76,7 @@ Os testes de fronteira de permissão, acesso de estudo e notas exercitam que dad
 
 | ID | Severidade | Situação | Descrição | Ação antes do GO |
 |---|---|---|---|---|
-| QA-001 | Crítica | BLOCKED | Não há prova reproduzível de cobertura integral dos subitens do edital oficial. | Converter ou obter o anexo programático e executar matriz tópico × módulo/apostila/questão. |
+| QA-001 | Crítica | BLOCKED | O conteúdo oficial do Cargo 16 foi obtido, mas não há prova reproduzível da cobertura de cada subitem por módulo, apostila ou questão. | Normalizar o conteúdo oficial e executar matriz tópico × módulo/apostila/questão. |
 | QA-002 | Crítica | BLOCKED | Não foi possível executar os fluxos E2E autenticados de aluno e ROOT sem uma sessão de QA. | Usar duas contas de teste, uma matrícula ativa e uma conta ROOT, com evidências de cada passo. |
 | QA-003 | Alta | BLOCKED | A relevância pedagógica dos vídeos não foi analisada além de título/origem e disponibilidade. | Revisar amostra com especialista e cadastrar data de checagem normativa por vídeo. |
 | QA-004 | Média | Aberta | O bundle JavaScript principal supera o limite recomendado pelo Vite. | Planejar code-splitting por rotas e componentes pesados; não bloqueia a correção funcional atual. |
@@ -89,7 +89,7 @@ Os testes de fronteira de permissão, acesso de estudo e notas exercitam que dad
 2. Executar o E2E do aluno: login; painel; trilha; aula; vídeo; apostila; questão; simulado; revisão de resultado; logout/login; confirmação do progresso e da nota.
 3. Executar o E2E ROOT: login; curso; matrícula com início e vencimento; criação e edição de questão; envio para revisão; decisão; auditoria; exclusão bloqueada de questão usada.
 4. Validar os mesmos passos críticos em viewport mobile e desktop; registrar captura, data, usuário de teste e resultado.
-5. Obter o conteúdo programático do edital oficial em texto, mapear cada item à unidade publicada e classificar `PASS`, `FAIL` ou `BLOCKED`. Só então remover QA-001.
+5. Normalizar o conteúdo programático oficial já obtido, mapear cada item à unidade publicada e classificar `PASS`, `FAIL` ou `BLOCKED`. Só então remover QA-001.
 6. Revisar uma amostra representativa dos vídeos por disciplina, verificar data e alteração normativa e registrar responsáveis.
 
 ## Referências
@@ -99,3 +99,4 @@ Os testes de fronteira de permissão, acesso de estudo e notas exercitam que dad
 [3]: https://www.gov.br/pt-br/servicos/consultar-o-manual-de-redacao-da-presidencia-da-republica  
 [4]: https://www.ohchr.org/en/instruments-listings  
 [5]: https://www.unodc.org/unodc/en/justice-and-prison-reform/nelsonmandelarules.html
+[6]: https://www.in.gov.br/en/web/dou/-/edital-n-1-pf-policial-de-20-de-maio-de-2025-630929086
