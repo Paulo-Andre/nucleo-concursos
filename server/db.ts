@@ -4,10 +4,20 @@ import {
   adminAuditLogs,
   authSessions,
   completedModules,
+  contentChangelog,
+  contents,
+  courseDisciplines,
   courses,
   courseEnrollments,
+  disciplineContents,
+  disciplines,
   InsertUser,
+  questionChangelog,
+  questionContentLinks,
+  questions,
+  reviewQueue,
   simulationRecords,
+  simulationQuestions,
   studyAnswers,
   studyNotes,
   studyProfiles,
@@ -15,6 +25,8 @@ import {
 } from "../drizzle/schema";
 import { getEnrollmentLifecycleStatus } from "./enrollmentStatus";
 import { DEFAULT_COURSES } from "./courseCatalog";
+import { canUseQuestionInSimulation, requiresExclusiveCentralBank, uniqueSimulationQuestions } from "./question-bank-policy";
+import { persistReviewDecision, type ReviewDecision as PersistedReviewDecision } from "./review-decision";
 
 type UserUpsertInput = {
   openId: string;
@@ -46,6 +58,7 @@ type SimulationInput = {
   byBlock: Record<string, { correct: number; total: number }>;
   answers: { questionId: string; correct: boolean }[];
   questionIds: string[];
+  persistentAnswers?: { questionId: number; correct: boolean; snapshot: Record<string, unknown> }[];
 };
 
 const emptyProfile = { xp: 0, lastStudyDate: null as string | null, studyDatesJson: "[]", usedQuestionIdsJson: "[]" };
@@ -304,6 +317,8 @@ export async function recordSimulation(userId: number, input: SimulationInput) {
     byBlockJson: JSON.stringify(input.byBlock),
   });
   if (input.answers.length) await db.insert(studyAnswers).values(input.answers.map(answer => ({ ...answer, userId })));
+  const persistentAnswers = uniqueSimulationQuestions((input.persistentAnswers ?? []).map(answer => ({ ...answer, id: answer.questionId, status: "published" as const, requiresReview: true })));
+  if (persistentAnswers.length) await db.insert(simulationQuestions).values(persistentAnswers.map((answer, position) => ({ simulationId: input.id, questionId: answer.questionId, position: position + 1, answeredCorrectly: answer.correct, snapshotJson: JSON.stringify(answer.snapshot) })));
   await registerStudyActivity(userId, input.correct * 8 + 15, input.questionIds);
   return getStudyState(userId);
 }
@@ -527,4 +542,419 @@ export async function revokeCourseEnrollment(actorUserId: number, userId: number
   await writeAdminAudit(actorUserId, userId, "REVOGACAO_DE_CURSO", `Curso ${courseId} revogado.`);
   const updated = await db.select().from(courseEnrollments).where(eq(courseEnrollments.id, existing[0].id)).limit(1);
   return updated[0] ? serializeEnrollment(updated[0]) : null;
+}
+
+export type KnowledgeStatus = "draft" | "review" | "approved" | "published" | "inactive";
+export type QuestionType = "certo_errado" | "multipla_escolha";
+export type QuestionDifficulty = "basic" | "intermediate" | "advanced";
+export type ReviewItemType = "question" | "content";
+export type ReviewDecision = "approved" | "rejected" | "correction_requested";
+
+type DisciplineInput = {
+  name: string;
+  shortName: string;
+  description?: string | null;
+  requiresReview: boolean;
+  status?: KnowledgeStatus;
+  courseIds?: string[];
+  contentIds?: number[];
+};
+
+type ContentInput = {
+  title: string;
+  description?: string | null;
+  body?: string | null;
+  requiresReview: boolean;
+  status?: KnowledgeStatus;
+  disciplineIds?: number[];
+};
+
+export type ManagedQuestionInput = {
+  statement: string;
+  questionType: QuestionType;
+  options: string[];
+  answer: boolean | string;
+  explanation?: string | null;
+  difficulty: QuestionDifficulty;
+  source?: string | null;
+  banca?: string | null;
+  year?: number | null;
+  requiresReview: boolean;
+  status?: KnowledgeStatus;
+  contentIds: number[];
+};
+
+function uniqueNumbers(values: number[] = []) {
+  return Array.from(new Set(values.filter(value => Number.isInteger(value) && value > 0)));
+}
+
+function uniqueCourseIds(values: string[] = []) {
+  return Array.from(new Set(values.map(value => value.trim().toLowerCase()).filter(Boolean)));
+}
+
+function normalizeOptional(value?: string | null) {
+  const normalized = value?.trim();
+  return normalized || null;
+}
+
+function serializeField(value: unknown) {
+  return value === null || value === undefined ? null : typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function valueChanged(previous: unknown, next: unknown) {
+  return serializeField(previous) !== serializeField(next);
+}
+
+async function assertExistingContentIds(contentIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  for (const contentId of uniqueNumbers(contentIds)) {
+    const row = await db.select({ id: contents.id }).from(contents).where(eq(contents.id, contentId)).limit(1);
+    if (!row[0]) throw new Error(`Conteúdo ${contentId} não encontrado.`);
+  }
+}
+
+async function writeQuestionChange(questionId: number, actorUserId: number, changedField: string, oldValue: unknown, newValue: unknown) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.insert(questionChangelog).values({ questionId, actorUserId, changedField, oldValue: serializeField(oldValue), newValue: serializeField(newValue) });
+}
+
+async function writeContentChange(contentId: number, actorUserId: number, changedField: string, oldValue: unknown, newValue: unknown) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.insert(contentChangelog).values({ contentId, actorUserId, changedField, oldValue: serializeField(oldValue), newValue: serializeField(newValue) });
+}
+
+export async function listManagedDisciplines() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select().from(disciplines).orderBy(disciplines.name);
+  return Promise.all(rows.map(async discipline => {
+    const [courseLinks, contentLinks] = await Promise.all([
+      db.select({ courseId: courseDisciplines.courseId }).from(courseDisciplines).where(eq(courseDisciplines.disciplineId, discipline.id)),
+      db.select({ contentId: disciplineContents.contentId }).from(disciplineContents).where(eq(disciplineContents.disciplineId, discipline.id)),
+    ]);
+    return { ...discipline, courseIds: courseLinks.map(link => link.courseId), contentIds: contentLinks.map(link => link.contentId) };
+  }));
+}
+
+async function getManagedDisciplineById(disciplineId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select().from(disciplines).where(eq(disciplines.id, disciplineId)).limit(1);
+  return rows[0];
+}
+
+export async function createManagedDiscipline(actorUserId: number, input: DisciplineInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const shortName = input.shortName.trim().toUpperCase();
+  const duplicate = await db.select({ id: disciplines.id }).from(disciplines).where(eq(disciplines.shortName, shortName)).limit(1);
+  if (duplicate[0]) throw new Error("Já existe uma disciplina com esta sigla.");
+  const result = await db.insert(disciplines).values({
+    name: input.name.trim(), shortName, description: normalizeOptional(input.description),
+    requiresReview: input.requiresReview, status: input.status ?? "draft", createdByUserId: actorUserId, updatedByUserId: actorUserId,
+  });
+  const disciplineId = Number(result[0].insertId);
+  await syncCourseDisciplineLinks(actorUserId, disciplineId, input.courseIds ?? []);
+  await syncDisciplineContentLinks(actorUserId, disciplineId, input.contentIds ?? []);
+  await writeAdminAudit(actorUserId, null, "CRIACAO_DE_DISCIPLINA", `Disciplina ${shortName} criada.`);
+  return getManagedDisciplineById(disciplineId);
+}
+
+export async function updateManagedDiscipline(actorUserId: number, disciplineId: number, input: DisciplineInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await getManagedDisciplineById(disciplineId);
+  if (!existing) throw new Error("Disciplina não encontrada.");
+  const shortName = input.shortName.trim().toUpperCase();
+  const duplicate = await db.select({ id: disciplines.id }).from(disciplines).where(eq(disciplines.shortName, shortName)).limit(1);
+  if (duplicate[0] && duplicate[0].id !== disciplineId) throw new Error("Já existe uma disciplina com esta sigla.");
+  await db.update(disciplines).set({
+    name: input.name.trim(), shortName, description: normalizeOptional(input.description), requiresReview: input.requiresReview,
+    status: input.status ?? existing.status, updatedByUserId: actorUserId,
+  }).where(eq(disciplines.id, disciplineId));
+  await syncCourseDisciplineLinks(actorUserId, disciplineId, input.courseIds ?? []);
+  await syncDisciplineContentLinks(actorUserId, disciplineId, input.contentIds ?? []);
+  await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_DISCIPLINA", `Disciplina ${shortName} atualizada.`);
+  return getManagedDisciplineById(disciplineId);
+}
+
+export async function syncCourseDisciplineLinks(actorUserId: number, disciplineId: number, courseIds: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const requested = uniqueCourseIds(courseIds);
+  for (const courseId of requested) {
+    const course = await getManagedCourseById(courseId);
+    if (!course) throw new Error(`Curso ${courseId} não encontrado.`);
+  }
+  const current = await db.select().from(courseDisciplines).where(eq(courseDisciplines.disciplineId, disciplineId));
+  for (const link of current.filter(link => !requested.includes(link.courseId))) {
+    await db.delete(courseDisciplines).where(eq(courseDisciplines.id, link.id));
+  }
+  for (const courseId of requested.filter(courseId => !current.some(link => link.courseId === courseId))) {
+    await db.insert(courseDisciplines).values({ courseId, disciplineId, linkedByUserId: actorUserId });
+  }
+}
+
+export async function syncDisciplineContentLinks(actorUserId: number, disciplineId: number, contentIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const requested = uniqueNumbers(contentIds);
+  await assertExistingContentIds(requested);
+  const current = await db.select().from(disciplineContents).where(eq(disciplineContents.disciplineId, disciplineId));
+  for (const link of current.filter(link => !requested.includes(link.contentId))) {
+    await db.delete(disciplineContents).where(eq(disciplineContents.id, link.id));
+  }
+  for (const contentId of requested.filter(contentId => !current.some(link => link.contentId === contentId))) {
+    await db.insert(disciplineContents).values({ disciplineId, contentId, linkedByUserId: actorUserId });
+  }
+}
+
+export async function listManagedContents() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select().from(contents).orderBy(desc(contents.updatedAt));
+  return Promise.all(rows.map(async content => {
+    const links = await db.select({ disciplineId: disciplineContents.disciplineId }).from(disciplineContents).where(eq(disciplineContents.contentId, content.id));
+    return { ...content, disciplineIds: links.map(link => link.disciplineId) };
+  }));
+}
+
+async function getManagedContentById(contentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select().from(contents).where(eq(contents.id, contentId)).limit(1);
+  return rows[0];
+}
+
+export async function createManagedContent(actorUserId: number, input: ContentInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const result = await db.insert(contents).values({
+    title: input.title.trim(), description: normalizeOptional(input.description), body: normalizeOptional(input.body),
+    requiresReview: input.requiresReview, status: input.status ?? "draft", createdByUserId: actorUserId, updatedByUserId: actorUserId,
+  });
+  const contentId = Number(result[0].insertId);
+  await syncContentDisciplineLinks(actorUserId, contentId, input.disciplineIds ?? []);
+  await writeContentChange(contentId, actorUserId, "created", null, { title: input.title.trim() });
+  await writeAdminAudit(actorUserId, null, "CRIACAO_DE_CONTEUDO", `Conteúdo ${contentId} criado.`);
+  return getManagedContentById(contentId);
+}
+
+export async function updateManagedContent(actorUserId: number, contentId: number, input: ContentInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await getManagedContentById(contentId);
+  if (!existing) throw new Error("Conteúdo não encontrado.");
+  const next = {
+    title: input.title.trim(), description: normalizeOptional(input.description), body: normalizeOptional(input.body),
+    requiresReview: input.requiresReview, status: input.status ?? existing.status,
+  };
+  await db.update(contents).set({ ...next, updatedByUserId: actorUserId }).where(eq(contents.id, contentId));
+  for (const field of Object.keys(next) as (keyof typeof next)[]) {
+    if (valueChanged(existing[field], next[field])) await writeContentChange(contentId, actorUserId, field, existing[field], next[field]);
+  }
+  await syncContentDisciplineLinks(actorUserId, contentId, input.disciplineIds ?? []);
+  await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_CONTEUDO", `Conteúdo ${contentId} atualizado.`);
+  return getManagedContentById(contentId);
+}
+
+export async function syncContentDisciplineLinks(actorUserId: number, contentId: number, disciplineIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const requested = uniqueNumbers(disciplineIds);
+  for (const disciplineId of requested) {
+    if (!await getManagedDisciplineById(disciplineId)) throw new Error(`Disciplina ${disciplineId} não encontrada.`);
+  }
+  const current = await db.select().from(disciplineContents).where(eq(disciplineContents.contentId, contentId));
+  for (const link of current.filter(link => !requested.includes(link.disciplineId))) {
+    await db.delete(disciplineContents).where(eq(disciplineContents.id, link.id));
+    await writeContentChange(contentId, actorUserId, "disciplineLink", link.disciplineId, null);
+  }
+  for (const disciplineId of requested.filter(disciplineId => !current.some(link => link.disciplineId === disciplineId))) {
+    await db.insert(disciplineContents).values({ disciplineId, contentId, linkedByUserId: actorUserId });
+    await writeContentChange(contentId, actorUserId, "disciplineLink", null, disciplineId);
+  }
+}
+
+export async function listManagedQuestions(input: { search?: string; status?: KnowledgeStatus; contentId?: number } = {}) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  let rows;
+  if (input.status && input.search) rows = await db.select().from(questions).where(and(eq(questions.status, input.status), like(questions.statement, `%${input.search.trim()}%`))).orderBy(desc(questions.updatedAt));
+  else if (input.status) rows = await db.select().from(questions).where(eq(questions.status, input.status)).orderBy(desc(questions.updatedAt));
+  else if (input.search?.trim()) rows = await db.select().from(questions).where(like(questions.statement, `%${input.search.trim()}%`)).orderBy(desc(questions.updatedAt));
+  else rows = await db.select().from(questions).orderBy(desc(questions.updatedAt));
+  const enriched = await Promise.all(rows.map(async question => {
+    const links = await db.select({ id: contents.id, title: contents.title, status: contents.status }).from(questionContentLinks).innerJoin(contents, eq(questionContentLinks.contentId, contents.id)).where(eq(questionContentLinks.questionId, question.id));
+    return { ...question, contentIds: links.map(link => link.id), contents: links, options: question.optionsJson ? JSON.parse(question.optionsJson) : [], answer: JSON.parse(question.answerJson) };
+  }));
+  return input.contentId ? enriched.filter(question => question.contentIds.includes(input.contentId!)) : enriched;
+}
+
+/** Projeção para alunos: respeita o modo simples e a revisão configurável, sem duplicar a questão por conteúdo. */
+export async function listStudyQuestions() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const allRows = await db.select().from(questions).orderBy(desc(questions.updatedAt));
+  const rows = uniqueSimulationQuestions(allRows.filter(question => canUseQuestionInSimulation(question)));
+  const studyQuestions = await Promise.all(rows.map(async question => {
+    const linkedContents = await db.select({ id: contents.id, title: contents.title }).from(questionContentLinks).innerJoin(contents, eq(questionContentLinks.contentId, contents.id)).where(eq(questionContentLinks.questionId, question.id));
+    const disciplineNames: string[] = [];
+    for (const content of linkedContents) {
+      const links = await db.select({ name: disciplines.name }).from(disciplineContents).innerJoin(disciplines, eq(disciplineContents.disciplineId, disciplines.id)).where(eq(disciplineContents.contentId, content.id));
+      for (const link of links) if (!disciplineNames.includes(link.name)) disciplineNames.push(link.name);
+    }
+    return {
+      id: question.id, statement: question.statement, questionType: question.questionType,
+      options: question.optionsJson ? JSON.parse(question.optionsJson) : [], answer: JSON.parse(question.answerJson),
+      explanation: question.explanation, difficulty: question.difficulty, source: question.source, banca: question.banca, year: question.year,
+      discipline: disciplineNames[0] ?? "Biblioteca central", subject: linkedContents.map(content => content.title).join(" · ") || "Conteúdo geral",
+      contentIds: linkedContents.map(content => content.id),
+    };
+  }));
+  return { requiresReviewMode: requiresExclusiveCentralBank(allRows), questions: studyQuestions };
+}
+
+async function getManagedQuestionById(questionId: number) {
+  const rows = await listManagedQuestions();
+  return rows.find(question => question.id === questionId);
+}
+
+export async function createManagedQuestion(actorUserId: number, input: ManagedQuestionInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const result = await db.insert(questions).values({
+    statement: input.statement.trim(), questionType: input.questionType, optionsJson: input.questionType === "multipla_escolha" ? JSON.stringify(input.options) : null,
+    answerJson: JSON.stringify(input.answer), explanation: normalizeOptional(input.explanation), difficulty: input.difficulty,
+    source: normalizeOptional(input.source), banca: normalizeOptional(input.banca), year: input.year ?? null,
+    requiresReview: input.requiresReview, status: input.status ?? "draft", createdByUserId: actorUserId, updatedByUserId: actorUserId,
+  });
+  const questionId = Number(result[0].insertId);
+  await writeQuestionChange(questionId, actorUserId, "created", null, { statement: input.statement.trim() });
+  await syncQuestionContentLinks(actorUserId, questionId, input.contentIds);
+  await writeAdminAudit(actorUserId, null, "CRIACAO_DE_QUESTAO", `Questão ${questionId} criada.`);
+  return getManagedQuestionById(questionId);
+}
+
+export async function updateManagedQuestion(actorUserId: number, questionId: number, input: ManagedQuestionInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await db.select().from(questions).where(eq(questions.id, questionId)).limit(1);
+  const previous = existing[0];
+  if (!previous) throw new Error("Questão não encontrada.");
+  const next = {
+    statement: input.statement.trim(), questionType: input.questionType, optionsJson: input.questionType === "multipla_escolha" ? JSON.stringify(input.options) : null,
+    answerJson: JSON.stringify(input.answer), explanation: normalizeOptional(input.explanation), difficulty: input.difficulty,
+    source: normalizeOptional(input.source), banca: normalizeOptional(input.banca), year: input.year ?? null,
+    requiresReview: input.requiresReview, status: input.status ?? previous.status,
+  };
+  await db.update(questions).set({ ...next, updatedByUserId: actorUserId }).where(eq(questions.id, questionId));
+  for (const field of Object.keys(next) as (keyof typeof next)[]) {
+    if (valueChanged(previous[field], next[field])) await writeQuestionChange(questionId, actorUserId, field, previous[field], next[field]);
+  }
+  await syncQuestionContentLinks(actorUserId, questionId, input.contentIds);
+  await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_QUESTAO", `Questão ${questionId} atualizada sem substituição do identificador.`);
+  return getManagedQuestionById(questionId);
+}
+
+export async function syncQuestionContentLinks(actorUserId: number, questionId: number, contentIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const requested = uniqueNumbers(contentIds);
+  await assertExistingContentIds(requested);
+  const current = await db.select().from(questionContentLinks).where(eq(questionContentLinks.questionId, questionId));
+  for (const link of current.filter(link => !requested.includes(link.contentId))) {
+    await db.delete(questionContentLinks).where(eq(questionContentLinks.id, link.id));
+    await writeQuestionChange(questionId, actorUserId, "contentLink", link.contentId, null);
+  }
+  for (const contentId of requested.filter(contentId => !current.some(link => link.contentId === contentId))) {
+    await db.insert(questionContentLinks).values({ questionId, contentId, linkedByUserId: actorUserId });
+    await writeQuestionChange(questionId, actorUserId, "contentLink", null, contentId);
+  }
+}
+
+export async function listQuestionChangelog(questionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  return db.select().from(questionChangelog).where(eq(questionChangelog.questionId, questionId)).orderBy(desc(questionChangelog.createdAt));
+}
+
+export async function listContentChangelog(contentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  return db.select().from(contentChangelog).where(eq(contentChangelog.contentId, contentId)).orderBy(desc(contentChangelog.createdAt));
+}
+
+export async function submitForReview(actorUserId: number, itemType: ReviewItemType, itemId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const pending = await db.select({ id: reviewQueue.id }).from(reviewQueue).where(and(eq(reviewQueue.itemType, itemType), eq(reviewQueue.itemId, itemId), eq(reviewQueue.status, "pending"))).limit(1);
+  if (pending[0]) throw new Error("Este item já está na fila de revisão.");
+  if (itemType === "question") {
+    const item = await db.select().from(questions).where(eq(questions.id, itemId)).limit(1);
+    if (!item[0]) throw new Error("Questão não encontrada.");
+    await db.update(questions).set({ status: "review", updatedByUserId: actorUserId }).where(eq(questions.id, itemId));
+    await writeQuestionChange(itemId, actorUserId, "status", item[0].status, "review");
+  } else {
+    const item = await db.select().from(contents).where(eq(contents.id, itemId)).limit(1);
+    if (!item[0]) throw new Error("Conteúdo não encontrado.");
+    await db.update(contents).set({ status: "review", updatedByUserId: actorUserId }).where(eq(contents.id, itemId));
+    await writeContentChange(itemId, actorUserId, "status", item[0].status, "review");
+  }
+  await db.insert(reviewQueue).values({ itemType, itemId, submittedByUserId: actorUserId, status: "pending" });
+  await writeAdminAudit(actorUserId, null, "ENVIO_PARA_REVISAO", `${itemType === "question" ? "Questão" : "Conteúdo"} ${itemId} enviado para revisão.`);
+  return { success: true };
+}
+
+export async function listReviewQueue(input: { itemType?: ReviewItemType; status?: "pending" | ReviewDecision; search?: string } = {}) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  let rows;
+  if (input.itemType && input.status) rows = await db.select().from(reviewQueue).where(and(eq(reviewQueue.itemType, input.itemType), eq(reviewQueue.status, input.status))).orderBy(desc(reviewQueue.createdAt));
+  else if (input.itemType) rows = await db.select().from(reviewQueue).where(eq(reviewQueue.itemType, input.itemType)).orderBy(desc(reviewQueue.createdAt));
+  else if (input.status) rows = await db.select().from(reviewQueue).where(eq(reviewQueue.status, input.status)).orderBy(desc(reviewQueue.createdAt));
+  else rows = await db.select().from(reviewQueue).orderBy(desc(reviewQueue.createdAt));
+  const enriched = await Promise.all(rows.map(async row => {
+    if (row.itemType === "question") {
+      const item = await db.select({ statement: questions.statement, status: questions.status }).from(questions).where(eq(questions.id, row.itemId)).limit(1);
+      return { ...row, title: item[0]?.statement ?? `Questão removida #${row.itemId}`, itemStatus: item[0]?.status ?? "inactive" };
+    }
+    const item = await db.select({ title: contents.title, status: contents.status }).from(contents).where(eq(contents.id, row.itemId)).limit(1);
+    return { ...row, title: item[0]?.title ?? `Conteúdo removido #${row.itemId}`, itemStatus: item[0]?.status ?? "inactive" };
+  }));
+  const term = input.search?.trim().toLowerCase();
+  return term ? enriched.filter(item => item.title.toLowerCase().includes(term)) : enriched;
+}
+
+export async function getReviewPendingCount() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select({ count: sql<number>`count(*)` }).from(reviewQueue).where(eq(reviewQueue.status, "pending"));
+  return Number(rows[0]?.count ?? 0);
+}
+
+export async function decideReview(actorUserId: number, reviewId: number, decision: ReviewDecision, notes?: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const review = await db.select().from(reviewQueue).where(eq(reviewQueue.id, reviewId)).limit(1);
+  if (!review[0]) throw new Error("Item de revisão não encontrado.");
+  if (review[0].status !== "pending") throw new Error("Esta revisão já recebeu uma decisão.");
+  const nextStatus: KnowledgeStatus = decision === "approved" ? "approved" : "draft";
+  if (review[0].itemType === "question") {
+    const item = await db.select().from(questions).where(eq(questions.id, review[0].itemId)).limit(1);
+    if (!item[0]) throw new Error("Questão não encontrada.");
+    await db.update(questions).set({ status: nextStatus, updatedByUserId: actorUserId }).where(eq(questions.id, review[0].itemId));
+    await writeQuestionChange(review[0].itemId, actorUserId, "reviewDecision", item[0].status, nextStatus);
+  } else {
+    const item = await db.select().from(contents).where(eq(contents.id, review[0].itemId)).limit(1);
+    if (!item[0]) throw new Error("Conteúdo não encontrado.");
+    await db.update(contents).set({ status: nextStatus, updatedByUserId: actorUserId }).where(eq(contents.id, review[0].itemId));
+    await writeContentChange(review[0].itemId, actorUserId, "reviewDecision", item[0].status, nextStatus);
+  }
+  await persistReviewDecision({ find: async id => id === reviewId ? review[0] : null, update: async (id, changes) => { await db.update(reviewQueue).set(changes).where(eq(reviewQueue.id, id)); } }, reviewId, actorUserId, decision as PersistedReviewDecision, normalizeOptional(notes));
+  await writeAdminAudit(actorUserId, null, "DECISAO_DE_REVISAO", `Revisão ${reviewId} concluída como ${decision}.`);
+  return { success: true, status: decision };
 }

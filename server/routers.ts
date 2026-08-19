@@ -6,20 +6,31 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, enrollmentRequiredProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   completeStudyModule,
+  createManagedContent,
   createManagedCourse,
+  createManagedDiscipline,
+  createManagedQuestion,
   createLocalUser,
   createSession,
   deleteManagedUser,
   deleteSessionByHash,
   getAdminStats,
+  getReviewPendingCount,
   getStudyState,
   getUserCourseAccess,
   grantCourseEnrollment,
   getUserByIdentifier,
   getUserByUsername,
   listAdminAuditLogs,
+  listContentChangelog,
   listManagedCourses,
+  listManagedContents,
+  listManagedDisciplines,
+  listManagedQuestions,
+  listStudyQuestions,
   listManagedUsers,
+  listQuestionChangelog,
+  listReviewQueue,
   listUserEnrollments,
   recordAnswer,
   recordSimulation,
@@ -27,9 +38,14 @@ import {
   setUserBlocked,
   setManagedCourseActive,
   updateManagedUser,
+  updateManagedContent,
+  updateManagedDiscipline,
+  updateManagedQuestion,
   updateUserPassword,
   updateUserProfile,
   writeAdminAudit,
+  submitForReview,
+  decideReview,
 } from "./db";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
@@ -54,6 +70,44 @@ const courseSchema = z.object({
   title: z.string().trim().min(4, "Informe o título do curso.").max(180),
   track: z.string().trim().min(2, "Informe a trilha do curso.").max(32),
   description: z.string().trim().max(1200).optional(),
+});
+const knowledgeStatusSchema = z.enum(["draft", "review", "approved", "published", "inactive"]);
+const questionTypeSchema = z.enum(["certo_errado", "multipla_escolha"]);
+const difficultySchema = z.enum(["basic", "intermediate", "advanced"]);
+const entityIdSchema = z.number().int().positive();
+const contentSchema = z.object({
+  title: z.string().trim().min(4, "Informe o título do conteúdo.").max(220),
+  description: z.string().trim().max(4000).optional(),
+  body: z.string().trim().max(30000).optional(),
+  requiresReview: z.boolean().default(false),
+  status: knowledgeStatusSchema.optional(),
+  disciplineIds: z.array(entityIdSchema).max(100).default([]),
+});
+const disciplineSchema = z.object({
+  name: z.string().trim().min(3, "Informe o nome da disciplina.").max(160),
+  shortName: z.string().trim().min(2, "Informe a sigla.").max(48),
+  description: z.string().trim().max(4000).optional(),
+  requiresReview: z.boolean().default(false),
+  status: knowledgeStatusSchema.optional(),
+  courseIds: z.array(courseIdSchema).max(100).default([]),
+  contentIds: z.array(entityIdSchema).max(500).default([]),
+});
+const questionSchema = z.object({
+  statement: z.string().trim().min(12, "Informe o enunciado da questão.").max(20000),
+  questionType: questionTypeSchema,
+  options: z.array(z.string().trim().min(1).max(1000)).max(10).default([]),
+  answer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]),
+  explanation: z.string().trim().max(12000).optional(),
+  difficulty: difficultySchema.default("intermediate"),
+  source: z.string().trim().max(240).optional(),
+  banca: z.string().trim().max(120).optional(),
+  year: z.number().int().min(1900).max(2100).nullable().optional(),
+  requiresReview: z.boolean().default(false),
+  status: knowledgeStatusSchema.optional(),
+  contentIds: z.array(entityIdSchema).max(100).default([]),
+}).superRefine((input, context) => {
+  if (input.questionType === "certo_errado" && typeof input.answer !== "boolean") context.addIssue({ code: "custom", path: ["answer"], message: "Questões CERTO/ERRADO exigem resposta booleana." });
+  if (input.questionType === "multipla_escolha" && (typeof input.answer !== "string" || !input.options.includes(input.answer))) context.addIssue({ code: "custom", path: ["answer"], message: "Selecione uma alternativa cadastrada como resposta." });
 });
 
 function safeUser(user: NonNullable<Parameters<typeof getStudyState>[0]> extends never ? never : any) {
@@ -134,7 +188,11 @@ export const appRouter = router({
       byDiscipline: metricSchema, byBlock: metricSchema,
       answers: z.array(z.object({ questionId: z.string().min(1).max(80), correct: z.boolean() })),
       questionIds: z.array(z.string().min(1).max(80)),
+      persistentAnswers: z.array(z.object({ questionId: entityIdSchema, correct: z.boolean(), snapshot: z.record(z.string(), z.unknown()) })).optional(),
     })).mutation(({ input, ctx }) => recordSimulation(ctx.user.id, input)),
+    questions: router({
+      list: enrollmentRequiredProcedure.query(() => listStudyQuestions()),
+    }),
     note: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).query(({ input, ctx }) => import("./db").then(({ getNote }) => getNote(ctx.user.id, input.moduleId))),
     saveNote: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80), content: z.string().trim().max(12000) })).mutation(({ input, ctx }) => saveNote(ctx.user.id, input.moduleId, input.content)),
   }),
@@ -144,6 +202,30 @@ export const appRouter = router({
     courses: adminProcedure.query(() => listManagedCourses()),
     createCourse: adminProcedure.input(courseSchema).mutation(({ input, ctx }) => createManagedCourse(ctx.user.id, input)),
     setCourseActive: adminProcedure.input(z.object({ courseId: courseIdSchema, isActive: z.boolean() })).mutation(({ input, ctx }) => setManagedCourseActive(ctx.user.id, input.courseId, input.isActive)),
+    disciplines: router({
+      list: adminProcedure.query(() => listManagedDisciplines()),
+      create: adminProcedure.input(disciplineSchema).mutation(({ input, ctx }) => createManagedDiscipline(ctx.user.id, input)),
+      update: adminProcedure.input(z.object({ id: entityIdSchema, data: disciplineSchema })).mutation(({ input, ctx }) => updateManagedDiscipline(ctx.user.id, input.id, input.data)),
+    }),
+    contents: router({
+      list: adminProcedure.query(() => listManagedContents()),
+      create: adminProcedure.input(contentSchema).mutation(({ input, ctx }) => createManagedContent(ctx.user.id, input)),
+      update: adminProcedure.input(z.object({ id: entityIdSchema, data: contentSchema })).mutation(({ input, ctx }) => updateManagedContent(ctx.user.id, input.id, input.data)),
+      changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listContentChangelog(input.id)),
+      sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "content", input.id)),
+    }),
+    questions: router({
+      list: adminProcedure.input(z.object({ search: z.string().trim().max(200).optional(), status: knowledgeStatusSchema.optional(), contentId: entityIdSchema.optional() })).query(({ input }) => listManagedQuestions(input)),
+      create: adminProcedure.input(questionSchema).mutation(({ input, ctx }) => createManagedQuestion(ctx.user.id, input)),
+      update: adminProcedure.input(z.object({ id: entityIdSchema, data: questionSchema })).mutation(({ input, ctx }) => updateManagedQuestion(ctx.user.id, input.id, input.data)),
+      changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listQuestionChangelog(input.id)),
+      sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "question", input.id)),
+    }),
+    review: router({
+      pendingCount: adminProcedure.query(() => getReviewPendingCount()),
+      list: adminProcedure.input(z.object({ itemType: z.enum(["question", "content"]).optional(), status: z.enum(["pending", "approved", "rejected", "correction_requested"]).optional(), search: z.string().trim().max(200).optional() })).query(({ input }) => listReviewQueue(input)),
+      decide: adminProcedure.input(z.object({ id: entityIdSchema, decision: z.enum(["approved", "rejected", "correction_requested"]), notes: z.string().trim().max(4000).optional() }).refine(input => input.decision === "approved" || (input.notes?.trim().length ?? 0) >= 5, { message: "Explique a rejeição ou a correção solicitada em ao menos 5 caracteres.", path: ["notes"] })).mutation(({ input, ctx }) => decideReview(ctx.user.id, input.id, input.decision, input.notes)),
+    }),
     auditLogs: adminProcedure.query(() => listAdminAuditLogs()),
     enrollments: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listUserEnrollments(input.userId)),
     grantEnrollment: adminProcedure.input(enrollmentSchema).mutation(async ({ input, ctx }) => grantCourseEnrollment(ctx.user.id, input.userId, input.courseId, input.startAt, input.expiresAt)),

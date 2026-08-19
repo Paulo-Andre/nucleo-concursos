@@ -59,15 +59,23 @@ export function currentStreak(studyDates: string[]) {
   return streak;
 }
 
-export function selectSimulationQuestions(bank: StudyQuestion[], total: number, usedIds: string[]) {
-  const selected: StudyQuestion[] = [];
+export function selectSimulationQuestions<T extends StudyQuestion>(bank: T[], total: number, usedIds: string[]) {
+  const selected: T[] = [];
   blocks.forEach((block, index) => {
     const target = index === blocks.length - 1 ? total - selected.length : Math.round(total * block.ratio);
     const pool = bank.filter((question) => question.block === block.id);
     const fresh = pool.filter((question) => !usedIds.includes(question.id)).sort(() => Math.random() - 0.5);
     const known = pool.filter((question) => usedIds.includes(question.id)).sort(() => Math.random() - 0.5);
     const arranged = [...fresh, ...known];
-    for (let i = 0; i < target; i += 1) selected.push(arranged[i % arranged.length]);
+    for (let i = 0; i < target && arranged.length; i += 1) selected.push(arranged[i % arranged.length]);
   });
-  return selected.sort(() => Math.random() - 0.5);
+  return Array.from(new Map(selected.map(question => [question.id, question])).values()).sort(() => Math.random() - 0.5);
+}
+
+/** Seleção sem proporção de blocos para fontes reutilizáveis que ainda não possuem classificação de edital. */
+export function selectUniqueQuestions<T extends { id: string }>(bank: T[], total: number, usedIds: string[]) {
+  const unique = Array.from(new Map(bank.map(question => [question.id, question])).values());
+  const fresh = unique.filter(question => !usedIds.includes(question.id)).sort(() => Math.random() - 0.5);
+  const known = unique.filter(question => usedIds.includes(question.id)).sort(() => Math.random() - 0.5);
+  return [...fresh, ...known].slice(0, Math.max(0, total));
 }

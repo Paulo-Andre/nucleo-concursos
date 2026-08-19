@@ -24,4 +24,21 @@
 - [x] Validar criação, edição, persistência e recuperação de anotações privadas por módulo.
 - [x] Validar compilação, banco, interface desktop/mobile e fluxos de login local antes da publicação.
 - [x] Confirmar após reinício que o runtime não registra erros de schema, exports ou bootstrap ROOT.
-- [ ] Salvar checkpoint e orientar o usuário a publicar a nova URL no painel.
+- [x] Salvar checkpoint e orientar o usuário a publicar a nova URL no painel.
+- [x] Mapear as entidades e fluxos atuais de cursos, disciplinas, conteúdos, questões, simulados e histórico.
+- [x] Criar modelo central reutilizável de disciplinas e conteúdos, com vínculos entre cursos, disciplinas e conteúdos sem cópias independentes.
+- [x] Implementar edição administrativa completa de questões, preservando o mesmo identificador e o histórico de simulados.
+- [x] Criar relacionamento muitos-para-muitos entre questões e conteúdos, com data e responsável por cada vínculo.
+- [x] Permitir pesquisar, filtrar, adicionar e remover conteúdos vinculados durante a criação ou edição de uma questão.
+- [x] Impedir que a mesma questão apareça duas vezes em um simulado, mesmo vinculada a vários conteúdos.
+- [x] Registrar auditoria detalhada de criação, alteração de campos, vínculos e status das questões e conteúdos.
+- [x] Implementar status Rascunho, Em revisão, Aprovado, Publicado e Inativo para questões e conteúdos.
+- [x] Criar fluxo configurável de revisão para questões e conteúdos, incluindo envio, aprovação, rejeição, devolução e solicitação de correção.
+- [x] Criar aba Revisar com contador de pendências, filtros por tipo/status e pesquisa administrativa.
+- [x] Garantir que simulados automáticos utilizem somente itens aprovados/publicados quando a revisão for exigida.
+- [ ] Criar migrações, testes Vitest e validação ponta a ponta para edição, vínculos múltiplos, revisão e simulados sem duplicidade.
+- [x] Persistir um snapshot imutável de enunciado, resposta e metadados para cada questão central usada em simulado.
+- [x] Adicionar pesquisa de conteúdos diretamente no seletor de vínculos da questão.
+- [x] Exigir e armazenar observações na decisão de revisão de rejeição ou solicitação de correção.
+- [x] Impedir o fallback estático quando existirem questões persistentes configuradas para revisão obrigatória.
+- [x] Cobrir em teste a gravação e recuperação das observações em decisões de rejeição e solicitação de correção.
