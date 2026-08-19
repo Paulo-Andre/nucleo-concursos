@@ -11,6 +11,7 @@ import {
   createManagedDiscipline,
   createManagedQuestion,
   createLocalUser,
+  deleteManagedCourse,
   createSession,
   deleteManagedUser,
   deleteSessionByHash,
@@ -202,6 +203,7 @@ export const appRouter = router({
     courses: adminProcedure.query(() => listManagedCourses()),
     createCourse: adminProcedure.input(courseSchema).mutation(({ input, ctx }) => createManagedCourse(ctx.user.id, input)),
     setCourseActive: adminProcedure.input(z.object({ courseId: courseIdSchema, isActive: z.boolean() })).mutation(({ input, ctx }) => setManagedCourseActive(ctx.user.id, input.courseId, input.isActive)),
+    deleteCourse: adminProcedure.input(z.object({ courseId: courseIdSchema, confirmation: courseIdSchema })).mutation(({ input, ctx }) => deleteManagedCourse(ctx.user.id, input.courseId, input.confirmation)),
     disciplines: router({
       list: adminProcedure.query(() => listManagedDisciplines()),
       create: adminProcedure.input(disciplineSchema).mutation(({ input, ctx }) => createManagedDiscipline(ctx.user.id, input)),

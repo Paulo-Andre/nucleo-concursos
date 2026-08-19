@@ -44,3 +44,12 @@
 - [x] Cobrir em teste a gravação e recuperação das observações em decisões de rejeição e solicitação de correção.
 - [x] Adicionar teste de integração real com banco e tRPC para questão, vínculos N:N, revisão, aprovação e consulta estudantil única.
 - [x] Executar e registrar um smoke completo do fluxo administrativo pelo contrato tRPC, com limpeza garantida dos dados temporários.
+- [x] Corrigir a repetição de alternativas no seletor de resposta correta de questões de múltipla escolha.
+- [x] Implementar exclusão segura de curso, removendo apenas seus vínculos e preservando disciplinas, conteúdos e questões da biblioteca central.
+- [x] Tornar explícitos e fáceis de usar os vínculos com disciplinas e conteúdos já existentes durante criação e edição.
+- [x] Confirmar e aprimorar a edição de disciplinas, conteúdos e questões existentes no painel ROOT.
+- [x] Tornar a fila de revisão funcional, compreensível e orientada quando não houver itens pendentes.
+- [x] Cobrir os novos fluxos administrativos com testes e validação visual.
+- [ ] Validar visualmente o painel ROOT com alternativas normalizadas, vínculos pesquisáveis, exclusão segura de curso e fila de revisão sem pendências.
+- [x] Ampliar os testes de contrato para busca de vínculos e estado de revisão sem pendências.
+- [x] Adicionar teste de integração da listagem administrativa de disciplinas e conteúdos reutilizáveis usada na busca de vínculos.

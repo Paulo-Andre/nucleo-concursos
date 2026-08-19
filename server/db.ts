@@ -480,6 +480,24 @@ export async function setManagedCourseActive(actorUserId: number, courseId: stri
   return updated;
 }
 
+/** Remove apenas o curso e suas relações diretas; a biblioteca central continua intacta para outros concursos. */
+export async function deleteManagedCourse(actorUserId: number, courseId: string, confirmation: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  if (confirmation !== courseId) throw new Error("Confirme digitando exatamente o código do curso.");
+  const existing = await getManagedCourseById(courseId);
+  if (!existing) throw new Error("Curso não encontrado.");
+  const [links, enrollments] = await Promise.all([
+    db.select({ id: courseDisciplines.id }).from(courseDisciplines).where(eq(courseDisciplines.courseId, courseId)),
+    db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(eq(courseEnrollments.courseId, courseId)),
+  ]);
+  await db.delete(courseDisciplines).where(eq(courseDisciplines.courseId, courseId));
+  await db.delete(courseEnrollments).where(eq(courseEnrollments.courseId, courseId));
+  await db.delete(courses).where(eq(courses.id, courseId));
+  await writeAdminAudit(actorUserId, null, "EXCLUSAO_DE_CURSO", `Curso ${existing.id} — ${existing.title} excluído; ${links.length} vínculo(s) e ${enrollments.length} matrícula(s) removidos. Disciplinas, conteúdos e questões foram preservados.`);
+  return { id: existing.id, title: existing.title, removedLinks: links.length, removedEnrollments: enrollments.length };
+}
+
 /** Cria as três matrizes iniciais uma única vez no banco de uma instância nova. */
 export async function ensureDefaultCourses(actorUserId: number) {
   const db = await getDb();
@@ -734,12 +752,13 @@ export async function createManagedContent(actorUserId: number, input: ContentIn
   if (!db) throw new Error("Banco de dados indisponível");
   const result = await db.insert(contents).values({
     title: input.title.trim(), description: normalizeOptional(input.description), body: normalizeOptional(input.body),
-    requiresReview: input.requiresReview, status: input.status ?? "draft", createdByUserId: actorUserId, updatedByUserId: actorUserId,
+    requiresReview: input.requiresReview, status: input.status === "review" ? "draft" : (input.status ?? "draft"), createdByUserId: actorUserId, updatedByUserId: actorUserId,
   });
   const contentId = Number(result[0].insertId);
   await syncContentDisciplineLinks(actorUserId, contentId, input.disciplineIds ?? []);
   await writeContentChange(contentId, actorUserId, "created", null, { title: input.title.trim() });
   await writeAdminAudit(actorUserId, null, "CRIACAO_DE_CONTEUDO", `Conteúdo ${contentId} criado.`);
+  if (input.status === "review") await ensureItemInReviewQueue(actorUserId, "content", contentId);
   return getManagedContentById(contentId);
 }
 
@@ -758,6 +777,7 @@ export async function updateManagedContent(actorUserId: number, contentId: numbe
   }
   await syncContentDisciplineLinks(actorUserId, contentId, input.disciplineIds ?? []);
   await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_CONTEUDO", `Conteúdo ${contentId} atualizado.`);
+  if (input.status === "review") await ensureItemInReviewQueue(actorUserId, "content", contentId);
   return getManagedContentById(contentId);
 }
 
@@ -830,12 +850,13 @@ export async function createManagedQuestion(actorUserId: number, input: ManagedQ
     statement: input.statement.trim(), questionType: input.questionType, optionsJson: input.questionType === "multipla_escolha" ? JSON.stringify(input.options) : null,
     answerJson: JSON.stringify(input.answer), explanation: normalizeOptional(input.explanation), difficulty: input.difficulty,
     source: normalizeOptional(input.source), banca: normalizeOptional(input.banca), year: input.year ?? null,
-    requiresReview: input.requiresReview, status: input.status ?? "draft", createdByUserId: actorUserId, updatedByUserId: actorUserId,
+    requiresReview: input.requiresReview, status: input.status === "review" ? "draft" : (input.status ?? "draft"), createdByUserId: actorUserId, updatedByUserId: actorUserId,
   });
   const questionId = Number(result[0].insertId);
   await writeQuestionChange(questionId, actorUserId, "created", null, { statement: input.statement.trim() });
   await syncQuestionContentLinks(actorUserId, questionId, input.contentIds);
   await writeAdminAudit(actorUserId, null, "CRIACAO_DE_QUESTAO", `Questão ${questionId} criada.`);
+  if (input.status === "review") await ensureItemInReviewQueue(actorUserId, "question", questionId);
   return getManagedQuestionById(questionId);
 }
 
@@ -857,6 +878,7 @@ export async function updateManagedQuestion(actorUserId: number, questionId: num
   }
   await syncQuestionContentLinks(actorUserId, questionId, input.contentIds);
   await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_QUESTAO", `Questão ${questionId} atualizada sem substituição do identificador.`);
+  if (input.status === "review") await ensureItemInReviewQueue(actorUserId, "question", questionId);
   return getManagedQuestionById(questionId);
 }
 
@@ -886,6 +908,13 @@ export async function listContentChangelog(contentId: number) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   return db.select().from(contentChangelog).where(eq(contentChangelog.contentId, contentId)).orderBy(desc(contentChangelog.createdAt));
+}
+
+async function ensureItemInReviewQueue(actorUserId: number, itemType: ReviewItemType, itemId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const pending = await db.select({ id: reviewQueue.id }).from(reviewQueue).where(and(eq(reviewQueue.itemType, itemType), eq(reviewQueue.itemId, itemId), eq(reviewQueue.status, "pending"))).limit(1);
+  if (!pending[0]) await submitForReview(actorUserId, itemType, itemId);
 }
 
 export async function submitForReview(actorUserId: number, itemType: ReviewItemType, itemId: number) {
