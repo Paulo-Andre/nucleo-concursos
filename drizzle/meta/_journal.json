@@ -50,6 +50,13 @@
       "when": 1787167424483,
       "tag": "0006_lowly_demogoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1787173597132,
+      "tag": "0007_sturdy_brood",
+      "breakpoints": true
     }
   ]
 }

@@ -30,6 +30,7 @@ import { canUseQuestionInSimulation, requiresExclusiveCentralBank, uniqueSimulat
 import { persistReviewDecision, type ReviewDecision as PersistedReviewDecision } from "./review-decision";
 import { completeStudyModules } from "../client/src/data/pfCompleteStudyData";
 import { contestCatalog, disciplineCatalog, getDisciplineIdForModule } from "../client/src/data/pfCurriculumCatalog";
+import { questionBank, type StudyQuestion } from "../client/src/data/pfStudyData";
 
 type UserUpsertInput = {
   openId: string;
@@ -561,6 +562,70 @@ export async function ensureDefaultCourses(actorUserId: number) {
   }
 }
 
+function normalizeSearchText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase();
+}
+
+export function legacyQuestionDifficulty(value: StudyQuestion["difficulty"]): QuestionDifficulty {
+  if (value === "Fácil") return "basic";
+  if (value === "Difícil") return "advanced";
+  return "intermediate";
+}
+
+export function legacyDisciplineId(label: string) {
+  const value = normalizeSearchText(label);
+  if (value.includes("portugues")) return "lingua-portuguesa";
+  if (value.includes("administrativo")) return "direito-administrativo";
+  if (value.includes("constitucional")) return "direito-constitucional";
+  if (value.includes("processual")) return "direito-processual-penal";
+  if (value.includes("penal")) return "direito-penal";
+  if (value.includes("humanos")) return "direitos-humanos";
+  if (value.includes("legislacao")) return "legislacao-especial";
+  if (value.includes("informatica")) return "informatica";
+  if (value.includes("estatistica")) return "estatistica";
+  if (value.includes("logico")) return "raciocinio-logico";
+  if (value.includes("contabilidade")) return "contabilidade-geral";
+  return null;
+}
+
+function contentForLegacyQuestion(question: StudyQuestion, contentIdsByTitle: Map<string, number>) {
+  const disciplineId = legacyDisciplineId(question.discipline);
+  if (!disciplineId) return undefined;
+  const questionText = normalizeSearchText(`${question.subject} ${question.statement}`);
+  const best = completeStudyModules.filter(module => getDisciplineIdForModule(module) === disciplineId).map(module => {
+    const terms = normalizeSearchText(`${module.title} ${module.concepts.join(" ")}`).split(/[^a-z0-9]+/).filter(term => term.length >= 4);
+    return { module, score: terms.reduce((total, term) => total + (questionText.includes(term) ? 1 : 0), 0) };
+  }).sort((left, right) => right.score - left.score || left.module.code.localeCompare(right.module.code))[0];
+  return best ? contentIdsByTitle.get(`${best.module.code} — ${best.module.title}`) : undefined;
+}
+
+async function importLegacyQuestions(actorUserId: number, contentIdsByTitle: Map<string, number>) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ id: questions.id, source: questions.source }).from(questions);
+  const idsBySource = new Map(rows.filter(row => row.source?.startsWith("LEGADO_ESTUDOS_PF:")).map(row => [row.source!.split(" | ")[0].replace("LEGADO_ESTUDOS_PF:", ""), row.id]));
+  let imported = 0;
+  for (const legacy of questionBank) {
+    const marker = `LEGADO_ESTUDOS_PF:${legacy.id}`;
+    let questionId = idsBySource.get(legacy.id);
+    if (!questionId) {
+      const result = await db.insert(questions).values({
+        statement: legacy.statement, questionType: "certo_errado", optionsJson: "[]", answerJson: JSON.stringify(legacy.answer),
+        explanation: `${legacy.explanation}\n\nDica de revisão: ${legacy.tip}`, difficulty: legacyQuestionDifficulty(legacy.difficulty),
+        source: `${marker} | ${legacy.source}`.slice(0, 240), banca: "Estudos PF", status: "published", requiresReview: false,
+        createdByUserId: actorUserId, updatedByUserId: actorUserId,
+      });
+      questionId = Number(result[0].insertId);
+      imported += 1;
+    }
+    const contentId = contentForLegacyQuestion(legacy, contentIdsByTitle);
+    if (!contentId) continue;
+    const existingLink = await db.select({ id: questionContentLinks.id }).from(questionContentLinks).where(and(eq(questionContentLinks.questionId, questionId), eq(questionContentLinks.contentId, contentId))).limit(1);
+    if (!existingLink[0]) await db.insert(questionContentLinks).values({ questionId, contentId, linkedByUserId: actorUserId });
+  }
+  return imported;
+}
+
 /**
  * Disponibiliza na biblioteca persistente os módulos didáticos que já existiam
  * na trilha de estudo. A rotina é idempotente e não substitui conteúdo criado
@@ -633,8 +698,9 @@ export async function ensureDefaultKnowledgeBase(actorUserId: number) {
     }
   }
 
-  if (importedContents || importedDisciplines) {
-    await writeAdminAudit(actorUserId, null, "SEMEADURA_BIBLIOTECA_CENTRAL", `${importedDisciplines} disciplina(s) e ${importedContents} conteúdo(s) foram disponibilizados na biblioteca central.`);
+  const importedQuestions = await importLegacyQuestions(actorUserId, contentIdsByTitle);
+  if (importedContents || importedDisciplines || importedQuestions) {
+    await writeAdminAudit(actorUserId, null, "SEMEADURA_BIBLIOTECA_CENTRAL", `${importedDisciplines} disciplina(s), ${importedContents} conteúdo(s) e ${importedQuestions} questão(ões) legadas foram disponibilizados na biblioteca central.`);
   }
 }
 
@@ -714,6 +780,7 @@ type ContentInput = {
   description?: string | null;
   cardText?: string | null;
   body?: string | null;
+  coverImageUrl?: string | null;
   videoUrl?: string | null;
   videoLabel?: string | null;
   materialUrl?: string | null;
@@ -887,7 +954,7 @@ export async function createManagedContent(actorUserId: number, input: ContentIn
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const result = await db.insert(contents).values({
-    title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
+    title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), coverImageUrl: normalizeOptional(input.coverImageUrl), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
     requiresReview: input.requiresReview, status: input.status === "review" ? "draft" : (input.status ?? "draft"), createdByUserId: actorUserId, updatedByUserId: actorUserId,
   });
   const contentId = Number(result[0].insertId);
@@ -904,7 +971,7 @@ export async function updateManagedContent(actorUserId: number, contentId: numbe
   const existing = await getManagedContentById(contentId);
   if (!existing) throw new Error("Conteúdo não encontrado.");
   const next = {
-    title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
+    title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), coverImageUrl: normalizeOptional(input.coverImageUrl), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
     requiresReview: input.requiresReview, status: input.status ?? existing.status,
   };
   await db.update(contents).set({ ...next, updatedByUserId: actorUserId }).where(eq(contents.id, contentId));

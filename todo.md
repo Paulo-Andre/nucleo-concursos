@@ -141,3 +141,8 @@
 - [x] Acrescentar ao cadastro e à edição de conteúdo os campos de objetivo, resumo, texto do card, URL de vídeo, URL de material complementar e rótulos dos recursos.
 - [x] Exibir links de vídeo e material complementar no card do conteúdo quando cadastrados, com rótulos acessíveis.
 - [x] Cobrir os novos contratos de conteúdo e questões com testes, validação pública, migração de banco e publicação.
+- [x] Verificar a divergência reportada entre o domínio público e a versão atual do painel em desenvolvimento; o domínio entregue confirmou a aba ROOT “Questões por conteúdo”.
+- [ ] Corrigir a consulta da aba ROOT “Questões por conteúdo” para recuperar e exibir as questões existentes vinculadas a cada conteúdo.
+- [ ] Adicionar suporte a imagem opcional no cadastro e na edição de conteúdos, com armazenamento seguro e exibição proporcional no card.
+- [ ] Alinhar os campos editáveis de novos conteúdos a todos os elementos informativos dos cards existentes, preservando estrutura visual, formatação e design.
+- [ ] Cobrir por testes e validar visualmente a exibição de questões vinculadas e os cards com imagem antes da publicação.

@@ -156,6 +156,7 @@ export const contents = mysqlTable("contents", {
   description: text("description"),
   cardText: text("cardText"),
   body: text("body"),
+  coverImageUrl: varchar("coverImageUrl", { length: 2048 }),
   videoUrl: varchar("videoUrl", { length: 2048 }),
   videoLabel: varchar("videoLabel", { length: 160 }),
   materialUrl: varchar("materialUrl", { length: 2048 }),

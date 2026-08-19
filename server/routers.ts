@@ -55,6 +55,7 @@ import {
 } from "./db";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
+import { storagePut } from "./storage";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
 const passwordSchema = z.string().min(8, "A senha deve ter pelo menos 8 caracteres.").max(128);
@@ -95,6 +96,7 @@ const contentSchema = z.object({
   description: z.string().trim().max(4000).optional(),
   cardText: z.string().trim().max(1200).optional(),
   body: z.string().trim().max(30000).optional(),
+  coverImageUrl: z.string().trim().max(2048).optional().or(z.literal("")),
   videoUrl: z.string().trim().url("Informe uma URL de vídeo válida.").max(2048).optional().or(z.literal("")),
   videoLabel: z.string().trim().max(160).optional(),
   materialUrl: z.string().trim().url("Informe uma URL de material válida.").max(2048).optional().or(z.literal("")),
@@ -103,6 +105,16 @@ const contentSchema = z.object({
   status: knowledgeStatusSchema.optional(),
   disciplineIds: z.array(entityIdSchema).max(100).default([]),
 });
+const contentImageSchema = z.object({
+  fileName: z.string().trim().min(1).max(180),
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  base64: z.string().min(4).max(5_600_000),
+});
+
+function imageExtension(mimeType: z.infer<typeof contentImageSchema>["mimeType"]) {
+  return mimeType === "image/jpeg" ? "jpg" : mimeType === "image/png" ? "png" : "webp";
+}
+
 const disciplineSchema = z.object({
   name: z.string().trim().min(3, "Informe o nome da disciplina.").max(160),
   shortName: z.string().trim().min(2, "Informe a sigla.").max(48),
@@ -236,6 +248,14 @@ export const appRouter = router({
     }),
     contents: router({
       list: adminProcedure.query(() => listManagedContents()),
+      uploadImage: adminProcedure.input(contentImageSchema).mutation(async ({ input, ctx }) => {
+        const base64 = input.base64.replace(/\s/g, "");
+        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) throw new TRPCError({ code: "BAD_REQUEST", message: "A imagem enviada não está em um formato válido." });
+        const bytes = Buffer.from(base64, "base64");
+        if (!bytes.length || bytes.length > 4 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Envie uma imagem JPG, PNG ou WEBP de até 4 MB." });
+        const stored = await storagePut(`content-covers/${ctx.user.id}/${crypto.randomUUID()}.${imageExtension(input.mimeType)}`, bytes, input.mimeType);
+        return { url: stored.url };
+      }),
       create: adminProcedure.input(contentSchema).mutation(({ input, ctx }) => createManagedContent(ctx.user.id, input)),
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: contentSchema })).mutation(({ input, ctx }) => updateManagedContent(ctx.user.id, input.id, input.data)),
       changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listContentChangelog(input.id)),
