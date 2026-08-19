@@ -130,3 +130,5 @@
 - [x] Publicar o checkpoint da separação administrativa após a validação autônoma e informar o acesso público atualizado.
 - [x] Renomear no painel ROOT a aba de questões para “Todas as questões”, preservando busca, filtros, edição direta e estado vazio orientado.
 - [x] Distinguir no painel ROOT a revisão editorial da revisão pessoal do aluno, com rótulos “Revisar (ROOT)” e “Adicionar à revisão ROOT”.
+- [x] Corrigir a referência normativa da Lei de Identificação Civil na aula LE-04 conforme o edital oficial e validar a alteração.
+- [x] Incluir a unidade LE-04 de identificação civil no conjunto de módulos efetivamente exibido ao aluno e cobrir essa composição por teste.

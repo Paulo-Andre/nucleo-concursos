@@ -21,6 +21,13 @@ describe("cobertura da trilha autoral PF", () => {
     expect(specialLegislationModules.every((module) => Boolean(specialApostilaByModule[module.id]))).toBe(true);
   });
 
+  it("mantém a lei de identificação civil exigida no programa oficial do Agente PF", () => {
+    const identificationModule = completeStudyModules.find((module) => module.id === "le-04");
+    expect(identificationModule).toBeDefined();
+    expect(identificationModule?.checklist).toContain("Lei nº 9.454/1997");
+    expect(identificationModule?.checklist).not.toContain("Lei nº 9.545/1997");
+  });
+
   it("mantém aula interativa e apostila para cada unidade autoral", () => {
     expect(completeStudyModules.every((module) => (
       module.lesson.teach.length === 3
