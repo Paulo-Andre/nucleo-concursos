@@ -102,3 +102,17 @@
 - [x] Documentar um runbook de backup e recuperação cobrindo repositório GitHub, exportação periódica do banco, armazenamento externo dos dumps, checklist de variáveis e restauração.
 - [x] Definir a estratégia de domínio fora da plataforma de hospedagem, com registrador e DNS independentes e procedimento de redirecionamento em caso de migração.
 - [x] Registrar periodicidade, local de armazenamento, responsável e ordem operacional de recuperação para código, banco, segredos e domínio.
+- [x] Criar matriz de prontidão de QA com status, cenário, evidência, limitação e data para cada critério das instruções complementares.
+- [x] Auditar a cobertura curricular do Agente PF 2025, aulas, apostilas, vídeos e links externos, registrando lacunas verificáveis.
+- [x] Remover da interface, rotas e referências funcionais a opção Telegram sem afetar a navegação ou o build.
+- [x] Tornar explícito o caminho administrativo de adicionar questão à revisão, consultar a fila, corrigir e concluir a decisão.
+- [x] Validar edição de questão existente, persistência e preservação do histórico no fluxo estudantil.
+- [x] Executar e registrar testes de build, autenticação/autorização, isolamento entre usuários, persistência do progresso e funções administrativas.
+- [ ] Executar e registrar validação visual desktop e mobile, incluindo o fluxo E2E autenticado essencial.
+- [ ] Consolidar evidências de regressão, matriz de prontidão e decisão objetiva de publicação após o fechamento dos bloqueios críticos.
+- [x] Ampliar a auditoria automatizada para confirmar que toda aula autoral possui material didático interativo e apostila correspondente.
+- [x] Substituir as referências externas com limitação de acesso automatizado por destinos oficiais atuais e verificáveis.
+- [ ] Executar o E2E autenticado de aluno e ROOT, em desktop e mobile, com contas de QA e matrícula temporária ativa.
+- [ ] Mapear cada subitem do conteúdo programático oficial do Agente PF 2025 para módulo, apostila ou questão e fechar a lacuna curricular de QA-001.
+- [ ] Revisar uma amostra pedagógica de vídeos por disciplina, com responsável e data de atualização normativa.
+- [ ] Anexar evidência visual autenticada do fluxo de revisão: instrução, abertura direta da questão na fila, correção e decisão.

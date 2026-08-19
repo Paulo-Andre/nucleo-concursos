@@ -1,0 +1,199 @@
+{
+  "checkedAt": "2026-08-19T14:45:58.408Z",
+  "total": 26,
+  "results": [
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.gov.br/pt-br/servicos/consultar-o-manual-de-redacao-da-presidencia-da-republica",
+      "status": 206,
+      "finalUrl": "https://www.gov.br/pt-br/servicos/consultar-o-manual-de-redacao-da-presidencia-da-republica",
+      "result": "PASS"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l9784.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.ohchr.org/en/instruments-listings",
+      "status": 206,
+      "finalUrl": "https://www.ohchr.org/en/instruments-listings",
+      "result": "PASS"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.unodc.org/unodc/en/justice-and-prison-reform/nelsonmandelarules.html",
+      "status": 200,
+      "finalUrl": "https://www.unodc.org/unodc/en/justice-and-prison-reform/nelsonmandelarules.html",
+      "result": "PASS"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l13060.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/lei/l13445.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfSpecialLegislationModules.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11343.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfSpecialLegislationModules.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/2003/l10.826.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/l14534.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfApostilaData.ts",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l6404consol.htm",
+      "status": null,
+      "finalUrl": null,
+      "result": "LINK_BROKEN",
+      "error": "AbortError"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=wddPyKWiXho",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=wddPyKWiXho",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=kSZ4nJheSWA",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=kSZ4nJheSWA",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=rdtP8fGQZyA",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=rdtP8fGQZyA",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=7ck3f9gbAA8",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=7ck3f9gbAA8",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=cOsGnMZyTTg",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=cOsGnMZyTTg",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=2kPa8mxTVZE",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=2kPa8mxTVZE",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=uiTURFNatcU",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=uiTURFNatcU",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=lqlwOhgxs_0",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=lqlwOhgxs_0",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=DQGTuAH52JU",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=DQGTuAH52JU",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=d8YTex6RQ6Q",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=d8YTex6RQ6Q",
+      "result": "PASS"
+    },
+    {
+      "source": "pfCuratedVideos.ts",
+      "url": "https://www.youtube.com/watch?v=uxsYwe2C2AQ",
+      "status": 200,
+      "finalUrl": "https://www.youtube.com/watch?v=uxsYwe2C2AQ",
+      "result": "PASS"
+    },
+    {
+      "source": "pfSpecialLegislationModules.ts",
+      "url": "https://www.gov.br/pf/pt-br/assuntos/armas/normativos/legislacao",
+      "status": 206,
+      "finalUrl": "https://www.gov.br/pf/pt-br/assuntos/armas/normativos/legislacao",
+      "result": "PASS"
+    }
+  ]
+}

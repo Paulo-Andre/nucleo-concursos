@@ -21,6 +21,25 @@ describe("cobertura da trilha autoral PF", () => {
     expect(specialLegislationModules.every((module) => Boolean(specialApostilaByModule[module.id]))).toBe(true);
   });
 
+  it("mantém aula interativa e apostila para cada unidade autoral", () => {
+    expect(completeStudyModules.every((module) => (
+      module.lesson.teach.length === 3
+      && Boolean(module.lesson.challenge.prompt)
+      && Boolean(module.lesson.challenge.feedback)
+      && Boolean(module.lesson.recall.prompt)
+      && Boolean(module.lesson.recall.answer)
+      && Boolean(apostilaByModule[module.id])
+    ))).toBe(true);
+    expect(specialLegislationModules.every((module) => (
+      module.lesson.teach.length === 3
+      && Boolean(module.lesson.challenge.prompt)
+      && Boolean(module.lesson.challenge.feedback)
+      && Boolean(module.lesson.recall.prompt)
+      && Boolean(module.lesson.recall.answer)
+      && Boolean(specialApostilaByModule[module.id])
+    ))).toBe(true);
+  });
+
   it("mapeia todos os módulos autorais para disciplinas canônicas", () => {
     const allAuthorialModules = [...completeStudyModules, ...specialLegislationModules];
     expect(allAuthorialModules.every((module) => getDisciplineIdForModule(module) !== null)).toBe(true);
