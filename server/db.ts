@@ -961,6 +961,23 @@ export async function updateManagedQuestion(actorUserId: number, questionId: num
   return getManagedQuestionById(questionId);
 }
 
+/** Exclui apenas questões que ainda não foram usadas em simulados, preservando a integridade do histórico estudantil. */
+export async function deleteManagedQuestion(actorUserId: number, questionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await db.select({ id: questions.id, statement: questions.statement }).from(questions).where(eq(questions.id, questionId)).limit(1);
+  if (!existing[0]) throw new Error("Questão não encontrada.");
+  const simulationUse = await db.select({ id: simulationQuestions.id }).from(simulationQuestions).where(eq(simulationQuestions.questionId, questionId)).limit(1);
+  if (simulationUse[0]) throw new Error("Esta questão já foi usada em um simulado e não pode ser excluída. Mude seu status para INATIVO para preservá-la no histórico.");
+
+  await db.delete(reviewQueue).where(and(eq(reviewQueue.itemType, "question"), eq(reviewQueue.itemId, questionId)));
+  await db.delete(questionChangelog).where(eq(questionChangelog.questionId, questionId));
+  await db.delete(questionContentLinks).where(eq(questionContentLinks.questionId, questionId));
+  await db.delete(questions).where(eq(questions.id, questionId));
+  await writeAdminAudit(actorUserId, null, "EXCLUSAO_DE_QUESTAO", `Questão ${questionId} excluída antes de ser usada em simulado.`);
+  return { id: questionId, statement: existing[0].statement };
+}
+
 export async function syncQuestionContentLinks(actorUserId: number, questionId: number, contentIds: number[]) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");

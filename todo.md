@@ -50,14 +50,26 @@
 - [x] Confirmar e aprimorar a edição de disciplinas, conteúdos e questões existentes no painel ROOT.
 - [x] Tornar a fila de revisão funcional, compreensível e orientada quando não houver itens pendentes.
 - [x] Cobrir os novos fluxos administrativos com testes e validação visual.
-- [ ] Validar visualmente o painel ROOT com alternativas normalizadas, vínculos pesquisáveis, exclusão segura de curso e fila de revisão sem pendências.
+- [x] Validar visualmente o painel ROOT com alternativas normalizadas, vínculos pesquisáveis, exclusão segura de curso e fila de revisão sem pendências.
 - [x] Corrigir o parsing de texto colado com sequências literais \n para preservar cada alternativa inteira.
 - [x] Garantir que o seletor de resposta correta exiba somente A/B/C/D, mantendo internamente alternativas completas, únicas e na mesma ordem do campo de texto.
 - [x] Exibir conteúdos existentes na área de vínculo de questão e esclarecer o estado vazio quando a biblioteca ainda não possuir conteúdos.
 - [x] Adicionar busca e ação de edição claramente visíveis para conteúdos existentes no painel ROOT.
-- [ ] Validar por teste e visualmente o cadastro de questão e a busca/edição de conteúdo.
+- [x] Validar por teste e visualmente o cadastro de questão e a busca/edição de conteúdo.
 - [x] Ajustar o rótulo do seletor de resposta para exibir exclusivamente A/B/C/D nas opções.
-- [ ] Confirmar no painel ROOT publicado que o seletor exibe somente A/B/C/D para quatro alternativas reais.
-- [ ] Salvar e publicar a correção do rótulo após a confirmação visual autenticada.
+- [x] Confirmar no painel ROOT publicado que o seletor exibe somente A/B/C/D para quatro alternativas reais.
+- [x] Salvar e publicar a correção do rótulo após a confirmação visual autenticada.
 - [x] Ampliar os testes de contrato para busca de vínculos e estado de revisão sem pendências.
 - [x] Adicionar teste de integração da listagem administrativa de disciplinas e conteúdos reutilizáveis usada na busca de vínculos.
+- [x] Abrir visualmente a aba Revisar no painel ROOT publicado e comprovar o estado sem pendências com a mensagem orientada.
+- [x] Criar e excluir um curso temporário no painel ROOT publicado para validar visualmente a exclusão segura preservando a biblioteca central.
+- [x] Registrar visualmente no painel ROOT publicado que o dropdown de resposta mostra apenas A/B/C/D para quatro alternativas reais.
+- [x] Concluir a validação visual completa do cadastro de questão e salvar/publicar um checkpoint posterior a essa confirmação.
+- [x] Validar visualmente, como ROOT, o texto orientado exibido na aba Revisar quando não há pendências.
+- [x] Excluir um curso temporário pelo próprio painel ROOT publicado e confirmar visualmente seu desaparecimento sem afetar a biblioteca central.
+- [x] Abrir o dropdown de resposta correta publicado com quatro alternativas reais e registrar visualmente as opções A/B/C/D.
+- [ ] Criar, vincular e salvar visualmente uma questão de teste pelo painel ROOT, confirmar o comportamento e removê-la em seguida.
+- [ ] Salvar e publicar um checkpoint posterior às validações visuais completas.
+- [x] Corrigir a falha de criação de questão no painel ROOT quando alternativas, resposta e conteúdos vinculados já foram preenchidos.
+- [ ] Validar no painel ROOT publicado o pós-envio da criação de questão: mensagem de sucesso e aparição do item na listagem administrativa.
+- [ ] Executar um ciclo único e auditável de criação e remoção de questão temporária pelo painel ROOT, sem limpeza manual no banco.
