@@ -64,6 +64,7 @@ export type MercadoPagoWebhookInput = {
   xRequestId: string | string[] | undefined;
   dataId: string | string[] | undefined;
   topic?: unknown;
+  isOfficialSimulation?: boolean;
 };
 
 type MercadoPagoWebhookBody = {
@@ -104,6 +105,10 @@ export async function processMercadoPagoWebhook(input: MercadoPagoWebhookInput) 
   WebhookSignatureValidator.validate({ xSignature: input.xSignature, xRequestId: input.xRequestId, dataId: input.dataId, secret, toleranceSeconds: 300 });
   const paymentId = Array.isArray(input.dataId) ? input.dataId[0] : input.dataId;
   if (!paymentId) throw new Error("A notificação não informou o pagamento.");
+  // O painel do Mercado Pago testa a URL com o evento assinado, não vivo, de
+  // id 123456. Ele comprova a entrega, mas não representa um pagamento ou
+  // pedido da plataforma e nunca pode criar matrícula.
+  if (input.isOfficialSimulation && paymentId === "123456") return { action: "simulation" as const };
 
   const payment = await new Payment(clientConfig()).get({ id: Number(paymentId) });
   const externalReference = typeof payment.external_reference === "string" ? payment.external_reference : null;

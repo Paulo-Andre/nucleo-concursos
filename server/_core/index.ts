@@ -53,7 +53,13 @@ async function startServer() {
         queryId: req.query.id,
         body: req.body,
       });
-      const result = await processMercadoPagoWebhook({ xSignature: req.header("x-signature"), xRequestId: req.header("x-request-id"), dataId, topic: req.query.topic ?? req.body?.type });
+      const result = await processMercadoPagoWebhook({
+        xSignature: req.header("x-signature"),
+        xRequestId: req.header("x-request-id"),
+        dataId,
+        topic: req.query.topic ?? req.body?.type,
+        isOfficialSimulation: req.body?.live_mode === false && dataId === "123456",
+      });
       res.status(200).json({ received: true, result: result.action });
     } catch (error) {
       console.error("[Mercado Pago webhook] rejeitado:", error instanceof Error ? error.message : error);
