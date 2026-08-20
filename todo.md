@@ -202,6 +202,7 @@
 - [ ] Conduzir no painel do Mercado Pago a coleta das credenciais produtivas e o cadastro do Webhook produtivo sem expor segredos na conversa.
 - [ ] Identificar a pendência de conta ou requisito do Mercado Pago que causa o erro genérico ao ativar credenciais de produção.
 - [ ] Solicitar ao suporte do Mercado Pago a análise e liberação da ativação produtiva, pois o erro persiste após teste concluído, HTTPS válido, termos aceitos e reCAPTCHA aprovado.
+- [ ] Definir e documentar uma estratégia de domínio próprio e hospedagem sustentável, com continuidade operacional, backup e recuperação fora de uma única plataforma.
 - [x] Corrigir a exclusão ROOT de usuários renomeados e a identificação independente de maiúsculas/minúsculas, preservando a conta ROOT e a limpeza dos dados privados.
 - [x] Corrigir a exclusão ROOT de cupons existentes por identificador estável, preservando pedidos e transações já registrados.
 - [x] Permitir cadastrar e editar uma imagem de capa de curso, com exibição consistente na vitrine pública e na área interna do aluno.
