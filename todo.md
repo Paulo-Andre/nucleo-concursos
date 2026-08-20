@@ -114,8 +114,8 @@
 - [x] Substituir as referências externas com limitação de acesso automatizado por destinos oficiais atuais e verificáveis.
 - [x] Executar o E2E autenticado de aluno e ROOT, em desktop e mobile, com contas de QA e matrícula temporária ativa.
 - [x] Mapear cada subitem do conteúdo programático oficial do Agente PF 2025 para módulo, apostila ou questão e fechar a lacuna curricular de QA-001.
-- [ ] Revisar uma amostra pedagógica de vídeos por disciplina, com responsável e data de atualização normativa.
-- [ ] Anexar evidência visual autenticada do fluxo de revisão: instrução, abertura direta da questão na fila, correção e decisão.
+- [x] Revisar uma amostra pedagógica de vídeos por disciplina, com responsável e data de atualização normativa.
+- [x] Anexar evidência visual autenticada do fluxo de revisão: instrução, abertura direta da questão na fila, correção e decisão.
 - [x] Criar para o aluno um caminho explícito de “revisar esta questão”, com registro de revisão e acesso posterior na área de estudo.
 - [x] Criar no painel ROOT uma aba “Todas as questões” com busca, filtros, acesso direto à edição e estado vazio orientado.
 - [x] Tornar os rótulos e orientações da revisão distintos entre revisão de estudo do aluno e revisão editorial administrativa de questões.
@@ -191,3 +191,8 @@
 - [x] Exibir automaticamente na página inicial somente os pacotes ativos publicados pelo ROOT, mantendo preço, duração e cursos cobertos sincronizados com o catálogo administrativo.
 - [x] Adicionar botão de login visível e fluxo de compra para visitantes: pacote escolhido → cadastro/login local → retorno ao pacote → Checkout Pro.
 - [x] Validar a vitrine comercial e o fluxo de aquisição em celular e desktop, com testes e publicação.
+- [x] Consolidar no repositório a amostra de vídeos por disciplina, com responsável nominal, data de atualização normativa e evidência verificável de cada análise.
+- [x] Capturar a sessão ROOT com item editorial temporário na fila, instrução visível, abertura da questão, correção e decisão final registrada.
+- [x] Adicionar validação reproduzível do fluxo editorial com dado temporário para impedir que a evidência dependa de fila vazia.
+- [x] Ler e registrar o trecho final de `server/question-bank.integration.test.ts` que cobre criação temporária, solicitação de correção e limpeza do fluxo editorial ROOT.
+- [x] Executar novamente `pnpm test` e registrar a saída aprovada após a nova cobertura reproduzível do fluxo editorial.

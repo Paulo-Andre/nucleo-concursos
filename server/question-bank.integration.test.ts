@@ -36,6 +36,8 @@ describe("integração real do banco central de questões", () => {
     const contentIds: number[] = [];
     let questionId: number | null = null;
     let reviewId: number | null = null;
+    let correctionQuestionId: number | null = null;
+    let correctionReviewId: number | null = null;
     const auditDetails: string[] = [];
     const profileBefore = (await db.select().from(studyProfiles).where(eq(studyProfiles.userId, root.id)).limit(1))[0] ?? null;
     const context: TrpcContext = {
@@ -85,6 +87,22 @@ describe("integração real do banco central de questões", () => {
       auditDetails.push(`Revisão ${reviewId} concluída como approved.`);
       expect((await caller.admin.review.list({ itemType: "question", status: "approved", search: token })).some(item => item.id === reviewId)).toBe(true);
 
+      const correctionQuestion = await caller.admin.questions.create({
+        statement: `__${token}: Questão temporária que exige correção editorial fundamentada.`, questionType: "certo_errado", options: [], answer: true,
+        explanation: "Justificativa temporária para validar a solicitação de correção.", difficulty: "basic", source: `correction-${token}`, banca: "E2E", year: 2026,
+        requiresReview: true, status: "draft", contentIds,
+      });
+      correctionQuestionId = correctionQuestion!.id;
+      auditDetails.push(`Questão ${correctionQuestionId} criada para correção.`);
+      await caller.admin.questions.sendToReview({ id: correctionQuestionId });
+      const correctionPending = await caller.admin.review.list({ itemType: "question", status: "pending", search: token });
+      const correctionReview = correctionPending.find(item => item.itemId === correctionQuestionId);
+      expect(correctionReview).toBeTruthy();
+      correctionReviewId = correctionReview!.id;
+      await caller.admin.review.decide({ id: correctionReviewId, decision: "correction_requested", notes: "Revisar a clareza do enunciado antes de publicar." });
+      const correctionRequested = await caller.admin.review.list({ itemType: "question", status: "correction_requested", search: token });
+      expect(correctionRequested.some(item => item.id === correctionReviewId && item.notes?.includes("clareza do enunciado"))).toBe(true);
+
       const studyQuestions = await caller.study.questions.list();
       const published = studyQuestions.questions.filter(item => item.id === questionId);
       expect(studyQuestions.requiresReviewMode).toBe(true);
@@ -113,10 +131,13 @@ describe("integração real do banco central de questões", () => {
       await db.delete(simulationRecords).where(eq(simulationRecords.id, simulationId));
       if (questionId) {
         await db.delete(studyAnswers).where(and(eq(studyAnswers.userId, root.id), eq(studyAnswers.questionId, String(questionId))));
-        await db.delete(reviewQueue).where(and(eq(reviewQueue.itemType, "question"), eq(reviewQueue.itemId, questionId)));
-        await db.delete(questionChangelog).where(eq(questionChangelog.questionId, questionId));
-        await db.delete(questionContentLinks).where(eq(questionContentLinks.questionId, questionId));
-        await db.delete(questions).where(eq(questions.id, questionId));
+      }
+      const temporaryQuestionIds = [questionId, correctionQuestionId].filter((id): id is number => id !== null);
+      if (temporaryQuestionIds.length) {
+        await db.delete(reviewQueue).where(and(eq(reviewQueue.itemType, "question"), inArray(reviewQueue.itemId, temporaryQuestionIds)));
+        await db.delete(questionChangelog).where(inArray(questionChangelog.questionId, temporaryQuestionIds));
+        await db.delete(questionContentLinks).where(inArray(questionContentLinks.questionId, temporaryQuestionIds));
+        await db.delete(questions).where(inArray(questions.id, temporaryQuestionIds));
       }
       if (contentIds.length) {
         await db.delete(contentChangelog).where(inArray(contentChangelog.contentId, contentIds));
