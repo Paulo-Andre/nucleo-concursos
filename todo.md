@@ -165,3 +165,6 @@
 - [x] Personalizar a checagem diária para selecionar perguntas curtas e variadas apenas entre conteúdos dos cursos com matrícula vigente do aluno.
 - [x] Adicionar fechamento acessível à checagem diária e impedir sua reabertura automática no mesmo dia após dispensa explícita.
 - [x] Cobrir CPF, e-mail, acesso por matrícula, variedade diária e fechamento com testes e validação responsiva antes da publicação.
+- [x] Auditar as telas móveis públicas, de estudo e administrativas para localizar textos quebrados, transbordamentos e controles comprimidos.
+- [x] Corrigir estrutura responsiva, tipografia, quebras de texto e ações para que nenhum conteúdo ultrapasse cards ou a largura da tela no celular.
+- [x] Cobrir e validar em desktop e celular os ajustes responsivos antes da publicação.
