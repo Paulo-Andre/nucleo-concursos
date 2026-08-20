@@ -312,7 +312,7 @@ export const appRouter = router({
     }),
     roadmap: router({
       list: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => listStudyRoadmap(ctx.user.id, input.courseId, ctx.user.role === "admin")),
-      save: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, contentId: entityIdSchema, weekday: z.number().int().min(0).max(6), startTime: studyTimeSchema, isActive: z.boolean().default(true) })).mutation(({ input, ctx }) => saveStudyRoadmapItem(ctx.user.id, input, ctx.user.role === "admin")),
+      save: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, disciplineId: entityIdSchema, weekday: z.number().int().min(0).max(6), isActive: z.boolean().default(true) })).mutation(({ input, ctx }) => saveStudyRoadmapItem(ctx.user.id, input, ctx.user.role === "admin")),
       remove: enrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyRoadmapItem(ctx.user.id, input.id)),
     }),
     submitSimulation: enrollmentRequiredProcedure.input(z.object({

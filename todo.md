@@ -216,3 +216,7 @@
 - [x] Permitir que o ROOT cadastre e edite de uma a três imagens de capa por plano comercial, exibindo-as como carrossel na vitrine e no catálogo autenticado.
 - [x] Corrigir a Gestão ROOT no celular para manter Negócios, Alunos e Conteúdos acessíveis, sem que o painel de produtos cubra a navegação lateral.
 - [x] Exibir os vídeos das aulas em um player incorporado na área de estudo, aceitando YouTube e fontes próprias e reduzindo a exposição a download direto.
+- [x] Corrigir a navegação móvel para que o menu lateral não cubra ou comprima o painel de estudos após sua abertura.
+- [x] Reestruturar o roteiro semanal para selecionar uma disciplina e um dia da semana, sem horário obrigatório, permitindo várias disciplinas em cada dia.
+- [x] Exibir e permitir iniciar os itens do roteiro agrupados por dia da semana, preservando o controle de acesso e a continuidade de estudo.
+- [x] Cobrir a nova organização semanal e o comportamento móvel com testes, validação visual e publicação.

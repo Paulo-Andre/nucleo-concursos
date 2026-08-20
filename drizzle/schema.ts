@@ -116,19 +116,20 @@ export const studyContentProgress = mysqlTable("studyContentProgress", {
   index("studyContentProgress_user_lastOpened_idx").on(table.userId, table.lastOpenedAt),
 ]);
 
-/** Roteiro pessoal do aluno: um conteúdo permitido por faixa de dia e horário. */
+/** Roteiro pessoal do aluno: uma disciplina permitida por dia da semana, com conteúdo inicial para abertura. */
 export const studyRoadmapItems = mysqlTable("studyRoadmapItems", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   courseId: varchar("courseId", { length: 80 }).notNull(),
   contentId: int("contentId").notNull(),
+  disciplineId: int("disciplineId"),
   weekday: int("weekday").notNull(),
   startTime: varchar("startTime", { length: 5 }).notNull(),
   isActive: boolean("isActive").notNull().default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [
-  uniqueIndex("studyRoadmapItems_user_course_content_unique").on(table.userId, table.courseId, table.contentId),
+  uniqueIndex("studyRoadmapItems_user_course_discipline_unique").on(table.userId, table.courseId, table.disciplineId),
   index("studyRoadmapItems_user_weekday_time_idx").on(table.userId, table.weekday, table.startTime),
 ]);
 

@@ -400,6 +400,8 @@ async function getEligibleContentIdsForCourses(courseIds: string[]) {
 
 type StudyCourseContent = {
   id: number;
+  disciplineId: number;
+  disciplineName: string;
   title: string;
   description: string | null;
   objective: string | null;
@@ -424,6 +426,8 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
   if (!db) throw new Error("Banco de dados indisponível");
   const rows = await db.select({
     id: contents.id,
+    disciplineId: disciplines.id,
+    disciplineName: disciplines.name,
     title: contents.title,
     description: contents.description,
     objective: contents.objective,
@@ -436,6 +440,7 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
   }).from(courseDisciplines)
     .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
     .innerJoin(contents, eq(disciplineContents.contentId, contents.id))
+    .innerJoin(disciplines, eq(disciplineContents.disciplineId, disciplines.id))
     .where(eq(courseDisciplines.courseId, courseId));
   const unique = new Map<number, StudyCourseContent>();
   rows.forEach(content => unique.set(content.id, content));
@@ -540,6 +545,8 @@ export async function listStudyRoadmap(userId: number, courseId: string, isAdmin
       return content ? [{
         id: item.id,
         contentId: item.contentId,
+        disciplineId: item.disciplineId ?? content.disciplineId,
+        disciplineName: content.disciplineName,
         weekday: item.weekday,
         startTime: item.startTime,
         isActive: item.isActive,
@@ -549,12 +556,14 @@ export async function listStudyRoadmap(userId: number, courseId: string, isAdmin
     .sort((left, right) => left.weekday - right.weekday || left.startTime.localeCompare(right.startTime));
 }
 
-export async function saveStudyRoadmapItem(userId: number, input: { courseId: string; contentId: number; weekday: number; startTime: string; isActive: boolean }, isAdmin = false) {
-  await assertStudyContentAvailable(userId, input.courseId, input.contentId, isAdmin);
+export async function saveStudyRoadmapItem(userId: number, input: { courseId: string; disciplineId: number; weekday: number; isActive: boolean }, isAdmin = false) {
+  await assertStudyCourseAccess(userId, input.courseId, isAdmin);
+  const content = (await listStudyCourseContents(input.courseId)).find(item => item.disciplineId === input.disciplineId);
+  if (!content) throw new Error("A disciplina escolhida não pertence ao curso selecionado.");
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  await db.insert(studyRoadmapItems).values({ userId, ...input }).onDuplicateKeyUpdate({
-    set: { weekday: input.weekday, startTime: input.startTime, isActive: input.isActive },
+  await db.insert(studyRoadmapItems).values({ userId, courseId: input.courseId, contentId: content.id, disciplineId: input.disciplineId, weekday: input.weekday, startTime: "00:00", isActive: input.isActive }).onDuplicateKeyUpdate({
+    set: { weekday: input.weekday, disciplineId: input.disciplineId, startTime: "00:00", isActive: input.isActive },
   });
   return listStudyRoadmap(userId, input.courseId, isAdmin);
 }

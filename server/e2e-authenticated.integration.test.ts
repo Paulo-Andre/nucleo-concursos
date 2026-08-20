@@ -63,7 +63,7 @@ describe("E2E autenticado de aluno e ROOT", () => {
       }
 
       const studyQuestionBank = await learnerCaller.study.questions.list();
-      const question = studyQuestionBank.questions[0];
+      const question = studyQuestionBank.questions.find(candidate => typeof candidate.answer === "boolean");
       expect(question).toBeTruthy();
       if (!question) return;
 

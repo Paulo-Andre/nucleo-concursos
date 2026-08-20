@@ -26,4 +26,12 @@ describe("contrato de layout móvel", () => {
     expect(cssSource).toContain('[role="dialog"] > header > :first-child { min-width: 0; }');
     expect(cssSource).toContain('[role="dialog"] > header h2, [role="dialog"] > header p { overflow-wrap: anywhere; }');
   });
+
+  it("abre a navegação móvel como gaveta acessível e mantém a página de roteiro disponível", () => {
+    expect(homeSource).toContain('id="study-navigation"');
+    expect(homeSource).toContain('w-[min(20rem,86vw)]');
+    expect(homeSource).toContain('overflow-y-auto overscroll-contain');
+    expect(homeSource).toContain('aria-controls="study-navigation"');
+    expect(homeSource).toContain('{ label: "Roteiro", icon: CalendarClock }');
+  });
 });
