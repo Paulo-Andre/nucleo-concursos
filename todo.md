@@ -197,15 +197,15 @@
 - [x] Ler e registrar o trecho final de `server/question-bank.integration.test.ts` que cobre criação temporária, solicitação de correção e limpeza do fluxo editorial ROOT.
 - [x] Executar novamente `pnpm test` e registrar a saída aprovada após a nova cobertura reproduzível do fluxo editorial.
 - [x] Substituir o token de teste do Mercado Pago pelo Access Token de produção de forma segura e validar sua conectividade.
-- [ ] Configurar a URL pública do Webhook no modo de produção e armazenar a assinatura secreta de produção.
+- [x] Configurar a URL pública do Webhook no modo de produção e armazenar a assinatura secreta de produção.
 - [ ] Confirmar o funcionamento do checkout de produção com uma transação controlada e sem duplicar matrículas.
-- [ ] Conduzir no painel do Mercado Pago a coleta das credenciais produtivas e o cadastro do Webhook produtivo sem expor segredos na conversa.
+- [x] Conduzir no painel do Mercado Pago a coleta das credenciais produtivas e o cadastro do Webhook produtivo sem expor segredos na conversa.
 - [ ] Identificar a pendência de conta ou requisito do Mercado Pago que causa o erro genérico ao ativar credenciais de produção.
 - [ ] Solicitar ao suporte do Mercado Pago a análise e liberação da ativação produtiva, pois o erro persiste após teste concluído, HTTPS válido, termos aceitos e reCAPTCHA aprovado.
 - [x] Receber o Access Token de produção pelo formulário seguro, validar a conta do Mercado Pago e registrar o resultado sem expor a credencial.
-- [ ] Receber a assinatura secreta do Webhook de produção pelo formulário seguro e validar a autenticação dos eventos recebidos.
+- [x] Receber a assinatura secreta do Webhook de produção pelo formulário seguro e validar a autenticação dos eventos recebidos.
 - [x] Aceitar a simulação oficial de webhook do Mercado Pago como evento técnico de validação, sem consultar pagamento fictício nem alterar pedidos ou matrículas.
-- [ ] Revalidar a simulação produtiva do Mercado Pago após a correção e confirmar a resposta HTTP de sucesso.
+- [x] Revalidar a simulação produtiva do Mercado Pago após a correção e confirmar a resposta HTTP de sucesso.
 - [x] Definir e documentar uma estratégia de domínio próprio e hospedagem sustentável, com continuidade operacional, backup e recuperação fora de uma única plataforma.
 - [x] Adicionar ao painel ROOT uma exportação segura e baixável dos dados da plataforma, sem segredos de infraestrutura, e documentar a restauração controlada do backup.
 - [x] Corrigir a exclusão ROOT de usuários renomeados e a identificação independente de maiúsculas/minúsculas, preservando a conta ROOT e a limpeza dos dados privados.
@@ -226,3 +226,5 @@
 - [x] Cobrir a nova organização semanal e o comportamento móvel com testes, validação visual e publicação.
 - [x] Corrigir a matriz de estudo em celular para empilhar título, descrição, contador de disciplinas e seletor de concurso sem colunas estreitas ou transbordamento.
 - [x] Validar a matriz corrigida em largura de celular, cobrir o contrato responsivo e publicar a correção.
+- [x] Distinguir no cadastro os conflitos de nome de usuário, e-mail e CPF, evitando atribuir genericamente ao CPF um erro causado por outro campo.
+- [x] Validar com teste um CPF novo e válido no cadastro local e publicar a correção de mensagens de conflito.

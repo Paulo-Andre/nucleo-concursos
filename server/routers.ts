@@ -254,8 +254,15 @@ export const appRouter = router({
     bootstrapStatus: publicProcedure.query(() => ({ rootBootstrapReady: hasRootBootstrapSecret() })),
     register: publicProcedure.input(profileSchema.extend({ cpf: cpfSchema, password: passwordSchema, passwordConfirmation: passwordSchema })).mutation(async ({ input, ctx }) => {
       if (input.password !== input.passwordConfirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
-      const duplicate = await getUserByIdentifier(input.username) ?? await getUserByIdentifier(input.email) ?? await getUserByCpf(input.cpf);
-      if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "Usuário, e-mail ou CPF já está em uso." });
+      if (await getUserByIdentifier(input.username)) {
+        throw new TRPCError({ code: "CONFLICT", message: "Este nome de usuário já está em uso." });
+      }
+      if (await getUserByIdentifier(input.email)) {
+        throw new TRPCError({ code: "CONFLICT", message: "Este e-mail já está em uso." });
+      }
+      if (await getUserByCpf(input.cpf)) {
+        throw new TRPCError({ code: "CONFLICT", message: "Este CPF já está em uso." });
+      }
       const user = await createLocalUser({ ...input, passwordHash: await hashPassword(input.password) });
       const session = await startLocalSession(ctx, user.id);
       return { user: safeUser(user), ...session };
