@@ -3,6 +3,12 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   adminAuditLogs,
   authSessions,
+  commerceCoupons,
+  commerceOrderItems,
+  commerceOrders,
+  commercePlanCourses,
+  commercePlans,
+  commerceTransactions,
   completedModules,
   contentChangelog,
   contents,
@@ -76,6 +82,29 @@ export type StudyReviewSnapshot = {
   discipline: string;
   subject: string;
   source?: string;
+};
+
+export type CommercePlanInput = {
+  code: string;
+  title: string;
+  description?: string | null;
+  planType: "course_access" | "subscription";
+  accessDurationDays: number;
+  priceCents: number;
+  isActive: boolean;
+  isHighlighted: boolean;
+  courseIds: string[];
+};
+
+export type CommerceCouponInput = {
+  code: string;
+  description?: string | null;
+  discountType: "percentage" | "fixed_amount";
+  discountValue: number;
+  maxRedemptions?: number | null;
+  startsAt?: Date | null;
+  endsAt?: Date | null;
+  isActive: boolean;
 };
 
 const emptyProfile = { xp: 0, lastStudyDate: null as string | null, studyDatesJson: "[]", usedQuestionIdsJson: "[]", dailyQuickCheckDate: null as string | null, dailyQuickCheckCourseId: null as string | null, dailyQuickCheckQuestionId: null as string | null, dailyQuickCheckDismissed: false };

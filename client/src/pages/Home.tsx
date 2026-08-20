@@ -5,8 +5,8 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import {
-  Award, BarChart3, BookOpen, Brain, Check, ChevronRight, CircleHelp, Clock3, Flame, Gauge,
-  GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, RotateCcw, ShieldCheck,
+  Award, BarChart3, BookOpen, Brain, Check, ChevronRight, CircleHelp, Clock3, CreditCard, Flame, Gauge,
+  GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, ReceiptText, RotateCcw, ShieldCheck,
   Sparkles, Target, Trophy, X, Zap,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -24,6 +24,8 @@ import { trpc } from "@/lib/trpc";
 import { AccountPanel } from "@/components/AccountPanel";
 import { AdminPanel } from "@/components/AdminPanel";
 import { AdminLibraryPanel } from "@/components/AdminLibraryPanel";
+import { AdminCommercePanel } from "@/components/AdminCommercePanel";
+import { CommercePanel } from "@/components/CommercePanel";
 import { rootAdminActionContainerClassName, rootAdminAreas } from "@/lib/rootAdminNavigation";
 import { CourseAccessRequired } from "@/components/CourseAccessRequired";
 import { Textarea } from "@/components/ui/textarea";
@@ -96,6 +98,8 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
   const [accountOpen, setAccountOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [commerceOpen, setCommerceOpen] = useState(false);
+  const [commerceAdminOpen, setCommerceAdminOpen] = useState(false);
   const accessQuery = trpc.study.access.useQuery(undefined, { refetchOnWindowFocus: false });
   const permittedContestIds = useMemo<ContestId[]>(() => {
     if (user.role === "admin") return contestCatalog.map((contest) => contest.id);
@@ -164,7 +168,7 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
   useEffect(() => { setQuickAnswer(null); }, [quickQuestion?.id]);
 
   if (user.role !== "admin" && accessQuery.isLoading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Verificando matrícula...</div>;
-  if (user.role !== "admin" && !accessQuery.data?.length) return <CourseAccessRequired userName={user.name} onLogout={logout} />;
+  if (user.role !== "admin" && !accessQuery.data?.length) return <>{commerceOpen && <CommercePanel onClose={() => setCommerceOpen(false)} />}<CourseAccessRequired userName={user.name} onLogout={logout} onBrowsePlans={() => setCommerceOpen(true)} /></>;
 
   function updateState(updater: (current: StudyState) => StudyState) { setState((current) => updater(current)); }
 
@@ -259,7 +263,7 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
         </div>
         <div className="mb-5 border-y border-white/10 px-3 py-3"><p className="text-[9px] font-bold tracking-[0.2em] text-[#8faeb5]">REGISTRO DE PREPARO</p><p className="font-display mt-1 text-sm font-bold text-white">{activeContest.role}</p></div>
         <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7e99a1]">Áreas do arquivo</p>
-        <nav className="space-y-1">{navigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}</nav>
+        <nav className="space-y-1">{navigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}<button onClick={() => { setCommerceOpen(true); setMenuOpen(false); }} className="nav-item"><CreditCard className="h-4 w-4" />Planos e acessos</button>{user.role === "admin" && <button onClick={() => { setCommerceAdminOpen(true); setMenuOpen(false); }} className="nav-item"><ReceiptText className="h-4 w-4" />Operação comercial</button>}</nav>
         <div className="mt-auto border-t border-white/10 pt-5">
           <div className="flex gap-4 px-2"><div className="relative h-32 w-3 border border-white/15 bg-[#102833]"><span className="absolute inset-x-0 top-1/4 h-px bg-white/35" /><span className="absolute inset-x-0 top-1/2 h-px bg-white/35" /><span className="absolute inset-x-0 top-3/4 h-px bg-white/35" /><div className="absolute bottom-0 w-full bg-[#8ad2c3] transition-all duration-300" style={{ height: `${level.progress}%` }} /></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#97b1b6]">Credencial</span><span className="border border-[#82cfbf]/50 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-[#a7ded2]">REG-01</span></div><p className="font-display mt-2 text-sm font-bold text-white">Nível {level.index}</p><p className="text-xs text-[#a8c1c3]">{level.label}</p><p className="mt-2 text-[10px] text-[#85a6aa]">{level.current} / {level.next} XP</p><p className="mt-1 text-[9px] font-bold tracking-[0.14em] text-[#6f9298]">MARCO DE TREINAMENTO</p></div><div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-[#82cfbf] text-center"><span className="font-display text-sm font-extrabold text-white">{state.xp}</span><span className="-mt-1 text-[7px] font-bold tracking-wider text-[#9edbcf]">XP</span></div></div>
         </div>
@@ -283,6 +287,8 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
       {accountOpen && <AccountPanel user={user} onClose={() => setAccountOpen(false)} />}
       {adminOpen && user.role === "admin" && <AdminPanel onClose={() => setAdminOpen(false)} />}
       {libraryOpen && user.role === "admin" && <AdminLibraryPanel onClose={() => setLibraryOpen(false)} />}
+      {commerceOpen && <CommercePanel onClose={() => setCommerceOpen(false)} />}
+      {commerceAdminOpen && user.role === "admin" && <AdminCommercePanel onClose={() => setCommerceAdminOpen(false)} />}
     </div>
   );
 }

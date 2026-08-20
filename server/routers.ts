@@ -60,6 +60,21 @@ import { isValidCpf, normalizeCpf } from "./cpf";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
 import { storagePut } from "./storage";
+import {
+  approveCommerceOrder,
+  cancelCommerceOrder,
+  createCommerceCoupon,
+  createCommerceOrder,
+  createCommercePlan,
+  listManagedCommerceCoupons,
+  listManagedCommerceOrders,
+  listManagedCommercePlans,
+  listPublicCommercePlans,
+  listUserCommerceOrders,
+  updateCommerceCoupon,
+  updateCommercePlan,
+} from "./commerce";
+import { createMercadoPagoCheckout } from "./mercadoPago";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
 const passwordSchema = z.string().min(8, "A senha deve ter pelo menos 8 caracteres.").max(128);
@@ -91,6 +106,32 @@ const courseSchema = z.object({
   track: z.string().trim().min(2, "Informe a trilha do curso.").max(32),
   description: z.string().trim().max(1200).optional(),
 });
+const commerceCodeSchema = z.string().trim().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[A-Za-z0-9_-]+$/, "Use apenas letras, números, hífen ou sublinhado.");
+const commercePlanSchema = z.object({
+  code: commerceCodeSchema,
+  title: z.string().trim().min(4, "Informe o nome do plano.").max(180),
+  description: z.string().trim().max(3000).optional().or(z.literal("")),
+  planType: z.enum(["course_access", "subscription"]),
+  accessDurationDays: z.number().int().min(1, "Informe uma duração mínima de 1 dia.").max(3650),
+  priceCents: z.number().int().min(0, "O preço não pode ser negativo.").max(100_000_000),
+  isActive: z.boolean(),
+  isHighlighted: z.boolean(),
+  courseIds: z.array(courseIdSchema).min(1, "Associe ao menos um curso.").max(100),
+});
+const commerceCouponSchema = z.object({
+  code: commerceCodeSchema,
+  description: z.string().trim().max(240).optional().or(z.literal("")),
+  discountType: z.enum(["percentage", "fixed_amount"]),
+  discountValue: z.number().int().min(1, "Informe um desconto maior que zero.").max(100_000_000),
+  maxRedemptions: z.number().int().positive().max(1_000_000).nullable().optional(),
+  startsAt: z.coerce.date().nullable().optional(),
+  endsAt: z.coerce.date().nullable().optional(),
+  isActive: z.boolean(),
+}).superRefine((input, context) => {
+  if (input.discountType === "percentage" && input.discountValue > 100) context.addIssue({ code: "custom", path: ["discountValue"], message: "Cupons percentuais aceitam no máximo 100%." });
+  if (input.startsAt && input.endsAt && input.endsAt <= input.startsAt) context.addIssue({ code: "custom", path: ["endsAt"], message: "O fim da campanha deve ser posterior ao início." });
+});
+const commerceOrderStatusSchema = z.enum(["pending_payment", "paid", "cancelled", "expired", "refunded"]);
 const knowledgeStatusSchema = z.enum(["draft", "review", "approved", "published", "inactive"]);
 const questionTypeSchema = z.enum(["certo_errado", "multipla_escolha"]);
 const difficultySchema = z.enum(["basic", "intermediate", "advanced"]);
@@ -178,6 +219,16 @@ function clearAllAuthCookies(ctx: { req: any; res: any }) {
   ctx.res.clearCookie(COOKIE_NAME, { ...options, maxAge: -1 });
 }
 
+function requestOrigin(req: { protocol?: string; get?: (name: string) => string | undefined; headers?: Record<string, string | string[] | undefined> }) {
+  const configured = process.env.PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+  const forwarded = req.headers?.["x-forwarded-proto"];
+  const protocol = Array.isArray(forwarded) ? forwarded[0] : forwarded || req.protocol || "https";
+  const host = req.get?.("host");
+  if (!host) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível preparar o checkout." });
+  return `${protocol}://${host}`;
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -242,6 +293,15 @@ export const appRouter = router({
     note: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).query(({ input, ctx }) => import("./db").then(({ getNote }) => getNote(ctx.user.id, input.moduleId))),
     saveNote: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80), content: z.string().trim().max(12000) })).mutation(({ input, ctx }) => saveNote(ctx.user.id, input.moduleId, input.content)),
   }),
+  commerce: router({
+    plans: publicProcedure.query(() => listPublicCommercePlans()),
+    myOrders: protectedProcedure.query(({ ctx }) => listUserCommerceOrders(ctx.user.id)),
+    createOrder: protectedProcedure.input(z.object({ planId: z.string().uuid(), couponCode: commerceCodeSchema.optional() })).mutation(({ input, ctx }) => createCommerceOrder(ctx.user.id, input.planId, input.couponCode)),
+    checkout: protectedProcedure.input(z.object({ orderId: z.string().uuid() })).mutation(({ input, ctx }) => {
+      const origin = requestOrigin(ctx.req);
+      return createMercadoPagoCheckout(ctx.user.id, input.orderId, { origin, notificationUrl: `${origin}/api/payments/mercado-pago/webhook` });
+    }),
+  }),
   admin: router({
     users: adminProcedure.input(z.object({ search: z.string().trim().max(80).optional() })).query(({ input }) => listManagedUsers(input.search)),
     stats: adminProcedure.query(() => getAdminStats()),
@@ -286,6 +346,17 @@ export const appRouter = router({
     enrollments: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listUserEnrollments(input.userId)),
     grantEnrollment: adminProcedure.input(enrollmentSchema).mutation(async ({ input, ctx }) => grantCourseEnrollment(ctx.user.id, input.userId, input.courseId, input.startAt, input.expiresAt)),
     revokeEnrollment: adminProcedure.input(z.object({ userId: z.number().int().positive(), courseId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => import("./db").then(({ revokeCourseEnrollment }) => revokeCourseEnrollment(ctx.user.id, input.userId, input.courseId))),
+    commerce: router({
+      plans: adminProcedure.query(() => listManagedCommercePlans()),
+      createPlan: adminProcedure.input(commercePlanSchema).mutation(({ input, ctx }) => createCommercePlan(ctx.user.id, input)),
+      updatePlan: adminProcedure.input(z.object({ id: z.string().uuid(), data: commercePlanSchema })).mutation(({ input, ctx }) => updateCommercePlan(ctx.user.id, input.id, input.data)),
+      coupons: adminProcedure.query(() => listManagedCommerceCoupons()),
+      createCoupon: adminProcedure.input(commerceCouponSchema).mutation(({ input, ctx }) => createCommerceCoupon(ctx.user.id, input)),
+      updateCoupon: adminProcedure.input(z.object({ id: z.string().uuid(), data: commerceCouponSchema })).mutation(({ input, ctx }) => updateCommerceCoupon(ctx.user.id, input.id, input.data)),
+      orders: adminProcedure.input(z.object({ status: commerceOrderStatusSchema.optional() })).query(({ input }) => listManagedCommerceOrders(input.status)),
+      approveOrder: adminProcedure.input(z.object({ id: z.string().uuid(), providerReference: z.string().trim().max(160).optional() })).mutation(({ input, ctx }) => approveCommerceOrder(ctx.user.id, input.id, "manual", input.providerReference)),
+      cancelOrder: adminProcedure.input(z.object({ id: z.string().uuid() })).mutation(({ input, ctx }) => cancelCommerceOrder(ctx.user.id, input.id)),
+    }),
     updateUser: adminProcedure.input(z.object({ userId: z.number().int().positive(), profile: profileSchema })).mutation(async ({ input, ctx }) => {
       const user = await updateManagedUser(input.userId, input.profile);
       if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Conta não encontrada." });

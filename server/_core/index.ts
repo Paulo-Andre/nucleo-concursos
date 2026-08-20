@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ensureRootAccount } from "../auth/rootBootstrap";
+import { processMercadoPagoWebhook } from "../mercadoPago";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +37,21 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
+  app.post("/api/payments/mercado-pago/webhook", async (req, res) => {
+    try {
+      const queryDataId = req.query["data.id"];
+      const dataId = typeof queryDataId === "string"
+        ? queryDataId
+        : Array.isArray(queryDataId)
+          ? queryDataId.filter((value): value is string => typeof value === "string")
+          : typeof req.body?.data?.id === "string" ? req.body.data.id : undefined;
+      const result = await processMercadoPagoWebhook({ xSignature: req.header("x-signature"), xRequestId: req.header("x-request-id"), dataId, topic: req.query.topic ?? req.body?.type });
+      res.status(200).json({ received: true, result: result.action });
+    } catch (error) {
+      console.error("[Mercado Pago webhook] rejeitado:", error instanceof Error ? error.message : error);
+      res.status(400).json({ received: false });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

@@ -123,6 +123,103 @@ export const courses = mysqlTable("courses", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("courses_active_idx").on(table.isActive)]);
 
+/** Plano comercial vendável: curso avulso ou assinatura com vários cursos. Valores monetários são guardados em centavos. */
+export const commercePlans = mysqlTable("commercePlans", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  code: varchar("code", { length: 48 }).notNull().unique(),
+  title: varchar("title", { length: 180 }).notNull(),
+  description: text("description"),
+  planType: mysqlEnum("planType", ["course_access", "subscription"]).notNull(),
+  accessDurationDays: int("accessDurationDays").notNull(),
+  priceCents: int("priceCents").notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("BRL"),
+  isActive: boolean("isActive").notNull().default(false),
+  isHighlighted: boolean("isHighlighted").notNull().default(false),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("commercePlans_active_idx").on(table.isActive), index("commercePlans_type_idx").on(table.planType)]);
+
+/** Cursos que uma compra de plano poderá liberar. O vínculo é reutilizável e editável no catálogo. */
+export const commercePlanCourses = mysqlTable("commercePlanCourses", {
+  id: int("id").autoincrement().primaryKey(),
+  planId: varchar("planId", { length: 64 }).notNull(),
+  courseId: varchar("courseId", { length: 80 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("commercePlanCourses_plan_course_unique").on(table.planId, table.courseId),
+  index("commercePlanCourses_course_idx").on(table.courseId),
+]);
+
+/** Cupom comercial administrado pelo ROOT. O contador é atualizado somente para pedidos pagos. */
+export const commerceCoupons = mysqlTable("commerceCoupons", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  code: varchar("code", { length: 48 }).notNull().unique(),
+  description: varchar("description", { length: 240 }),
+  discountType: mysqlEnum("discountType", ["percentage", "fixed_amount"]).notNull(),
+  discountValue: int("discountValue").notNull(),
+  maxRedemptions: int("maxRedemptions"),
+  redeemedCount: int("redeemedCount").notNull().default(0),
+  startsAt: timestamp("startsAt"),
+  endsAt: timestamp("endsAt"),
+  isActive: boolean("isActive").notNull().default(true),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("commerceCoupons_active_idx").on(table.isActive), index("commerceCoupons_validity_idx").on(table.startsAt, table.endsAt)]);
+
+/** Pedido comercial de um plano, com valores consolidados no momento da solicitação. */
+export const commerceOrders = mysqlTable("commerceOrders", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  planId: varchar("planId", { length: 64 }).notNull(),
+  couponCode: varchar("couponCode", { length: 48 }),
+  status: mysqlEnum("status", ["pending_payment", "paid", "cancelled", "expired", "refunded"]).notNull().default("pending_payment"),
+  subtotalCents: int("subtotalCents").notNull(),
+  discountCents: int("discountCents").notNull().default(0),
+  totalCents: int("totalCents").notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("BRL"),
+  provider: varchar("provider", { length: 40 }).notNull().default("manual"),
+  providerReference: varchar("providerReference", { length: 160 }),
+  paidAt: timestamp("paidAt"),
+  accessGrantedAt: timestamp("accessGrantedAt"),
+  cancelledAt: timestamp("cancelledAt"),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("commerceOrders_user_created_idx").on(table.userId, table.createdAt),
+  index("commerceOrders_status_idx").on(table.status),
+  index("commerceOrders_plan_idx").on(table.planId),
+  index("commerceOrders_provider_reference_idx").on(table.provider, table.providerReference),
+]);
+
+/** Instantâneo do produto comprado para preservar título, duração, preço e cursos mesmo que o plano mude depois. */
+export const commerceOrderItems = mysqlTable("commerceOrderItems", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: varchar("orderId", { length: 64 }).notNull(),
+  planId: varchar("planId", { length: 64 }).notNull(),
+  titleSnapshot: varchar("titleSnapshot", { length: 180 }).notNull(),
+  planTypeSnapshot: mysqlEnum("planTypeSnapshot", ["course_access", "subscription"]).notNull(),
+  accessDurationDaysSnapshot: int("accessDurationDaysSnapshot").notNull(),
+  courseIdsSnapshotJson: text("courseIdsSnapshotJson").notNull(),
+  unitPriceCents: int("unitPriceCents").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [uniqueIndex("commerceOrderItems_order_unique").on(table.orderId)]);
+
+/** Tentativas e confirmações de pagamento; não armazena cartão, PIX, dados pessoais ou payload bruto do provedor. */
+export const commerceTransactions = mysqlTable("commerceTransactions", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  orderId: varchar("orderId", { length: 64 }).notNull(),
+  provider: varchar("provider", { length: 40 }).notNull(),
+  providerReference: varchar("providerReference", { length: 160 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "cancelled", "refunded"]).notNull().default("pending"),
+  amountCents: int("amountCents").notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("BRL"),
+  processedAt: timestamp("processedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("commerceTransactions_order_idx").on(table.orderId), index("commerceTransactions_provider_ref_idx").on(table.provider, table.providerReference)]);
+
 /** Matrícula individual: uma conta pode ter cursos diferentes e renová-los por período. */
 export const courseEnrollments = mysqlTable("courseEnrollments", {
   id: int("id").autoincrement().primaryKey(),
@@ -132,6 +229,8 @@ export const courseEnrollments = mysqlTable("courseEnrollments", {
   expiresAt: timestamp("expiresAt").notNull(),
   status: mysqlEnum("status", ["active", "revoked"]).notNull().default("active"),
   createdByUserId: int("createdByUserId").notNull(),
+  sourceOrderId: varchar("sourceOrderId", { length: 64 }),
+  sourcePlanId: varchar("sourcePlanId", { length: 64 }),
   revokedAt: timestamp("revokedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -139,6 +238,7 @@ export const courseEnrollments = mysqlTable("courseEnrollments", {
   uniqueIndex("courseEnrollments_user_course_unique").on(table.userId, table.courseId),
   index("courseEnrollments_user_idx").on(table.userId),
   index("courseEnrollments_expiry_idx").on(table.expiresAt),
+  index("courseEnrollments_source_order_idx").on(table.sourceOrderId),
 ]);
 
 /** Disciplinas independentes e reutilizáveis por uma ou mais matrizes de curso. */

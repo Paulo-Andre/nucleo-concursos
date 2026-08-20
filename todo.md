@@ -173,3 +173,14 @@
 - [x] Validar a marca e o menu lateral em celular e desktop, com testes, compilação e publicação.
 - [x] Garantir que a exclusão administrativa de um aluno remova matrículas e revisões privadas vinculadas, preservando o histórico administrativo auditável.
 - [x] Corrigir a política de cookie de sessão em HTTP local, mantendo `SameSite=None` apenas com `Secure` e permitindo a autenticação de QA local.
+- [x] Definir o catálogo comercial com planos avulsos por concurso e assinatura Núcleo Concursos, incluindo preço, duração, cursos liberados e status de publicação.
+- [x] Criar modelo persistente de pedidos, itens, cupons, descontos, transações e histórico de renovações, preservando rastreabilidade administrativa.
+- [x] Implementar regras de acesso comercial: pedido aprovado concede ou renova matrícula com vigência; expiração bloqueia somente o curso adquirido; assinatura libera sua seleção de cursos.
+- [x] Criar área do aluno para conhecer planos, aplicar cupom, iniciar pedido, acompanhar pagamento, consultar validade e renovar acesso.
+- [x] Criar área ROOT de gestão comercial para criar planos e cupons, acompanhar pedidos/transações e aprovar pagamentos manuais quando necessário.
+- [x] Preparar a interface de integração para um provedor de pagamento escolhido, com validação de webhook e liberação automática somente após confirmação do provedor.
+- [x] Cobrir catálogo, cupons, pedidos, matrículas, expiração, histórico e permissões por testes, build e validação responsiva antes da publicação.
+- [x] Integrar Mercado Pago Checkout Pro para abrir a cobrança do pedido comercial com identificador interno rastreável.
+- [x] Receber a notificação do Mercado Pago, consultar a API de pagamentos e liberar/renovar matrícula somente após confirmação de pagamento aprovado.
+- [x] Configurar com segurança as credenciais do Mercado Pago e registrar a URL pública de notificação no painel do provedor.
+- [x] Estabilizar o teste de integração comercial para acomodar a latência transitória do banco, sem reduzir a cobertura do ciclo de pedido e matrícula.
