@@ -1,7 +1,7 @@
 # Matriz Final de Prontidão — Estudos PF
 
 **Data da auditoria:** 19/08/2026  
-**Escopo:** estado atual da árvore de trabalho, após as correções de revisão, remoção de Telegram, atualização de fontes externas e separação administrativa entre alunos e questões.  
+**Escopo:** estado atual da árvore de trabalho, após as correções de revisão, remoção de Telegram, atualização de fontes externas, cadastro com CPF validado, checagem diária personalizada e reforço de layout móvel.  
 **Ambientes verificados:** suíte automatizada, build local, servidor de desenvolvimento, página pública em desktop e mobile; a sessão autenticada não estava disponível no navegador de QA.  
 **Legenda:** `PASS` = evidência executada e aprovada; `FAIL` = evidência executada e reprovada; `BLOCKED` = validação necessária sem condição de execução; `N/A` = recurso fora do escopo atual, sem rota ou interface implementada.
 
@@ -19,7 +19,7 @@ O conteúdo oficial do Cargo 16 foi extraído diretamente da publicação do Di�
 
 | Área | Critério | Status | Evidência objetiva | Limitação / ação pendente |
 |---|---|---|---|---|
-| Regressão | Suíte de testes completa | PASS | `pnpm test`: **72 testes aprovados** em 19/08/2026, incluindo parser/importador PF 2018, contratos de ROOT, fila pessoal de revisão e navegação administrativa. | Reexecutar após qualquer alteração funcional. |
+| Regressão | Suíte de testes completa | PASS | `pnpm test`: **83 testes aprovados** em 19/08/2026, incluindo parser/importador PF 2018, contratos de ROOT, CPF, checagem diária personalizada, fila pessoal de revisão e navegação administrativa. | Reexecutar após qualquer alteração funcional. |
 | Regressão | Build de produção | PASS | `pnpm run build` concluiu com Vite e bundle do servidor. | Aviso não bloqueador: bundle JS principal de 1,75 MB deve ser tratado como melhoria de performance. |
 | Runtime | Servidor de desenvolvimento | PASS | Reinicialização bem-sucedida; logs recentes mostram conexão Vite sem erro novo. | Um `SyntaxError` anterior relativo a `ensureDefaultKnowledgeBase` permaneceu apenas no histórico do console; não reapareceu após reinício, build e testes. |
 | Currículo | 11 disciplinas canônicas vinculadas à trilha PF | PASS | `pfCurriculumCatalog.ts` declara as 11 disciplinas como ativas e a matriz `pf-agente` as inclui integralmente. | Não substitui a conferência oficial de subitens. |
@@ -40,7 +40,7 @@ O conteúdo oficial do Cargo 16 foi extraído diretamente da publicação do Di�
 | Administração de usuários | Bloquear, desbloquear, remover usuário e redefinir senha | N/A | Não existem rotas nem interface administrativas específicas para bloqueio/desbloqueio/remoção de usuário. | Só implementar se este for um requisito do negócio; exigir confirmação de regra de retenção e recuperação de acesso. |
 | Auditoria | Trilhas de auditoria administrativas | PASS | Testes de curso, questão, revisão e exclusão exercitam operações auditáveis. | Revisar visualmente filtros e leitura dos registros como ROOT. |
 | Desktop | Página pública, login e cadastro responsivos | PASS | Capturas desktop da página pública concluídas no ciclo de QA. | Painel autenticado não foi acessado nesta sessão. |
-| Mobile | Página pública, login e cadastro responsivos | PASS | Capturas mobile da mesma página pública concluídas. | Simulado, apostila, perfil e administração exigem sessão para validação final. |
+| Mobile | Página pública, login e cadastro responsivos | PASS | Capturas em **320 px** e **375 px** confirmaram títulos, abas, campos e botões contidos no viewport após limites de largura, quebras controladas e ações empilhadas. | Simulado, apostila, perfil e administração exigem sessão para validação final. |
 | E2E aluno | Entrar, abrir trilha, iniciar aula, registrar avanço e retomar após novo login | BLOCKED | O navegador não dispunha de sessão nem de credencial de aluno de teste. | Requer aluno de QA com matrícula ativa e confirmação manual das etapas. |
 | E2E ROOT | Entrar, criar/editar questão, enviar para revisão e gerir matrícula | BLOCKED | O navegador não dispunha de sessão ROOT para esta execução. | Requer login ROOT feito pelo titular ou credencial de QA temporária e revogável. |
 

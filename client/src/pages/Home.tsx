@@ -42,7 +42,6 @@ const studyModules: StudyModule[] = [...baseStudyModules, ...specialLegislationM
 const allApostilaByModule = { ...baseApostilaByModule, ...specialApostilaByModule };
 
 const imageUrls = {
-  mark: "/manus-storage/estudos-pf-mark_d22c4173.png",
   desk: "/manus-storage/estudos-pf-desk_0c4ed447.jpg",
   statistics: "/manus-storage/estudos-pf-statistics_94d69e91.jpg",
   training: "/manus-storage/estudos-pf-training_9d304fd0.jpg",
@@ -255,8 +254,8 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
     <div className="min-h-screen bg-[#f5f1e8] text-[#152d38] lg:flex">
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[272px] flex-col border-r border-white/10 bg-[#152d38] px-4 py-6 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="mb-10 flex items-center gap-3 px-2">
-          <img src={imageUrls.mark} alt="Símbolo Estudos PF" className="h-11 w-11 rounded-xl bg-[#e8e4d9] p-1.5" />
-          <div><p className="font-display text-lg font-extrabold tracking-tight text-[#fffdf7]">ESTUDOS <span className="text-[#82cfbf]">PF</span></p><p className="text-[9px] font-bold tracking-[0.22em] text-[#8fa7ae]">ARQUIVO OPERACIONAL</p></div>
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#e8e4d9] text-[#0e5a70]" role="img" aria-label="Símbolo Núcleo Concursos"><ShieldCheck className="h-6 w-6" /></div>
+          <div className="min-w-0"><p className="font-display text-lg font-extrabold tracking-tight text-[#fffdf7]">NÚCLEO <span className="text-[#82cfbf]">CONCURSOS</span></p><p className="text-[9px] font-bold tracking-[0.16em] text-[#8fa7ae] sm:tracking-[0.22em]">PREPARO MULTIDISCIPLINAR</p></div>
         </div>
         <div className="mb-5 border-y border-white/10 px-3 py-3"><p className="text-[9px] font-bold tracking-[0.2em] text-[#8faeb5]">REGISTRO DE PREPARO</p><p className="font-display mt-1 text-sm font-bold text-white">{activeContest.role}</p></div>
         <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7e99a1]">Áreas do arquivo</p>

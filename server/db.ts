@@ -130,7 +130,7 @@ export async function upsertUser(user: UserUpsertInput): Promise<void> {
   if (!db) return;
   const values: InsertUser = {
     openId: user.openId,
-    name: user.name?.trim() || "Usuário Estudos PF",
+    name: user.name?.trim() || "Usuário Núcleo Concursos",
     loginMethod: user.loginMethod || "oauth",
     role: user.role ?? "user",
     lastSignedIn: user.lastSignedIn ?? new Date(),

@@ -168,3 +168,6 @@
 - [x] Auditar as telas móveis públicas, de estudo e administrativas para localizar textos quebrados, transbordamentos e controles comprimidos.
 - [x] Corrigir estrutura responsiva, tipografia, quebras de texto e ações para que nenhum conteúdo ultrapasse cards ou a largura da tela no celular.
 - [x] Cobrir e validar em desktop e celular os ajustes responsivos antes da publicação.
+- [x] Localizar e corrigir o recurso de logotipo quebrado no menu lateral, com fallback visual que não dependa de imagem externa instável.
+- [x] Substituir a marca restrita “Estudos PF” por uma identidade ampla, adequada a diferentes concursos e cursos policiais.
+- [x] Validar a marca e o menu lateral em celular e desktop, com testes, compilação e publicação.
