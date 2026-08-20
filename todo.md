@@ -220,3 +220,5 @@
 - [x] Reestruturar o roteiro semanal para selecionar uma disciplina e um dia da semana, sem horário obrigatório, permitindo várias disciplinas em cada dia.
 - [x] Exibir e permitir iniciar os itens do roteiro agrupados por dia da semana, preservando o controle de acesso e a continuidade de estudo.
 - [x] Cobrir a nova organização semanal e o comportamento móvel com testes, validação visual e publicação.
+- [x] Corrigir a matriz de estudo em celular para empilhar título, descrição, contador de disciplinas e seletor de concurso sem colunas estreitas ou transbordamento.
+- [x] Validar a matriz corrigida em largura de celular, cobrir o contrato responsivo e publicar a correção.

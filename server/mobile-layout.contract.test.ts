@@ -13,7 +13,9 @@ describe("contrato de layout móvel", () => {
 
   it("não força o seletor de concurso a exceder a largura em celular", () => {
     expect(homeSource).toContain("className=\"w-full min-w-0 rounded-xl");
-    expect(homeSource).toContain("sm:min-w-[220px]");
+    expect(homeSource).toContain("md:min-w-[220px]");
+    expect(homeSource).toContain("md:flex-row md:items-center md:justify-between");
+    expect(homeSource).toContain("w-full flex-col gap-2 md:w-auto md:flex-row");
   });
 
   it("preserva títulos legíveis e ações empilhadas no acesso e no painel", () => {
