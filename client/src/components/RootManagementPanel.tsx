@@ -1,5 +1,6 @@
 import { ShieldCheck, X } from "lucide-react";
 import { AdminCommercePanel } from "@/components/AdminCommercePanel";
+import { AdminBackupPanel } from "@/components/AdminBackupPanel";
 import { AdminLibraryPanel } from "@/components/AdminLibraryPanel";
 import { AdminPanel } from "@/components/AdminPanel";
 import { GlobalContactSettingsPanel } from "@/components/GlobalContactSettingsPanel";
@@ -56,10 +57,11 @@ export function RootManagementPanel({ activeSection, onSectionChange, onClose }:
         </aside>
         <div className="relative min-h-0 flex-1 bg-[#f5f1e8]">
           <div className="root-management-embedded h-full">
-            {activeSection === "business" && <AdminCommercePanel onClose={onClose} />}
-            {activeSection === "students" && <AdminPanel onClose={onClose} />}
-            {activeSection === "contents" && <AdminLibraryPanel onClose={onClose} />}
+            {activeSection === "business" && <AdminCommercePanel embedded />}
+            {activeSection === "students" && <AdminPanel embedded />}
+            {activeSection === "contents" && <AdminLibraryPanel embedded />}
             {activeSection === "contacts" && <GlobalContactSettingsPanel />}
+            {activeSection === "backup" && <AdminBackupPanel />}
           </div>
         </div>
       </section>

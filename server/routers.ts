@@ -7,6 +7,7 @@ import { adminProcedure, enrollmentRequiredProcedure, protectedProcedure, public
 import {
   completeStudyModule,
   completeStudyContent,
+  createAdministrativeBackup,
   createManagedContent,
   createManagedCourse,
   createManagedDiscipline,
@@ -367,6 +368,9 @@ export const appRouter = router({
         email: z.string().trim().email("Informe um e-mail válido.").max(320).optional().or(z.literal("")),
         telegramUrl: z.string().trim().url("Informe um link válido.").max(500).optional().or(z.literal("")),
       })).mutation(({ input, ctx }) => import("./db").then(({ saveGlobalContactSettings }) => saveGlobalContactSettings(ctx.user.id, input))),
+    }),
+    backup: router({
+      export: adminProcedure.mutation(({ ctx }) => createAdministrativeBackup(ctx.user.id)),
     }),
     disciplines: router({
       list: adminProcedure.query(() => listManagedDisciplines()),

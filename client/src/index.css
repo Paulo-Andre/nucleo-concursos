@@ -122,8 +122,10 @@
   .ghost-button { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#c9c1b2] bg-[#fffdf8] px-4 py-2.5 text-sm font-bold text-[#264351] transition duration-150 hover:border-[#0e5a70] hover:text-[#0e5a70] active:scale-[0.97]; }
   .dossier-rule { @apply h-px bg-gradient-to-r from-[#0e5a70] via-[#c8c0b1] to-transparent; }
   .record-code { @apply border border-[#b8d2cf] bg-[#edf5f2] px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[#0e5a70]; }
-  .root-management-embedded > .fixed { position: absolute; inset: 0; z-index: 0; display: block; padding: 0; background: transparent; backdrop-filter: none; }
-  .root-management-embedded > .fixed > section { width: 100%; max-width: none; height: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
+  /* Painéis ROOT legados trazem uma casca `fixed`. Dentro do centro de comando,
+     ela deve ficar restrita à área de conteúdo para não esconder as abas. */
+  .root-management-embedded > .fixed { position: absolute !important; inset: 0 !important; z-index: 0 !important; display: block; padding: 0; background: transparent; backdrop-filter: none; }
+  .root-management-embedded > .fixed > section { width: 100% !important; max-width: none; height: 100% !important; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
   @media (max-width: 639px) {
     [role="dialog"] > header { gap: 0.75rem; padding: 1rem; }
     [role="dialog"] > header > :first-child { min-width: 0; }

@@ -43,6 +43,8 @@ import { questionBank, type StudyQuestion } from "../client/src/data/pfStudyData
 import { loadPF2018Questions } from "./importProvasPF";
 import { isValidCpf, normalizeCpf } from "./cpf";
 import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
+import { storagePut } from "./storage";
+import { serializeAdminBackup, type AdminBackupData } from "./adminBackup";
 
 type UserUpsertInput = {
   openId: string;
@@ -753,6 +755,50 @@ export async function writeAdminAudit(actorUserId: number, affectedUserId: numbe
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   await db.insert(adminAuditLogs).values({ actorUserId, affectedUserId, action, detail });
+}
+
+/** Exportação lógica para contingência, sem hashes de senha, tokens ou sessões. */
+export async function createAdministrativeBackup(actorUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const [
+    backupUsers, profileRows, completedModuleRows, answerRows, reviewItemRows, simulationRecordRows, noteRows, contentProgressRows, roadmapRows,
+    auditRows, courseRows, planRows, planCourseRows, couponRows, orderRows, orderItemRows, transactionRows, enrollmentRows,
+    disciplineRows, contentRows, questionRows, courseDisciplineRows, disciplineContentRows, questionContentLinkRows, simulationQuestionRows,
+    reviewQueueRows, questionChangelogRows, contentChangelogRows, contactRows,
+  ] = await Promise.all([
+    db.select({ id: users.id, openId: users.openId, name: users.name, username: users.username, email: users.email, cpf: users.cpf, loginMethod: users.loginMethod, role: users.role, isBlocked: users.isBlocked, createdAt: users.createdAt, updatedAt: users.updatedAt, lastSignedIn: users.lastSignedIn }).from(users),
+    db.select().from(studyProfiles), db.select().from(completedModules), db.select().from(studyAnswers), db.select().from(studyReviewItems),
+    db.select().from(simulationRecords), db.select().from(studyNotes), db.select().from(studyContentProgress), db.select().from(studyRoadmapItems),
+    db.select().from(adminAuditLogs), db.select().from(courses), db.select().from(commercePlans), db.select().from(commercePlanCourses),
+    db.select().from(commerceCoupons), db.select().from(commerceOrders), db.select().from(commerceOrderItems), db.select().from(commerceTransactions),
+    db.select().from(courseEnrollments), db.select().from(disciplines), db.select().from(contents), db.select().from(questions),
+    db.select().from(courseDisciplines), db.select().from(disciplineContents), db.select().from(questionContentLinks), db.select().from(simulationQuestions),
+    db.select().from(reviewQueue), db.select().from(questionChangelog), db.select().from(contentChangelog), db.select().from(globalContactSettings),
+  ]);
+  const data: AdminBackupData = {
+    users: backupUsers,
+    studyProfiles: profileRows, completedModules: completedModuleRows, studyAnswers: answerRows, studyReviewItems: reviewItemRows,
+    simulationRecords: simulationRecordRows, studyNotes: noteRows, studyContentProgress: contentProgressRows, studyRoadmapItems: roadmapRows,
+    adminAuditLogs: auditRows, courses: courseRows, commercePlans: planRows, commercePlanCourses: planCourseRows,
+    commerceCoupons: couponRows, commerceOrders: orderRows, commerceOrderItems: orderItemRows, commerceTransactions: transactionRows,
+    courseEnrollments: enrollmentRows, disciplines: disciplineRows, contents: contentRows, questions: questionRows,
+    courseDisciplines: courseDisciplineRows, disciplineContents: disciplineContentRows, questionContentLinks: questionContentLinkRows,
+    simulationQuestions: simulationQuestionRows, reviewQueue: reviewQueueRows, questionChangelog: questionChangelogRows,
+    contentChangelog: contentChangelogRows, globalContactSettings: contactRows,
+  };
+  const exportedAt = new Date();
+  const payload = serializeAdminBackup(data, exportedAt);
+  const serialized = JSON.stringify(payload, null, 2);
+  const bytes = Buffer.byteLength(serialized, "utf8");
+  if (bytes > 25 * 1024 * 1024) throw new Error("O backup ultrapassou 25 MB. Solicite uma exportação assistida para evitar um arquivo incompleto.");
+  const stamp = exportedAt.toISOString().replace(/[:.]/g, "-");
+  const fileName = `nucleo-concursos-backup-${stamp}.json`;
+  const stored = await storagePut(`admin-backups/${actorUserId}/${fileName}`, serialized, "application/json");
+  const recordCount = Object.values(payload.tableCounts).reduce((sum, count) => sum + count, 0);
+  await writeAdminAudit(actorUserId, null, "EXPORTACAO_DE_BACKUP", `Exportação lógica gerada com ${recordCount} registros e ${bytes} bytes, sem credenciais de sessão.`);
+  return { fileName, downloadUrl: stored.url, exportedAt: exportedAt.toISOString(), bytes, tableCounts: payload.tableCounts };
 }
 
 export async function updateManagedUser(userId: number, input: { name: string; username: string; email: string; cpf?: string }) {

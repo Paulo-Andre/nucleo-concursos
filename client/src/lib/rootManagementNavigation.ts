@@ -1,6 +1,6 @@
-import { BookOpenCheck, BriefcaseBusiness, ContactRound, UsersRound, type LucideIcon } from "lucide-react";
+import { BookOpenCheck, BriefcaseBusiness, ContactRound, HardDriveDownload, UsersRound, type LucideIcon } from "lucide-react";
 
-export type RootManagementSection = "business" | "students" | "contents" | "contacts";
+export type RootManagementSection = "business" | "students" | "contents" | "contacts" | "backup";
 
 export type RootManagementSectionDefinition = {
   id: RootManagementSection;
@@ -33,5 +33,11 @@ export const rootManagementSections: RootManagementSectionDefinition[] = [
     label: "Contatos",
     description: "E-mail e Telegram exibidos a todos os usuários.",
     icon: ContactRound,
+  },
+  {
+    id: "backup",
+    label: "Backup",
+    description: "Exporte uma cópia segura dos dados da plataforma.",
+    icon: HardDriveDownload,
   },
 ];
