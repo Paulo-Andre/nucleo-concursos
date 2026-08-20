@@ -28,7 +28,7 @@ describe("login local ROOT", () => {
     const caller = appRouter.createCaller(context);
     const signedIn = await caller.auth.login({ identifier: "paulo", password: password! });
 
-    expect(signedIn).toMatchObject({ username: "paulo", role: "admin" });
+    expect(signedIn).toMatchObject({ user: { username: "paulo", role: "admin" }, hadActiveSession: expect.any(Boolean) });
     const session = cookies.find(cookie => cookie.name === LOCAL_SESSION_COOKIE);
     expect(session?.value).toBeTruthy();
 

@@ -276,10 +276,17 @@ export async function updateUserProfile(userId: number, input: { name: string; u
   return getUserById(userId);
 }
 
-export async function createSession(userId: number, id: string, tokenHash: string, expiresAt: Date) {
+export async function replaceSessionForUser(userId: number, id: string, tokenHash: string, expiresAt: Date) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  await db.insert(authSessions).values({ id, userId, tokenHash, expiresAt });
+  const activeSession = await db.select({ id: authSessions.id }).from(authSessions)
+    .where(and(eq(authSessions.userId, userId), gt(authSessions.expiresAt, new Date())))
+    .limit(1);
+  await db.transaction(async (tx) => {
+    await tx.delete(authSessions).where(eq(authSessions.userId, userId));
+    await tx.insert(authSessions).values({ id, userId, tokenHash, expiresAt });
+  });
+  return { hadActiveSession: Boolean(activeSession[0]) };
 }
 
 export async function getUserFromSessionHash(tokenHash: string) {

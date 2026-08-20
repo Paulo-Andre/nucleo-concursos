@@ -13,7 +13,7 @@ import {
   deleteManagedQuestion,
   createLocalUser,
   deleteManagedCourse,
-  createSession,
+  replaceSessionForUser,
   deleteManagedUser,
   deleteSessionByHash,
   getAdminStats,
@@ -216,9 +216,10 @@ function invalidCredentials() {
 
 async function startLocalSession(ctx: { req: any; res: any }, userId: number) {
   const token = createSessionToken();
-  await createSession(userId, crypto.randomUUID(), hashSessionToken(token), new Date(Date.now() + LOCAL_SESSION_MAX_AGE_MS));
+  const session = await replaceSessionForUser(userId, crypto.randomUUID(), hashSessionToken(token), new Date(Date.now() + LOCAL_SESSION_MAX_AGE_MS));
   const options = getSessionCookieOptions(ctx.req);
   ctx.res.cookie(LOCAL_SESSION_COOKIE, token, { ...options, maxAge: LOCAL_SESSION_MAX_AGE_MS });
+  return session;
 }
 
 function clearAllAuthCookies(ctx: { req: any; res: any }) {
@@ -247,15 +248,15 @@ export const appRouter = router({
       const duplicate = await getUserByIdentifier(input.username) ?? await getUserByIdentifier(input.email) ?? await getUserByCpf(input.cpf);
       if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "Usuário, e-mail ou CPF já está em uso." });
       const user = await createLocalUser({ ...input, passwordHash: await hashPassword(input.password) });
-      await startLocalSession(ctx, user.id);
-      return safeUser(user);
+      const session = await startLocalSession(ctx, user.id);
+      return { user: safeUser(user), ...session };
     }),
     login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3), password: passwordSchema })).mutation(async ({ input, ctx }) => {
       const user = await getUserByIdentifier(input.identifier);
       if (!user?.passwordHash || !(await verifyPassword(input.password, user.passwordHash))) throw invalidCredentials();
       if (user.isBlocked) throw new TRPCError({ code: "FORBIDDEN", message: "Esta conta está bloqueada. Procure a administração." });
-      await startLocalSession(ctx, user.id);
-      return safeUser(user);
+      const session = await startLocalSession(ctx, user.id);
+      return { user: safeUser(user), ...session };
     }),
     logout: publicProcedure.mutation(async ({ ctx }) => {
       const token = ctx.req.headers.cookie?.match(new RegExp(`${LOCAL_SESSION_COOKIE}=([^;]+)`))?.[1];
@@ -267,6 +268,7 @@ export const appRouter = router({
       if (input.newPassword !== input.confirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
       if (!ctx.user.passwordHash || !(await verifyPassword(input.currentPassword, ctx.user.passwordHash))) throw new TRPCError({ code: "FORBIDDEN", message: "A senha atual não confere." });
       await updateUserPassword(ctx.user.id, await hashPassword(input.newPassword));
+      await startLocalSession(ctx, ctx.user.id);
       return { success: true };
     }),
     updateProfile: protectedProcedure.input(profileSchema).mutation(async ({ input, ctx }) => {

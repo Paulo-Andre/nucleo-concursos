@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type AccessGateProps = { onAuthenticated: () => void; initialMode?: "login" | "register"; onBackToStorefront?: () => void; selectedPlanPending?: boolean };
+type AccessGateProps = { onAuthenticated: (hadActiveSession: boolean) => void; initialMode?: "login" | "register"; onBackToStorefront?: () => void; selectedPlanPending?: boolean };
 
 function formatCpfInput(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -27,8 +27,8 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", username: "", email: "", cpf: "", identifier: "", password: "", confirmation: "" });
   const utils = trpc.useUtils();
-  const login = trpc.auth.login.useMutation({ onSuccess: async user => { utils.auth.me.setData(undefined, user); await utils.auth.me.invalidate(); onAuthenticated(); } });
-  const register = trpc.auth.register.useMutation({ onSuccess: async user => { utils.auth.me.setData(undefined, user); await utils.auth.me.invalidate(); onAuthenticated(); } });
+  const login = trpc.auth.login.useMutation({ onSuccess: async result => { utils.auth.me.setData(undefined, result.user); await utils.auth.me.invalidate(); onAuthenticated(result.hadActiveSession); } });
+  const register = trpc.auth.register.useMutation({ onSuccess: async result => { utils.auth.me.setData(undefined, result.user); await utils.auth.me.invalidate(); onAuthenticated(result.hadActiveSession); } });
   const pending = login.isPending || register.isPending;
 
   function update(field: keyof typeof form, value: string) { setForm(current => ({ ...current, [field]: value })); }

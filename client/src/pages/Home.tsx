@@ -83,7 +83,7 @@ export default function Home() {
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Carregando credencial...</div>;
   if (!isAuthenticated) {
-    if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onBackToStorefront={() => setAccessMode(null)} onAuthenticated={() => window.location.reload()} />;
+    if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onBackToStorefront={() => setAccessMode(null)} onAuthenticated={(hadActiveSession) => { if (hadActiveSession) window.sessionStorage.setItem("nucleo-session-replaced-notice", "1"); window.location.reload(); }} />;
     return <PublicStorefront onLogin={() => setAccessMode("login")} onChoosePlan={startPlanAcquisition} />;
   }
 
@@ -110,6 +110,7 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
   const [commercePlanFocus, setCommercePlanFocus] = useState<string | null>(initialCommercePlanId ?? null);
   const [rootManagementOpen, setRootManagementOpen] = useState(false);
   const [rootManagementSection, setRootManagementSection] = useState<RootManagementSection>("business");
+  const [sessionReplacementNotice, setSessionReplacementNotice] = useState(() => window.sessionStorage.getItem("nucleo-session-replaced-notice") === "1");
   const accessQuery = trpc.study.access.useQuery(undefined, { refetchOnWindowFocus: false });
   const courseCatalogQuery = trpc.study.courseCatalog.useQuery(undefined, { refetchOnWindowFocus: false });
   const permittedContestIds = useMemo<ContestId[]>(() => {
@@ -139,6 +140,10 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
     setCommercePlanFocus(initialCommercePlanId);
     onCommercePlanConsumed();
   }, [initialCommercePlanId, onCommercePlanConsumed]);
+
+  useEffect(() => {
+    if (sessionReplacementNotice) window.sessionStorage.removeItem("nucleo-session-replaced-notice");
+  }, [sessionReplacementNotice]);
 
   const privateState = trpc.study.state.useQuery(undefined, { refetchOnWindowFocus: false });
   const centralQuestionsQuery = trpc.study.questions.list.useQuery(undefined, { refetchOnWindowFocus: false });
@@ -289,6 +294,7 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
       </aside>
       {menuOpen && <button aria-label="Fechar navegação" className="fixed inset-0 z-30 bg-[#152d38]/45 lg:hidden" onClick={() => setMenuOpen(false)} />}
       <main className="min-h-screen min-w-0 flex-1">
+        {sessionReplacementNotice && <div role="alert" className="fixed inset-x-3 top-3 z-50 mx-auto flex max-w-xl items-start justify-between gap-3 border border-[#b88336]/45 bg-[#fff8e8] px-4 py-3 text-sm font-medium text-[#5e3a0b] shadow-lg sm:left-auto sm:right-6 sm:top-6 sm:mx-0"><span><strong>Acesso atualizado.</strong> Havia outra sessão ativa nesta conta; ela foi encerrada para proteger seus dados.</span><button type="button" aria-label="Fechar aviso" onClick={() => setSessionReplacementNotice(false)} className="shrink-0 text-lg leading-none" >×</button></div>}
         <header className="sticky top-0 z-20 flex min-w-0 items-center justify-between gap-1 border-b border-[#dcd6ca] bg-[#f5f1e8]/90 px-3 backdrop-blur-md sm:gap-2 sm:px-7 lg:px-10">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3"><button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#d5cdbd] bg-[#fffdf8] lg:hidden" onClick={() => setMenuOpen(true)}><Menu className="h-5 w-5" /></button><div className="min-w-0"><p className="eyebrow truncate">CONCURSO · {activeContest.name.toUpperCase()}</p><h1 className="font-display truncate text-base font-bold text-[#183542]">{view}</h1></div></div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button><button onClick={() => void logout()} className="shrink-0 border border-[#d6cfc2] bg-[#fffdf8] px-1.5 py-2 text-[9px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3] sm:px-2.5 sm:text-[10px]">SAIR</button><button onClick={() => setAccountOpen(true)} className="hidden h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white sm:flex">{level.index}</button></div>

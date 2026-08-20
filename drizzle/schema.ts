@@ -28,7 +28,7 @@ export const authSessions = mysqlTable("authSessions", {
   tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
   expiresAt: timestamp("expiresAt").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, table => [index("authSessions_userId_idx").on(table.userId), index("authSessions_expiresAt_idx").on(table.expiresAt)]);
+}, table => [uniqueIndex("authSessions_userId_unique").on(table.userId), index("authSessions_expiresAt_idx").on(table.expiresAt)]);
 
 /** Estado agregado necessário para XP, sequência e seleção de questões do estudante. */
 export const studyProfiles = mysqlTable("studyProfiles", {

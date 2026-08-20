@@ -208,7 +208,7 @@
 - [x] Reorganizar a gestão ROOT em navegação lateral com áreas separadas para negócios, alunos e conteúdos, retirando os atalhos soltos de alunos e questões do cabeçalho.
 - [x] Permitir que o ROOT cadastre e edite links globais de contato, como e-mail e Telegram, exibidos de modo consistente para todos os usuários.
 - [ ] Reforçar controles de segurança de autenticação, autorização e sessão sem alterar o login local existente.
-- [ ] Impedir sessões simultâneas por conta e informar o último usuário que houver outro acesso ativo antes de liberar uma nova sessão.
+- [x] Impedir sessões simultâneas por conta e informar o último usuário que houver outro acesso ativo antes de liberar uma nova sessão.
 - [ ] Exibir no painel principal o próximo conteúdo permitido ao aluno, com botão Continuar que retoma o ponto de estudo disponível.
 - [ ] Permitir que o aluno monte um roteiro semanal com conteúdo, dia e horário e inicie a sessão prevista, preservando a prioridade de continuidade do conteúdo já iniciado.
 - [x] Permitir que o ROOT cadastre e edite de uma a três imagens de capa por plano comercial, exibindo-as como carrossel na vitrine e no catálogo autenticado.
