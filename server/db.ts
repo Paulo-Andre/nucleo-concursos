@@ -26,8 +26,10 @@ import {
   simulationRecords,
   simulationQuestions,
   studyAnswers,
+  studyContentProgress,
   studyNotes,
   studyProfiles,
+  studyRoadmapItems,
   studyReviewItems,
   users,
 } from "../drizzle/schema";
@@ -392,6 +394,185 @@ async function getEligibleContentIdsForCourses(courseIds: string[]) {
     .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
     .where(inArray(courseDisciplines.courseId, courseIds));
   return Array.from(new Set(rows.map(row => row.contentId)));
+}
+
+type StudyCourseContent = {
+  id: number;
+  title: string;
+  description: string | null;
+  objective: string | null;
+  cardText: string | null;
+  coverImageUrl: string | null;
+  videoUrl: string | null;
+  videoLabel: string | null;
+  materialUrl: string | null;
+  materialLabel: string | null;
+};
+
+async function assertStudyCourseAccess(userId: number, courseId: string, isAdmin = false) {
+  if (isAdmin) return;
+  const access = await getUserCourseAccess(userId);
+  if (!access.some(enrollment => enrollment.courseId === courseId)) {
+    throw new Error("Este conteúdo exige uma matrícula vigente no curso selecionado.");
+  }
+}
+
+async function listStudyCourseContents(courseId: string): Promise<StudyCourseContent[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select({
+    id: contents.id,
+    title: contents.title,
+    description: contents.description,
+    objective: contents.objective,
+    cardText: contents.cardText,
+    coverImageUrl: contents.coverImageUrl,
+    videoUrl: contents.videoUrl,
+    videoLabel: contents.videoLabel,
+    materialUrl: contents.materialUrl,
+    materialLabel: contents.materialLabel,
+  }).from(courseDisciplines)
+    .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
+    .innerJoin(contents, eq(disciplineContents.contentId, contents.id))
+    .where(eq(courseDisciplines.courseId, courseId));
+  const unique = new Map<number, StudyCourseContent>();
+  rows.forEach(content => unique.set(content.id, content));
+  return Array.from(unique.values()).sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
+}
+
+function serializeContentProgress(content: StudyCourseContent, progress?: typeof studyContentProgress.$inferSelect) {
+  return {
+    ...content,
+    progress: progress ? {
+      status: progress.status,
+      startedAt: progress.startedAt.toISOString(),
+      lastOpenedAt: progress.lastOpenedAt.toISOString(),
+      completedAt: progress.completedAt?.toISOString() ?? null,
+    } : null,
+  };
+}
+
+/** Conteúdos permitidos, último acesso e próxima aula de um aluno em determinado curso. */
+export async function getStudyCourseProgress(userId: number, courseId: string, isAdmin = false) {
+  await assertStudyCourseAccess(userId, courseId, isAdmin);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const courseContents = await listStudyCourseContents(courseId);
+  const contentIds = courseContents.map(content => content.id);
+  const rows = contentIds.length
+    ? await db.select().from(studyContentProgress).where(and(
+      eq(studyContentProgress.userId, userId),
+      eq(studyContentProgress.courseId, courseId),
+      inArray(studyContentProgress.contentId, contentIds),
+    ))
+    : [];
+  const progressByContentId = new Map(rows.map(row => [row.contentId, row]));
+  const items = courseContents.map(content => serializeContentProgress(content, progressByContentId.get(content.id)));
+  const lastStarted = [...items]
+    .filter(item => item.progress?.status === "started")
+    .sort((left, right) => new Date(right.progress!.lastOpenedAt).getTime() - new Date(left.progress!.lastOpenedAt).getTime())[0];
+  const firstNotCompleted = items.find(item => item.progress?.status !== "completed");
+  return {
+    courseId,
+    contents: items,
+    continueItem: lastStarted ?? firstNotCompleted ?? items[0] ?? null,
+  };
+}
+
+async function assertStudyContentAvailable(userId: number, courseId: string, contentId: number, isAdmin = false) {
+  await assertStudyCourseAccess(userId, courseId, isAdmin);
+  const content = (await listStudyCourseContents(courseId)).find(item => item.id === contentId);
+  if (!content) throw new Error("O conteúdo escolhido não pertence ao curso selecionado.");
+  return content;
+}
+
+/** Registra abertura de aula sem reabrir uma aula já concluída. */
+export async function openStudyContent(userId: number, input: { courseId: string; contentId: number }, isAdmin = false) {
+  await assertStudyContentAvailable(userId, input.courseId, input.contentId, isAdmin);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const now = new Date();
+  await db.insert(studyContentProgress).values({
+    userId,
+    courseId: input.courseId,
+    contentId: input.contentId,
+    status: "started",
+    startedAt: now,
+    lastOpenedAt: now,
+    completedAt: null,
+  }).onDuplicateKeyUpdate({ set: { lastOpenedAt: now } });
+  return getStudyCourseProgress(userId, input.courseId, isAdmin);
+}
+
+/** Marca uma aula permitida como concluída no histórico de conteúdo do aluno. */
+export async function completeStudyContent(userId: number, input: { courseId: string; contentId: number }, isAdmin = false) {
+  await assertStudyContentAvailable(userId, input.courseId, input.contentId, isAdmin);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const now = new Date();
+  await db.insert(studyContentProgress).values({
+    userId,
+    courseId: input.courseId,
+    contentId: input.contentId,
+    status: "completed",
+    startedAt: now,
+    lastOpenedAt: now,
+    completedAt: now,
+  }).onDuplicateKeyUpdate({ set: { status: "completed", lastOpenedAt: now, completedAt: now } });
+  return getStudyCourseProgress(userId, input.courseId, isAdmin);
+}
+
+/** Itens de roteiro do aluno, sempre filtrados pela matrícula e pelo proprietário do registro. */
+export async function listStudyRoadmap(userId: number, courseId: string, isAdmin = false) {
+  await assertStudyCourseAccess(userId, courseId, isAdmin);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [rows, courseContents] = await Promise.all([
+    db.select().from(studyRoadmapItems).where(and(eq(studyRoadmapItems.userId, userId), eq(studyRoadmapItems.courseId, courseId))),
+    listStudyCourseContents(courseId),
+  ]);
+  const contentById = new Map(courseContents.map(content => [content.id, content]));
+  return rows
+    .flatMap(item => {
+      const content = contentById.get(item.contentId);
+      return content ? [{
+        id: item.id,
+        contentId: item.contentId,
+        weekday: item.weekday,
+        startTime: item.startTime,
+        isActive: item.isActive,
+        content,
+      }] : [];
+    })
+    .sort((left, right) => left.weekday - right.weekday || left.startTime.localeCompare(right.startTime));
+}
+
+export async function saveStudyRoadmapItem(userId: number, input: { courseId: string; contentId: number; weekday: number; startTime: string; isActive: boolean }, isAdmin = false) {
+  await assertStudyContentAvailable(userId, input.courseId, input.contentId, isAdmin);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.insert(studyRoadmapItems).values({ userId, ...input }).onDuplicateKeyUpdate({
+    set: { weekday: input.weekday, startTime: input.startTime, isActive: input.isActive },
+  });
+  return listStudyRoadmap(userId, input.courseId, isAdmin);
+}
+
+export async function removeStudyRoadmapItem(userId: number, id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.delete(studyRoadmapItems).where(and(eq(studyRoadmapItems.id, id), eq(studyRoadmapItems.userId, userId)));
+  return { success: true } as const;
+}
+
+/** Utilitário interno para limpeza controlada dos testes integrados de progresso. */
+export async function deleteStudyContentProgressByScope(userId: number, courseId: string, contentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.delete(studyContentProgress).where(and(
+    eq(studyContentProgress.userId, userId),
+    eq(studyContentProgress.courseId, courseId),
+    eq(studyContentProgress.contentId, contentId),
+  ));
 }
 
 export async function getDailyQuickCheck(userId: number, courseId: string) {

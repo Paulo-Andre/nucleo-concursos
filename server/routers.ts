@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, enrollmentRequiredProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   completeStudyModule,
+  completeStudyContent,
   createManagedContent,
   createManagedCourse,
   createManagedDiscipline,
@@ -19,6 +20,7 @@ import {
   getAdminStats,
   getReviewPendingCount,
   getStudyState,
+  getStudyCourseProgress,
   getUserCourseAccess,
   getUserByCpf,
   getDailyQuickCheck,
@@ -38,14 +40,18 @@ import {
   listQuestionChangelog,
   listReviewQueue,
   listStudyReviewItems,
+  listStudyRoadmap,
   listUserEnrollments,
   completeStudyReviewItem,
   recordAnswer,
   recordSimulation,
+  openStudyContent,
   removeStudyReviewItem,
   saveNote,
   saveStudyReviewItem,
+  saveStudyRoadmapItem,
   setUserBlocked,
+  removeStudyRoadmapItem,
   setManagedCourseActive,
   updateManagedUser,
   updateManagedContent,
@@ -103,7 +109,7 @@ const enrollmentSchema = z.object({
   startAt: z.coerce.date(),
   expiresAt: z.coerce.date(),
 }).refine(input => input.expiresAt > input.startAt, { message: "A data de vencimento deve ser posterior ao início.", path: ["expiresAt"] });
-const courseIdSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(80).regex(/^[a-z0-9._-]+$/, "Use letras minúsculas, números, ponto, hífen ou sublinhado.");
+const courseIdSchema = z.string().trim().toLowerCase().min(2, "Use ao menos 2 caracteres.").max(80).regex(/^[a-z0-9._-]+$/, "Use letras minúsculas, números, ponto, hífen ou sublinhado.");
 const courseSchema = z.object({
   id: courseIdSchema,
   title: z.string().trim().min(4, "Informe o título do curso.").max(180),
@@ -144,6 +150,7 @@ const knowledgeStatusSchema = z.enum(["draft", "review", "approved", "published"
 const questionTypeSchema = z.enum(["certo_errado", "multipla_escolha"]);
 const difficultySchema = z.enum(["basic", "intermediate", "advanced"]);
 const entityIdSchema = z.number().int().positive();
+const studyTimeSchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Informe um horário válido no formato HH:MM.");
 const contentSchema = z.object({
   title: z.string().trim().min(4, "Informe o título do conteúdo.").max(220),
   objective: z.string().trim().max(4000).optional(),
@@ -285,6 +292,16 @@ export const appRouter = router({
     dailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getDailyQuickCheck(ctx.user.id, input.courseId)),
     dismissDailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).mutation(({ input, ctx }) => dismissDailyQuickCheck(ctx.user.id, input.courseId)),
     completeModule: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => completeStudyModule(ctx.user.id, input.moduleId)),
+    contentProgress: router({
+      get: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getStudyCourseProgress(ctx.user.id, input.courseId, ctx.user.role === "admin")),
+      open: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, contentId: entityIdSchema })).mutation(({ input, ctx }) => openStudyContent(ctx.user.id, input, ctx.user.role === "admin")),
+      complete: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, contentId: entityIdSchema })).mutation(({ input, ctx }) => completeStudyContent(ctx.user.id, input, ctx.user.role === "admin")),
+    }),
+    roadmap: router({
+      list: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => listStudyRoadmap(ctx.user.id, input.courseId, ctx.user.role === "admin")),
+      save: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, contentId: entityIdSchema, weekday: z.number().int().min(0).max(6), startTime: studyTimeSchema, isActive: z.boolean().default(true) })).mutation(({ input, ctx }) => saveStudyRoadmapItem(ctx.user.id, input, ctx.user.role === "admin")),
+      remove: enrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyRoadmapItem(ctx.user.id, input.id)),
+    }),
     submitSimulation: enrollmentRequiredProcedure.input(z.object({
       id: z.string().min(1).max(64), total: z.number().int().positive(), correct: z.number().int().nonnegative(), errors: z.number().int().nonnegative(), elapsedSeconds: z.number().int().nonnegative(),
       byDiscipline: metricSchema, byBlock: metricSchema,
