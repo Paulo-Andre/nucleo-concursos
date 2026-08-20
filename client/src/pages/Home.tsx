@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Award, BarChart3, BookOpen, Brain, Check, ChevronRight, CircleHelp, Clock3, CreditCard, Flame, Gauge,
-  GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, ReceiptText, RotateCcw, ShieldCheck,
+  GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, RotateCcw, ShieldCheck,
   Sparkles, Target, Trophy, X, Zap,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -22,12 +22,10 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import AccessGate from "@/pages/AccessGate";
 import { trpc } from "@/lib/trpc";
 import { AccountPanel } from "@/components/AccountPanel";
-import { AdminPanel } from "@/components/AdminPanel";
-import { AdminLibraryPanel } from "@/components/AdminLibraryPanel";
-import { AdminCommercePanel } from "@/components/AdminCommercePanel";
 import { CommercePanel } from "@/components/CommercePanel";
 import { PublicStorefront } from "@/components/PublicStorefront";
-import { rootAdminActionContainerClassName, rootAdminAreas } from "@/lib/rootAdminNavigation";
+import { RootManagementPanel, RootManagementSection } from "@/components/RootManagementPanel";
+import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 import { CourseAccessRequired } from "@/components/CourseAccessRequired";
 import { Textarea } from "@/components/ui/textarea";
 import { simulationAnswerFeedback } from "@/lib/simulationReviewHelpers";
@@ -108,11 +106,10 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
   const [simulationResult, setSimulationResult] = useState<SimulationRecord | null>(null);
   const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
-  const [libraryOpen, setLibraryOpen] = useState(false);
   const [commerceOpen, setCommerceOpen] = useState(Boolean(initialCommercePlanId));
   const [commercePlanFocus, setCommercePlanFocus] = useState<string | null>(initialCommercePlanId ?? null);
-  const [commerceAdminOpen, setCommerceAdminOpen] = useState(false);
+  const [rootManagementOpen, setRootManagementOpen] = useState(false);
+  const [rootManagementSection, setRootManagementSection] = useState<RootManagementSection>("business");
   const accessQuery = trpc.study.access.useQuery(undefined, { refetchOnWindowFocus: false });
   const courseCatalogQuery = trpc.study.courseCatalog.useQuery(undefined, { refetchOnWindowFocus: false });
   const permittedContestIds = useMemo<ContestId[]>(() => {
@@ -284,16 +281,17 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
         </div>
         <div className="mb-5 border-y border-white/10 px-3 py-3"><p className="text-[9px] font-bold tracking-[0.2em] text-[#8faeb5]">REGISTRO DE PREPARO</p><p className="font-display mt-1 text-sm font-bold text-white">{activeContest.role}</p></div>
         <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7e99a1]">Áreas do arquivo</p>
-        <nav className="space-y-1">{navigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}<button onClick={() => { setCommerceOpen(true); setMenuOpen(false); }} className="nav-item"><CreditCard className="h-4 w-4" />Planos e acessos</button>{user.role === "admin" && <button onClick={() => { setCommerceAdminOpen(true); setMenuOpen(false); }} className="nav-item"><ReceiptText className="h-4 w-4" />Operação comercial</button>}</nav>
+        <nav className="space-y-1">{navigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}<button onClick={() => { setCommerceOpen(true); setMenuOpen(false); }} className="nav-item"><CreditCard className="h-4 w-4" />Planos e acessos</button>{user.role === "admin" && <button onClick={() => { setRootManagementSection("business"); setRootManagementOpen(true); setMenuOpen(false); }} className="nav-item"><ShieldCheck className="h-4 w-4" />Gestão ROOT</button>}</nav>
         <div className="mt-auto border-t border-white/10 pt-5">
           <div className="flex gap-4 px-2"><div className="relative h-32 w-3 border border-white/15 bg-[#102833]"><span className="absolute inset-x-0 top-1/4 h-px bg-white/35" /><span className="absolute inset-x-0 top-1/2 h-px bg-white/35" /><span className="absolute inset-x-0 top-3/4 h-px bg-white/35" /><div className="absolute bottom-0 w-full bg-[#8ad2c3] transition-all duration-300" style={{ height: `${level.progress}%` }} /></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#97b1b6]">Credencial</span><span className="border border-[#82cfbf]/50 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-[#a7ded2]">REG-01</span></div><p className="font-display mt-2 text-sm font-bold text-white">Nível {level.index}</p><p className="text-xs text-[#a8c1c3]">{level.label}</p><p className="mt-2 text-[10px] text-[#85a6aa]">{level.current} / {level.next} XP</p><p className="mt-1 text-[9px] font-bold tracking-[0.14em] text-[#6f9298]">MARCO DE TREINAMENTO</p></div><div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-[#82cfbf] text-center"><span className="font-display text-sm font-extrabold text-white">{state.xp}</span><span className="-mt-1 text-[7px] font-bold tracking-wider text-[#9edbcf]">XP</span></div></div>
+          <GlobalContactLinks variant="sidebar" />
         </div>
       </aside>
       {menuOpen && <button aria-label="Fechar navegação" className="fixed inset-0 z-30 bg-[#152d38]/45 lg:hidden" onClick={() => setMenuOpen(false)} />}
       <main className="min-h-screen min-w-0 flex-1">
         <header className="sticky top-0 z-20 flex min-w-0 items-center justify-between gap-1 border-b border-[#dcd6ca] bg-[#f5f1e8]/90 px-3 backdrop-blur-md sm:gap-2 sm:px-7 lg:px-10">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3"><button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#d5cdbd] bg-[#fffdf8] lg:hidden" onClick={() => setMenuOpen(true)}><Menu className="h-5 w-5" /></button><div className="min-w-0"><p className="eyebrow truncate">CONCURSO · {activeContest.name.toUpperCase()}</p><h1 className="font-display truncate text-base font-bold text-[#183542]">{view}</h1></div></div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button>{user.role === "admin" && <div className={`${rootAdminActionContainerClassName} shrink-0`}><button aria-label="Abrir gestão de alunos" onClick={() => setAdminOpen(true)} className="whitespace-nowrap border border-[#8ab9b0] bg-[#e8f3f0] px-1.5 py-2 text-[9px] font-bold tracking-wide text-[#0e5a70] sm:px-2.5 sm:text-[10px]">{rootAdminAreas.students.shortLabel}</button><button aria-label="Abrir biblioteca de questões" onClick={() => setLibraryOpen(true)} className="whitespace-nowrap border border-[#a8c8d0] bg-[#edf7fa] px-1.5 py-2 text-[9px] font-bold tracking-wide text-[#0e5a70] sm:px-2.5 sm:text-[10px]">{rootAdminAreas.library.shortLabel}</button></div>}<button onClick={() => void logout()} className="shrink-0 border border-[#d6cfc2] bg-[#fffdf8] px-1.5 py-2 text-[9px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3] sm:px-2.5 sm:text-[10px]">SAIR</button><button onClick={() => setAccountOpen(true)} className="hidden h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white sm:flex">{level.index}</button></div>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button><button onClick={() => void logout()} className="shrink-0 border border-[#d6cfc2] bg-[#fffdf8] px-1.5 py-2 text-[9px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3] sm:px-2.5 sm:text-[10px]">SAIR</button><button onClick={() => setAccountOpen(true)} className="hidden h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white sm:flex">{level.index}</button></div>
         </header>
         <div className="mx-auto max-w-[1540px] p-4 sm:p-7 lg:p-10"><ContestSelector contestId={effectiveContestId} allowedContestIds={permittedContestIds} course={activeCourse} onChange={setContestId} />{simulation ? <SimulationScreen simulation={simulation} onAnswer={submitSimulationAnswer} onExit={() => setSimulation(null)} /> : simulationResult ? <SimulationResult result={simulationResult} onAgain={() => startSimulation(simulationResult.total)} onClose={() => { setSimulationResult(null); setView("Histórico"); }} /> : <>
           {view === "Painel" && <Dashboard state={state} modules={availableModules} contestName={activeContest.name} coverImageUrl={activeCourse?.coverImageUrl} level={level} totalAnswers={totalAnswers} overallScore={overallScore} streak={streak} studiedPercent={studiedPercent} focus={focus} historyChart={historyChart} onStudy={() => setView("Conteúdo")} onSimulate={() => setView("Simulados")} />}
@@ -306,10 +304,8 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
           {view === "Painel" && !simulation && !simulationResult && quickQuestion && (manualQuickQuestion !== null || !dailyCheckQuery.data?.dismissed) && <QuickCheck question={quickQuestion} answer={quickAnswer} correct={quickCorrect} reviewSaved={((personalReviewsQuery.data ?? []) as PersonalReviewItem[]).some(item => item.questionKey === quickQuestion.id)} reviewPending={addPersonalReviewMutation.isPending} onSaveForReview={() => addToPersonalReview(quickQuestion)} onAnswer={(answer) => { setQuickAnswer(answer); registerAnswer(quickQuestion, answer === quickQuestion.answer); }} onDismiss={() => manualQuickQuestion ? setManualQuickQuestion(null) : dismissDailyCheckMutation.mutate({ courseId: effectiveContestId })} />}
       {openedModule && <ModulePanel module={openedModule} completed={state.completedModules.includes(openedModule.id)} onComplete={() => completeModule(openedModule)} onClose={() => setOpenedModule(null)} />}
       {accountOpen && <AccountPanel user={user} onClose={() => setAccountOpen(false)} />}
-      {adminOpen && user.role === "admin" && <AdminPanel onClose={() => setAdminOpen(false)} />}
-      {libraryOpen && user.role === "admin" && <AdminLibraryPanel onClose={() => setLibraryOpen(false)} />}
       {commerceOpen && <CommercePanel initialPlanId={commercePlanFocus} onClose={() => { setCommerceOpen(false); setCommercePlanFocus(null); }} />}
-      {commerceAdminOpen && user.role === "admin" && <AdminCommercePanel onClose={() => setCommerceAdminOpen(false)} />}
+      {rootManagementOpen && user.role === "admin" && <RootManagementPanel activeSection={rootManagementSection} onSectionChange={setRootManagementSection} onClose={() => setRootManagementOpen(false)} />}
     </div>
   );
 }

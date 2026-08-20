@@ -205,8 +205,8 @@
 - [x] Corrigir a exclusão ROOT de usuários renomeados e a identificação independente de maiúsculas/minúsculas, preservando a conta ROOT e a limpeza dos dados privados.
 - [x] Corrigir a exclusão ROOT de cupons existentes por identificador estável, preservando pedidos e transações já registrados.
 - [x] Permitir cadastrar e editar uma imagem de capa de curso, com exibição consistente na vitrine pública e na área interna do aluno.
-- [ ] Reorganizar a gestão ROOT em navegação lateral com áreas separadas para negócios, alunos e conteúdos, retirando os atalhos soltos de alunos e questões do cabeçalho.
-- [ ] Permitir que o ROOT cadastre e edite links globais de contato, como e-mail e Telegram, exibidos de modo consistente para todos os usuários.
+- [x] Reorganizar a gestão ROOT em navegação lateral com áreas separadas para negócios, alunos e conteúdos, retirando os atalhos soltos de alunos e questões do cabeçalho.
+- [x] Permitir que o ROOT cadastre e edite links globais de contato, como e-mail e Telegram, exibidos de modo consistente para todos os usuários.
 - [ ] Reforçar controles de segurança de autenticação, autorização e sessão sem alterar o login local existente.
 - [ ] Impedir sessões simultâneas por conta e informar o último usuário que houver outro acesso ativo antes de liberar uma nova sessão.
 - [ ] Exibir no painel principal o próximo conteúdo permitido ao aluno, com botão Continuar que retoma o ponto de estudo disponível.

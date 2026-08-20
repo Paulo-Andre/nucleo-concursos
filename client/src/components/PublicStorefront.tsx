@@ -2,6 +2,7 @@ import { ArrowRight, BookOpenCheck, Check, ChevronRight, Clock3, CreditCard, Gra
 import { trpc } from "@/lib/trpc";
 import { formatStorefrontCurrency, storefrontCourseLabel, storefrontPlanCta, storefrontPlanType, type PublicStorefrontPlan } from "@/lib/publicStorefront";
 import { PlanCoverCarousel } from "@/components/PlanCoverCarousel";
+import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 
 type PublicStorefrontProps = {
   onLogin: () => void;
@@ -75,6 +76,6 @@ export function PublicStorefront({ onLogin, onChoosePlan }: PublicStorefrontProp
 
     <section className="px-4 pb-14 sm:px-7 sm:pb-20 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-2xl bg-[#dceee8] p-6 sm:p-9 lg:flex-row lg:items-center lg:justify-between"><div className="max-w-2xl"><p className="eyebrow text-[#176a5a]">PRONTO PARA COMEÇAR?</p><h2 className="font-display mt-2 text-2xl font-extrabold text-[#173d4a] sm:text-3xl">Sua preparação pode ter um ponto de partida claro.</h2><p className="mt-3 text-sm leading-6 text-[#456965]">Conheça os pacotes ativos, escolha uma trilha e registre seu acesso para começar.</p></div><button onClick={scrollToPackages} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#173d4a] px-5 text-sm font-extrabold text-white transition hover:bg-[#0e5a70]">Conhecer pacotes <ArrowRight className="h-4 w-4" /></button></div></section>
 
-    <footer className="border-t border-[#d9d0c1] bg-[#fffdf8] px-4 py-7 sm:px-7 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-2 text-xs text-[#597370] sm:flex-row sm:items-center sm:justify-between"><p className="font-bold text-[#315a5d]">NÚCLEO CONCURSOS</p><p>Acesso individual · Pagamento processado pelo Mercado Pago.</p></div></footer>
+    <footer className="border-t border-[#d9d0c1] bg-[#fffdf8] px-4 py-7 sm:px-7 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#597370]"><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p className="font-bold text-[#315a5d]">NÚCLEO CONCURSOS</p><p>Acesso individual · Pagamento processado pelo Mercado Pago.</p></div><GlobalContactLinks /></div></footer>
   </main>;
 }
