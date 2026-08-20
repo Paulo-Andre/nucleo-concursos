@@ -531,11 +531,13 @@ export async function deleteManagedUser(userId: number) {
   if (!db) throw new Error("Banco de dados indisponível");
   await Promise.all([
     db.delete(authSessions).where(eq(authSessions.userId, userId)),
+    db.delete(courseEnrollments).where(eq(courseEnrollments.userId, userId)),
     db.delete(completedModules).where(eq(completedModules.userId, userId)),
     db.delete(studyAnswers).where(eq(studyAnswers.userId, userId)),
     db.delete(simulationRecords).where(eq(simulationRecords.userId, userId)),
     db.delete(studyNotes).where(eq(studyNotes.userId, userId)),
     db.delete(studyProfiles).where(eq(studyProfiles.userId, userId)),
+    db.delete(studyReviewItems).where(eq(studyReviewItems.userId, userId)),
   ]);
   await db.delete(users).where(eq(users.id, userId));
 }

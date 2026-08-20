@@ -108,11 +108,11 @@
 - [x] Tornar explícito o caminho administrativo de adicionar questão à revisão, consultar a fila, corrigir e concluir a decisão.
 - [x] Validar edição de questão existente, persistência e preservação do histórico no fluxo estudantil.
 - [x] Executar e registrar testes de build, autenticação/autorização, isolamento entre usuários, persistência do progresso e funções administrativas.
-- [ ] Executar e registrar validação visual desktop e mobile, incluindo o fluxo E2E autenticado essencial.
-- [ ] Consolidar evidências de regressão, matriz de prontidão e decisão objetiva de publicação após o fechamento dos bloqueios críticos.
+- [x] Executar e registrar validação visual desktop e mobile, incluindo o fluxo E2E autenticado essencial.
+- [x] Consolidar evidências de regressão, matriz de prontidão e decisão objetiva de publicação após o fechamento dos bloqueios críticos.
 - [x] Ampliar a auditoria automatizada para confirmar que toda aula autoral possui material didático interativo e apostila correspondente.
 - [x] Substituir as referências externas com limitação de acesso automatizado por destinos oficiais atuais e verificáveis.
-- [ ] Executar o E2E autenticado de aluno e ROOT, em desktop e mobile, com contas de QA e matrícula temporária ativa.
+- [x] Executar o E2E autenticado de aluno e ROOT, em desktop e mobile, com contas de QA e matrícula temporária ativa.
 - [x] Mapear cada subitem do conteúdo programático oficial do Agente PF 2025 para módulo, apostila ou questão e fechar a lacuna curricular de QA-001.
 - [ ] Revisar uma amostra pedagógica de vídeos por disciplina, com responsável e data de atualização normativa.
 - [ ] Anexar evidência visual autenticada do fluxo de revisão: instrução, abertura direta da questão na fila, correção e decisão.
@@ -171,3 +171,5 @@
 - [x] Localizar e corrigir o recurso de logotipo quebrado no menu lateral, com fallback visual que não dependa de imagem externa instável.
 - [x] Substituir a marca restrita “Estudos PF” por uma identidade ampla, adequada a diferentes concursos e cursos policiais.
 - [x] Validar a marca e o menu lateral em celular e desktop, com testes, compilação e publicação.
+- [x] Garantir que a exclusão administrativa de um aluno remova matrículas e revisões privadas vinculadas, preservando o histórico administrativo auditável.
+- [x] Corrigir a política de cookie de sessão em HTTP local, mantendo `SameSite=None` apenas com `Secure` e permitindo a autenticação de QA local.
