@@ -10,7 +10,7 @@ import {
   courseEnrollments,
   courses,
 } from "../drizzle/schema";
-import { approveCommerceOrder, createCommerceCoupon, createCommerceOrder, createCommercePlan } from "./commerce";
+import { approveCommerceOrder, createCommerceCoupon, createCommerceOrder, createCommercePlan, deleteCommerceCoupon } from "./commerce";
 import { createLocalUser, deleteManagedUser, getDb } from "./db";
 import { createMercadoPagoCheckout } from "./mercadoPago";
 
@@ -77,6 +77,12 @@ describe("ciclo comercial de planos e matrículas", () => {
 
       const savedCoupon = (await db.select().from(commerceCoupons).where(eq(commerceCoupons.id, couponId!)).limit(1))[0];
       expect(savedCoupon?.redeemedCount).toBe(1);
+
+      await deleteCommerceCoupon(actor.id, couponId!);
+      couponId = null;
+      expect(await db.select().from(commerceCoupons).where(eq(commerceCoupons.id, savedCoupon!.id))).toHaveLength(0);
+      expect((await db.select().from(commerceOrders).where(eq(commerceOrders.id, freeOrder.id)).limit(1))[0]?.couponCode).toBe(`${token}-FREE`.toUpperCase());
+      expect(await db.select().from(commerceTransactions).where(eq(commerceTransactions.orderId, freeOrder.id))).toHaveLength(1);
     } finally {
       if (orderIds.length) {
         await db.delete(commerceTransactions).where(inArray(commerceTransactions.orderId, orderIds));

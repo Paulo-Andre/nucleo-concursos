@@ -582,6 +582,7 @@ export type ManagedCourseInput = {
   title: string;
   track: string;
   description?: string | null;
+  coverImageUrl?: string | null;
 };
 
 export async function listManagedCourses() {
@@ -607,6 +608,7 @@ export async function createManagedCourse(actorUserId: number, input: ManagedCou
     title: input.title,
     track: input.track,
     description: input.description?.trim() || null,
+    coverImageUrl: input.coverImageUrl?.trim() || null,
     isActive: true,
     createdByUserId: actorUserId,
   });
@@ -614,6 +616,23 @@ export async function createManagedCourse(actorUserId: number, input: ManagedCou
   if (!created) throw new Error("Curso não foi salvo.");
   await writeAdminAudit(actorUserId, null, "CRIACAO_DE_CURSO", `Curso ${created.id} — ${created.title} criado.`);
   return created;
+}
+
+export async function updateManagedCourse(actorUserId: number, courseId: string, input: Omit<ManagedCourseInput, "id">) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await getManagedCourseById(courseId);
+  if (!existing) throw new Error("Curso não encontrado.");
+  await db.update(courses).set({
+    title: input.title,
+    track: input.track,
+    description: input.description?.trim() || null,
+    coverImageUrl: input.coverImageUrl?.trim() || null,
+  }).where(eq(courses.id, courseId));
+  const updated = await getManagedCourseById(courseId);
+  if (!updated) throw new Error("Curso não foi atualizado.");
+  await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_CURSO", `Curso ${courseId} atualizado.`);
+  return updated;
 }
 
 export async function setManagedCourseActive(actorUserId: number, courseId: string, isActive: boolean) {
@@ -882,6 +901,26 @@ export async function getUserCourseAccess(userId: number) {
     sql`${courseEnrollments.expiresAt} > NOW()`,
   ));
   return rows.map(serializeEnrollment);
+}
+
+/** Cursos e capas que podem ser apresentados na área de estudos do usuário autenticado. */
+export async function listStudyCourseCatalog(userId: number, includeInactive = false) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const fields = {
+    id: courses.id,
+    title: courses.title,
+    track: courses.track,
+    description: courses.description,
+    coverImageUrl: courses.coverImageUrl,
+    isActive: courses.isActive,
+  };
+  if (includeInactive) return db.select(fields).from(courses);
+
+  const activeEnrollments = await getUserCourseAccess(userId);
+  const courseIds = activeEnrollments.map(enrollment => enrollment.courseId);
+  if (!courseIds.length) return [];
+  return db.select(fields).from(courses).where(and(eq(courses.isActive, true), inArray(courses.id, courseIds)));
 }
 
 export async function grantCourseEnrollment(actorUserId: number, userId: number, courseId: string, startAt: Date, expiresAt: Date) {

@@ -196,3 +196,12 @@
 - [x] Adicionar validação reproduzível do fluxo editorial com dado temporário para impedir que a evidência dependa de fila vazia.
 - [x] Ler e registrar o trecho final de `server/question-bank.integration.test.ts` que cobre criação temporária, solicitação de correção e limpeza do fluxo editorial ROOT.
 - [x] Executar novamente `pnpm test` e registrar a saída aprovada após a nova cobertura reproduzível do fluxo editorial.
+- [ ] Substituir o token de teste do Mercado Pago pelo Access Token de produção de forma segura e validar sua conectividade.
+- [ ] Configurar a URL pública do Webhook no modo de produção e armazenar a assinatura secreta de produção.
+- [ ] Confirmar o funcionamento do checkout de produção com uma transação controlada e sem duplicar matrículas.
+- [ ] Conduzir no painel do Mercado Pago a coleta das credenciais produtivas e o cadastro do Webhook produtivo sem expor segredos na conversa.
+- [ ] Identificar a pendência de conta ou requisito do Mercado Pago que causa o erro genérico ao ativar credenciais de produção.
+- [ ] Solicitar ao suporte do Mercado Pago a análise e liberação da ativação produtiva, pois o erro persiste após teste concluído, HTTPS válido, termos aceitos e reCAPTCHA aprovado.
+- [x] Corrigir a exclusão ROOT de usuários renomeados e a identificação independente de maiúsculas/minúsculas, preservando a conta ROOT e a limpeza dos dados privados.
+- [x] Corrigir a exclusão ROOT de cupons existentes por identificador estável, preservando pedidos e transações já registrados.
+- [x] Permitir cadastrar e editar uma imagem de capa de curso, com exibição consistente na vitrine pública e na área interna do aluno.

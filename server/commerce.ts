@@ -71,7 +71,14 @@ async function courseIdsForPlan(planId: string) {
 }
 
 async function serializePlan(plan: typeof commercePlans.$inferSelect) {
-  return { ...plan, courseIds: await courseIdsForPlan(plan.id) };
+  const courseIds = await courseIdsForPlan(plan.id);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const storedCourses = courseIds.length
+    ? await db.select({ id: courses.id, title: courses.title, track: courses.track, coverImageUrl: courses.coverImageUrl }).from(courses).where(inArray(courses.id, courseIds))
+    : [];
+  const coursesById = new Map(storedCourses.map(course => [course.id, course]));
+  return { ...plan, courseIds, courses: courseIds.map(courseId => coursesById.get(courseId)).filter((course): course is NonNullable<typeof course> => Boolean(course)) };
 }
 
 async function ensurePlanCourses(courseIds: string[]) {
@@ -173,6 +180,17 @@ export async function updateCommerceCoupon(actorUserId: number, couponId: string
   }).where(eq(commerceCoupons.id, couponId));
   await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_CUPOM", `Cupom ${current.code} atualizado.`);
   return (await db.select().from(commerceCoupons).where(eq(commerceCoupons.id, couponId)).limit(1))[0];
+}
+
+/** Exclui somente o cupom do catálogo; pedidos e transações preservam seus valores e códigos consolidados. */
+export async function deleteCommerceCoupon(actorUserId: number, couponId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const current = (await db.select().from(commerceCoupons).where(eq(commerceCoupons.id, couponId)).limit(1))[0];
+  if (!current) throw new Error("Cupom não encontrado.");
+  await db.delete(commerceCoupons).where(eq(commerceCoupons.id, couponId));
+  await writeAdminAudit(actorUserId, null, "EXCLUSAO_DE_CUPOM", `Cupom ${current.code} excluído; pedidos anteriores foram preservados.`);
+  return { id: current.id, code: current.code };
 }
 
 async function serializeOrder(order: typeof commerceOrders.$inferSelect) {

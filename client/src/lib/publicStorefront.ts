@@ -6,6 +6,7 @@ export type PublicStorefrontPlan = {
   accessDurationDays: number;
   planType: "single_course" | "subscription" | string;
   courseIds: string[];
+  courses?: { id: string; title: string; track: string; coverImageUrl: string | null }[];
   isHighlighted?: boolean;
 };
 

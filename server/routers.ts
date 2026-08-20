@@ -24,8 +24,8 @@ import {
   getDailyQuickCheck,
   dismissDailyQuickCheck,
   grantCourseEnrollment,
+  getUserById,
   getUserByIdentifier,
-  getUserByUsername,
   listAdminAuditLogs,
   listContentChangelog,
   listManagedCourses,
@@ -33,6 +33,7 @@ import {
   listManagedDisciplines,
   listManagedQuestions,
   listStudyQuestions,
+  listStudyCourseCatalog,
   listManagedUsers,
   listQuestionChangelog,
   listReviewQueue,
@@ -48,6 +49,7 @@ import {
   setManagedCourseActive,
   updateManagedUser,
   updateManagedContent,
+  updateManagedCourse,
   updateManagedDiscipline,
   updateManagedQuestion,
   updateUserPassword,
@@ -64,6 +66,7 @@ import {
   approveCommerceOrder,
   cancelCommerceOrder,
   createCommerceCoupon,
+  deleteCommerceCoupon,
   createCommerceOrder,
   createCommercePlan,
   listManagedCommerceCoupons,
@@ -75,6 +78,7 @@ import {
   updateCommercePlan,
 } from "./commerce";
 import { createMercadoPagoCheckout } from "./mercadoPago";
+import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
 const passwordSchema = z.string().min(8, "A senha deve ter pelo menos 8 caracteres.").max(128);
@@ -105,7 +109,10 @@ const courseSchema = z.object({
   title: z.string().trim().min(4, "Informe o título do curso.").max(180),
   track: z.string().trim().min(2, "Informe a trilha do curso.").max(32),
   description: z.string().trim().max(1200).optional(),
+  coverImageUrl: z.string().trim().url("Informe uma URL válida para a capa.").max(1024).optional().or(z.literal("")),
 });
+const courseUpdateSchema = courseSchema.omit({ id: true });
+const accountDeletionConfirmationSchema = z.string().trim().min(3, "Digite o nome ou usuário atual para confirmar.").max(160);
 const commerceCodeSchema = z.string().trim().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[A-Za-z0-9_-]+$/, "Use apenas letras, números, hífen ou sublinhado.");
 const commercePlanSchema = z.object({
   code: commerceCodeSchema,
@@ -270,6 +277,7 @@ export const appRouter = router({
   study: router({
     state: enrollmentRequiredProcedure.query(({ ctx }) => getStudyState(ctx.user.id)),
     access: protectedProcedure.query(({ ctx }) => getUserCourseAccess(ctx.user.id)),
+    courseCatalog: protectedProcedure.query(({ ctx }) => listStudyCourseCatalog(ctx.user.id, ctx.user.role === "admin")),
     answer: enrollmentRequiredProcedure.input(z.object({ questionId: z.string().trim().min(1).max(80), correct: z.boolean() })).mutation(({ input, ctx }) => recordAnswer(ctx.user.id, input.questionId, input.correct)),
     dailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getDailyQuickCheck(ctx.user.id, input.courseId)),
     dismissDailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).mutation(({ input, ctx }) => dismissDailyQuickCheck(ctx.user.id, input.courseId)),
@@ -307,6 +315,15 @@ export const appRouter = router({
     stats: adminProcedure.query(() => getAdminStats()),
     courses: adminProcedure.query(() => listManagedCourses()),
     createCourse: adminProcedure.input(courseSchema).mutation(({ input, ctx }) => createManagedCourse(ctx.user.id, input)),
+    updateCourse: adminProcedure.input(z.object({ courseId: courseIdSchema, data: courseUpdateSchema })).mutation(({ input, ctx }) => updateManagedCourse(ctx.user.id, input.courseId, input.data)),
+    uploadCourseCover: adminProcedure.input(contentImageSchema).mutation(async ({ input, ctx }) => {
+      const base64 = input.base64.replace(/\s/g, "");
+      if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) throw new TRPCError({ code: "BAD_REQUEST", message: "A imagem enviada não está em um formato válido." });
+      const bytes = Buffer.from(base64, "base64");
+      if (!bytes.length || bytes.length > 4 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Envie uma imagem JPG, PNG ou WEBP de até 4 MB." });
+      const stored = await storagePut(`course-covers/${ctx.user.id}/${crypto.randomUUID()}.${imageExtension(input.mimeType)}`, bytes, input.mimeType);
+      return { url: stored.url };
+    }),
     setCourseActive: adminProcedure.input(z.object({ courseId: courseIdSchema, isActive: z.boolean() })).mutation(({ input, ctx }) => setManagedCourseActive(ctx.user.id, input.courseId, input.isActive)),
     deleteCourse: adminProcedure.input(z.object({ courseId: courseIdSchema, confirmation: courseIdSchema })).mutation(({ input, ctx }) => deleteManagedCourse(ctx.user.id, input.courseId, input.confirmation)),
     disciplines: router({
@@ -353,6 +370,7 @@ export const appRouter = router({
       coupons: adminProcedure.query(() => listManagedCommerceCoupons()),
       createCoupon: adminProcedure.input(commerceCouponSchema).mutation(({ input, ctx }) => createCommerceCoupon(ctx.user.id, input)),
       updateCoupon: adminProcedure.input(z.object({ id: z.string().uuid(), data: commerceCouponSchema })).mutation(({ input, ctx }) => updateCommerceCoupon(ctx.user.id, input.id, input.data)),
+      deleteCoupon: adminProcedure.input(z.object({ id: z.string().uuid() })).mutation(({ input, ctx }) => deleteCommerceCoupon(ctx.user.id, input.id)),
       orders: adminProcedure.input(z.object({ status: commerceOrderStatusSchema.optional() })).query(({ input }) => listManagedCommerceOrders(input.status)),
       approveOrder: adminProcedure.input(z.object({ id: z.string().uuid(), providerReference: z.string().trim().max(160).optional() })).mutation(({ input, ctx }) => approveCommerceOrder(ctx.user.id, input.id, "manual", input.providerReference)),
       cancelOrder: adminProcedure.input(z.object({ id: z.string().uuid() })).mutation(({ input, ctx }) => cancelCommerceOrder(ctx.user.id, input.id)),
@@ -375,10 +393,15 @@ export const appRouter = router({
       await writeAdminAudit(ctx.user.id, input.userId, input.isBlocked ? "BLOQUEIO_DE_CONTA" : "DESBLOQUEIO_DE_CONTA", input.isBlocked ? "Conta bloqueada." : "Conta desbloqueada.");
       return { success: true };
     }),
-    deleteUser: adminProcedure.input(z.object({ userId: z.number().int().positive(), confirmationUsername: usernameSchema })).mutation(async ({ input, ctx }) => {
+    deleteUser: adminProcedure.input(z.object({
+      userId: z.number().int().positive(),
+      confirmation: accountDeletionConfirmationSchema.optional(),
+      confirmationUsername: accountDeletionConfirmationSchema.optional(),
+    }).refine(input => Boolean(input.confirmation || input.confirmationUsername), { message: "Digite o nome ou usuário atual para confirmar.", path: ["confirmation"] })).mutation(async ({ input, ctx }) => {
       if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "A conta administrativa não pode excluir a si mesma." });
-      const target = await getUserByUsername(input.confirmationUsername);
-      if (!target || target.id !== input.userId) throw new TRPCError({ code: "BAD_REQUEST", message: "Confirmação de usuário inválida." });
+      const target = await getUserById(input.userId);
+      const confirmation = input.confirmation ?? input.confirmationUsername ?? "";
+      if (!target || !matchesAccountDeletionConfirmation(target, confirmation)) throw new TRPCError({ code: "BAD_REQUEST", message: "Confirmação inválida. Digite o nome ou usuário atual da conta." });
       await writeAdminAudit(ctx.user.id, input.userId, "EXCLUSAO_DE_CONTA", `Conta ${target.username ?? target.name} excluída pelo administrador.`);
       await deleteManagedUser(input.userId);
       return { success: true };
