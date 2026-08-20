@@ -228,3 +228,5 @@
 - [x] Validar a matriz corrigida em largura de celular, cobrir o contrato responsivo e publicar a correção.
 - [x] Distinguir no cadastro os conflitos de nome de usuário, e-mail e CPF, evitando atribuir genericamente ao CPF um erro causado por outro campo.
 - [x] Validar com teste um CPF novo e válido no cadastro local e publicar a correção de mensagens de conflito.
+- [x] Corrigir a matriz de estudo em larguras intermediárias e desktop para que título, descrição, contador de disciplinas e seletor não sejam comprimidos.
+- [x] Validar a matriz em 720 px, tablet e desktop, cobrir o breakpoint contra regressão e publicar a correção.

@@ -11,11 +11,12 @@ describe("contrato de layout móvel", () => {
     expect(cssSource).toContain(".shell-card { @apply min-w-0");
   });
 
-  it("não força o seletor de concurso a exceder a largura em celular", () => {
+  it("mantém a matriz vertical até telas amplas, sem comprimir título e seletor", () => {
     expect(homeSource).toContain("className=\"w-full min-w-0 rounded-xl");
-    expect(homeSource).toContain("md:min-w-[220px]");
-    expect(homeSource).toContain("md:flex-row md:items-center md:justify-between");
-    expect(homeSource).toContain("w-full flex-col gap-2 md:w-auto md:flex-row");
+    expect(homeSource).toContain("xl:flex-row xl:items-center xl:justify-between");
+    expect(homeSource).toContain("w-full flex-col gap-2 border-t");
+    expect(homeSource).toContain("xl:w-[min(100%,24rem)]");
+    expect(homeSource).toContain("xl:min-w-[17rem] xl:flex-1");
   });
 
   it("preserva títulos legíveis e ações empilhadas no acesso e no painel", () => {
