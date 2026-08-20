@@ -17,6 +17,7 @@ import {
   courseEnrollments,
   disciplineContents,
   disciplines,
+  globalContactSettings,
   InsertUser,
   questionChangelog,
   questionContentLinks,
@@ -299,6 +300,28 @@ export async function deleteSessionsForUser(userId: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(authSessions).where(eq(authSessions.userId, userId));
+}
+
+export type GlobalContactSettingsInput = {
+  email?: string | null;
+  telegramUrl?: string | null;
+};
+
+export async function getGlobalContactSettings() {
+  const db = await getDb();
+  if (!db) return { email: null, telegramUrl: null, updatedAt: null };
+  const row = await db.select().from(globalContactSettings).where(eq(globalContactSettings.id, 1)).limit(1);
+  return row[0] ?? { email: null, telegramUrl: null, updatedAt: null };
+}
+
+export async function saveGlobalContactSettings(actorUserId: number, input: GlobalContactSettingsInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const email = input.email?.trim().toLowerCase() || null;
+  const telegramUrl = input.telegramUrl?.trim() || null;
+  await db.insert(globalContactSettings).values({ id: 1, email, telegramUrl, updatedByUserId: actorUserId })
+    .onDuplicateKeyUpdate({ set: { email, telegramUrl, updatedByUserId: actorUserId } });
+  return getGlobalContactSettings();
 }
 
 async function ensureStudyProfile(userId: number) {

@@ -101,6 +101,37 @@ export const studyNotes = mysqlTable("studyNotes", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [uniqueIndex("studyNotes_user_module_unique").on(table.userId, table.moduleId), index("studyNotes_userId_idx").on(table.userId)]);
 
+/** Progresso por conteúdo: permite que o aluno retome o último conteúdo iniciado em um curso. */
+export const studyContentProgress = mysqlTable("studyContentProgress", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  courseId: varchar("courseId", { length: 80 }).notNull(),
+  contentId: int("contentId").notNull(),
+  status: mysqlEnum("status", ["started", "completed"]).notNull().default("started"),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  lastOpenedAt: timestamp("lastOpenedAt").defaultNow().onUpdateNow().notNull(),
+  completedAt: timestamp("completedAt"),
+}, table => [
+  uniqueIndex("studyContentProgress_user_course_content_unique").on(table.userId, table.courseId, table.contentId),
+  index("studyContentProgress_user_lastOpened_idx").on(table.userId, table.lastOpenedAt),
+]);
+
+/** Roteiro pessoal do aluno: um conteúdo permitido por faixa de dia e horário. */
+export const studyRoadmapItems = mysqlTable("studyRoadmapItems", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  courseId: varchar("courseId", { length: 80 }).notNull(),
+  contentId: int("contentId").notNull(),
+  weekday: int("weekday").notNull(),
+  startTime: varchar("startTime", { length: 5 }).notNull(),
+  isActive: boolean("isActive").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("studyRoadmapItems_user_course_content_unique").on(table.userId, table.courseId, table.contentId),
+  index("studyRoadmapItems_user_weekday_time_idx").on(table.userId, table.weekday, table.startTime),
+]);
+
 /** Registro imutável das ações administrativas relevantes. */
 export const adminAuditLogs = mysqlTable("adminAuditLogs", {
   id: int("id").autoincrement().primaryKey(),
@@ -130,6 +161,7 @@ export const commercePlans = mysqlTable("commercePlans", {
   code: varchar("code", { length: 48 }).notNull().unique(),
   title: varchar("title", { length: 180 }).notNull(),
   description: text("description"),
+  coverImageUrlsJson: varchar("coverImageUrlsJson", { length: 4096 }).notNull().default("[]"),
   planType: mysqlEnum("planType", ["course_access", "subscription"]).notNull(),
   accessDurationDays: int("accessDurationDays").notNull(),
   priceCents: int("priceCents").notNull(),
@@ -389,6 +421,15 @@ export const contentChangelog = mysqlTable("contentChangelog", {
   newValue: text("newValue"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [index("contentChangelog_content_idx").on(table.contentId), index("contentChangelog_actor_idx").on(table.actorUserId)]);
+
+/** Dados públicos de contato, mantidos pelo ROOT e reutilizados em toda a plataforma. */
+export const globalContactSettings = mysqlTable("globalContactSettings", {
+  id: int("id").primaryKey(),
+  email: varchar("email", { length: 320 }),
+  telegramUrl: varchar("telegramUrl", { length: 500 }),
+  updatedByUserId: int("updatedByUserId"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 
 export type User = typeof users.$inferSelect;
 export type Course = typeof courses.$inferSelect;

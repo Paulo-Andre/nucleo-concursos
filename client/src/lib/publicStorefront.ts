@@ -2,6 +2,7 @@ export type PublicStorefrontPlan = {
   id: string;
   title: string;
   description?: string | null;
+  coverImageUrls?: string[];
   priceCents: number;
   accessDurationDays: number;
   planType: "single_course" | "subscription" | string;

@@ -10,7 +10,7 @@ import {
   courseEnrollments,
   courses,
 } from "../drizzle/schema";
-import { approveCommerceOrder, createCommerceCoupon, createCommerceOrder, createCommercePlan, deleteCommerceCoupon } from "./commerce";
+import { approveCommerceOrder, createCommerceCoupon, createCommerceOrder, createCommercePlan, deleteCommerceCoupon, updateCommercePlan } from "./commerce";
 import { createLocalUser, deleteManagedUser, getDb } from "./db";
 import { createMercadoPagoCheckout } from "./mercadoPago";
 
@@ -34,9 +34,16 @@ describe("ciclo comercial de planos e matrículas", () => {
     try {
       const plan = await createCommercePlan(actor.id, {
         code: `${token}-plan`, title: "Plano temporário de QA", description: "Cobertura de integração comercial.", planType: "course_access",
+        coverImageUrls: ["https://cdn.example.invalid/plano-a.webp", "https://cdn.example.invalid/plano-a.webp", "https://cdn.example.invalid/plano-b.webp", "https://cdn.example.invalid/plano-c.webp", "https://cdn.example.invalid/plano-excedente.webp"],
         accessDurationDays: 30, priceCents: 19_900, isActive: true, isHighlighted: false, courseIds: [course.id],
       });
       planId = plan.id;
+      expect(plan.coverImageUrls).toEqual(["https://cdn.example.invalid/plano-a.webp", "https://cdn.example.invalid/plano-b.webp", "https://cdn.example.invalid/plano-c.webp"]);
+      const updatedPlan = await updateCommercePlan(actor.id, plan.id, {
+        code: `${token}-plan`, title: "Plano temporário de QA", description: "Cobertura de integração comercial.", planType: "course_access",
+        coverImageUrls: ["https://cdn.example.invalid/plano-atualizado.webp"], accessDurationDays: 30, priceCents: 19_900, isActive: true, isHighlighted: false, courseIds: [course.id],
+      });
+      expect(updatedPlan.coverImageUrls).toEqual(["https://cdn.example.invalid/plano-atualizado.webp"]);
       const coupon = await createCommerceCoupon(actor.id, {
         code: `${token}-free`, description: "Cupom integral de QA", discountType: "percentage", discountValue: 100, maxRedemptions: 1, isActive: true,
       });

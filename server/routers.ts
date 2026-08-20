@@ -118,6 +118,7 @@ const commercePlanSchema = z.object({
   code: commerceCodeSchema,
   title: z.string().trim().min(4, "Informe o nome do plano.").max(180),
   description: z.string().trim().max(3000).optional().or(z.literal("")),
+  coverImageUrls: z.array(z.string().trim().url("Informe uma URL válida para a imagem do plano.").max(2048)).max(3, "Adicione no máximo três imagens ao plano.").default([]),
   planType: z.enum(["course_access", "subscription"]),
   accessDurationDays: z.number().int().min(1, "Informe uma duração mínima de 1 dia.").max(3650),
   priceCents: z.number().int().min(0, "O preço não pode ser negativo.").max(100_000_000),
@@ -310,6 +311,9 @@ export const appRouter = router({
       return createMercadoPagoCheckout(ctx.user.id, input.orderId, { origin, notificationUrl: `${origin}/api/payments/mercado-pago/webhook` });
     }),
   }),
+  platform: router({
+    contacts: publicProcedure.query(() => import("./db").then(({ getGlobalContactSettings }) => getGlobalContactSettings())),
+  }),
   admin: router({
     users: adminProcedure.input(z.object({ search: z.string().trim().max(80).optional() })).query(({ input }) => listManagedUsers(input.search)),
     stats: adminProcedure.query(() => getAdminStats()),
@@ -326,6 +330,13 @@ export const appRouter = router({
     }),
     setCourseActive: adminProcedure.input(z.object({ courseId: courseIdSchema, isActive: z.boolean() })).mutation(({ input, ctx }) => setManagedCourseActive(ctx.user.id, input.courseId, input.isActive)),
     deleteCourse: adminProcedure.input(z.object({ courseId: courseIdSchema, confirmation: courseIdSchema })).mutation(({ input, ctx }) => deleteManagedCourse(ctx.user.id, input.courseId, input.confirmation)),
+    contacts: router({
+      get: adminProcedure.query(() => import("./db").then(({ getGlobalContactSettings }) => getGlobalContactSettings())),
+      save: adminProcedure.input(z.object({
+        email: z.string().trim().email("Informe um e-mail válido.").max(320).optional().or(z.literal("")),
+        telegramUrl: z.string().trim().url("Informe um link válido.").max(500).optional().or(z.literal("")),
+      })).mutation(({ input, ctx }) => import("./db").then(({ saveGlobalContactSettings }) => saveGlobalContactSettings(ctx.user.id, input))),
+    }),
     disciplines: router({
       list: adminProcedure.query(() => listManagedDisciplines()),
       create: adminProcedure.input(disciplineSchema).mutation(({ input, ctx }) => createManagedDiscipline(ctx.user.id, input)),
@@ -365,6 +376,14 @@ export const appRouter = router({
     revokeEnrollment: adminProcedure.input(z.object({ userId: z.number().int().positive(), courseId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => import("./db").then(({ revokeCourseEnrollment }) => revokeCourseEnrollment(ctx.user.id, input.userId, input.courseId))),
     commerce: router({
       plans: adminProcedure.query(() => listManagedCommercePlans()),
+      uploadPlanImage: adminProcedure.input(contentImageSchema).mutation(async ({ input, ctx }) => {
+        const base64 = input.base64.replace(/\s/g, "");
+        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) throw new TRPCError({ code: "BAD_REQUEST", message: "A imagem enviada não está em um formato válido." });
+        const bytes = Buffer.from(base64, "base64");
+        if (!bytes.length || bytes.length > 4 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Envie uma imagem JPG, PNG ou WEBP de até 4 MB." });
+        const stored = await storagePut(`plan-covers/${ctx.user.id}/${crypto.randomUUID()}.${imageExtension(input.mimeType)}`, bytes, input.mimeType);
+        return { url: stored.url };
+      }),
       createPlan: adminProcedure.input(commercePlanSchema).mutation(({ input, ctx }) => createCommercePlan(ctx.user.id, input)),
       updatePlan: adminProcedure.input(z.object({ id: z.string().uuid(), data: commercePlanSchema })).mutation(({ input, ctx }) => updateCommercePlan(ctx.user.id, input.id, input.data)),
       coupons: adminProcedure.query(() => listManagedCommerceCoupons()),

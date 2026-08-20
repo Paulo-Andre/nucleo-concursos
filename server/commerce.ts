@@ -16,6 +16,7 @@ export type CommercePlanInput = {
   code: string;
   title: string;
   description?: string | null;
+  coverImageUrls?: string[];
   planType: "course_access" | "subscription";
   accessDurationDays: number;
   priceCents: number;
@@ -43,6 +44,22 @@ function parseCourseIds(raw: string) {
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizePlanCoverImageUrls(raw: string[] | undefined) {
+  return Array.from(new Set((raw ?? []).map(value => value.trim()).filter(Boolean))).slice(0, 3);
+}
+
+function parsePlanCoverImageUrls(raw: string | null | undefined) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? normalizePlanCoverImageUrls(parsed.filter((value): value is string => typeof value === "string"))
+      : [];
   } catch {
     return [];
   }
@@ -78,7 +95,7 @@ async function serializePlan(plan: typeof commercePlans.$inferSelect) {
     ? await db.select({ id: courses.id, title: courses.title, track: courses.track, coverImageUrl: courses.coverImageUrl }).from(courses).where(inArray(courses.id, courseIds))
     : [];
   const coursesById = new Map(storedCourses.map(course => [course.id, course]));
-  return { ...plan, courseIds, courses: courseIds.map(courseId => coursesById.get(courseId)).filter((course): course is NonNullable<typeof course> => Boolean(course)) };
+  return { ...plan, coverImageUrls: parsePlanCoverImageUrls(plan.coverImageUrlsJson), courseIds, courses: courseIds.map(courseId => coursesById.get(courseId)).filter((course): course is NonNullable<typeof course> => Boolean(course)) };
 }
 
 async function ensurePlanCourses(courseIds: string[]) {
@@ -116,6 +133,7 @@ export async function createCommercePlan(actorUserId: number, input: CommercePla
     code,
     title: input.title,
     description: input.description || null,
+    coverImageUrlsJson: JSON.stringify(normalizePlanCoverImageUrls(input.coverImageUrls)),
     planType: input.planType,
     accessDurationDays: input.accessDurationDays,
     priceCents: input.priceCents,
@@ -138,6 +156,7 @@ export async function updateCommercePlan(actorUserId: number, planId: string, in
   const courseIds = await ensurePlanCourses(input.courseIds);
   await db.update(commercePlans).set({
     code: normalizeCode(input.code), title: input.title, description: input.description || null,
+    coverImageUrlsJson: JSON.stringify(normalizePlanCoverImageUrls(input.coverImageUrls)),
     planType: input.planType, accessDurationDays: input.accessDurationDays, priceCents: input.priceCents,
     isActive: input.isActive, isHighlighted: input.isHighlighted,
   }).where(eq(commercePlans.id, planId));
