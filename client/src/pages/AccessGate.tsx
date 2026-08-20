@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type AccessGateProps = { onAuthenticated: () => void };
+type AccessGateProps = { onAuthenticated: () => void; initialMode?: "login" | "register"; onBackToStorefront?: () => void; selectedPlanPending?: boolean };
 
 function formatCpfInput(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -22,8 +22,8 @@ function hasValidCpfDigits(value: string) {
   return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
 }
 
-export default function AccessGate({ onAuthenticated }: AccessGateProps) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+export default function AccessGate({ onAuthenticated, initialMode = "login", onBackToStorefront, selectedPlanPending = false }: AccessGateProps) {
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", username: "", email: "", cpf: "", identifier: "", password: "", confirmation: "" });
   const utils = trpc.useUtils();
@@ -56,6 +56,8 @@ export default function AccessGate({ onAuthenticated }: AccessGateProps) {
         <div className="mt-9 border-t border-white/15 pt-5 text-xs leading-5 text-[#a8c1c3] sm:mt-12"><LockKeyhole className="mr-2 inline h-4 w-4 text-[#82cfbf]" />Sessão segura e dados vinculados à sua conta.</div>
       </div>
       <div className="min-w-0 p-5 sm:p-12">
+        {onBackToStorefront && <button type="button" onClick={onBackToStorefront} className="mb-6 inline-flex items-center gap-1 text-xs font-bold text-[#0e5a70] hover:underline">← Ver pacotes</button>}
+        {selectedPlanPending && <p className="mb-5 rounded-xl border border-[#a9d0c5] bg-[#edf7f5] px-3 py-2 text-xs font-semibold leading-5 text-[#17644e]">Seu pacote está reservado para a próxima etapa. Crie sua conta ou entre para continuar a compra dentro da plataforma.</p>}
         <div className="flex flex-wrap gap-x-7 border-b border-[#d8d0c1] text-sm font-bold"><button className={`-mb-px border-b-2 px-1 pb-3 ${mode === "login" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("login"); setMessage(null); }}>Entrar</button><button className={`-mb-px border-b-2 px-1 pb-3 ${mode === "register" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("register"); setMessage(null); }}><UserPlus className="mr-1.5 inline h-4 w-4" />Criar conta</button></div>
         <div className="mt-7"><p className="text-[10px] font-bold tracking-[0.14em] text-[#5d777d] sm:tracking-[0.18em]">{mode === "login" ? "IDENTIFIQUE-SE" : "NOVA CREDENCIAL"}</p><h2 className="font-display mt-2 break-words text-2xl font-extrabold sm:text-3xl">{mode === "login" ? "Acesse seu dossiê." : "Comece seu registro."}</h2></div>
         <form onSubmit={submit} className="mt-7 space-y-4">

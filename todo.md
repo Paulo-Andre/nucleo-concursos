@@ -185,5 +185,9 @@
 - [x] Configurar com segurança as credenciais do Mercado Pago e registrar a URL pública de notificação no painel do provedor.
 - [x] Estabilizar o teste de integração comercial para acomodar a latência transitória do banco, sem reduzir a cobertura do ciclo de pedido e matrícula.
 - [x] Confirmar que a rota pública do Webhook do Mercado Pago responde à requisição POST publicada, sem fallback para a página do cliente.
-- [ ] Validar uma compra aprovada no ambiente de testes com comprador de teste do Mercado Pago e confirmar a liberação automática de matrícula.
-- [ ] Investigar e corrigir a reconciliação automática quando um pagamento de teste aprovado não atualiza o pedido nem a matrícula.
+- [x] Validar uma compra aprovada no ambiente de testes com comprador de teste do Mercado Pago e confirmar a liberação automática de matrícula.
+- [x] Investigar e corrigir a reconciliação automática quando um pagamento de teste aprovado não atualiza o pedido nem a matrícula.
+- [x] Criar uma página inicial pública orientada à conversão, com apresentação de pacotes, benefícios e chamadas de compra claras.
+- [x] Exibir automaticamente na página inicial somente os pacotes ativos publicados pelo ROOT, mantendo preço, duração e cursos cobertos sincronizados com o catálogo administrativo.
+- [x] Adicionar botão de login visível e fluxo de compra para visitantes: pacote escolhido → cadastro/login local → retorno ao pacote → Checkout Pro.
+- [x] Validar a vitrine comercial e o fluxo de aquisição em celular e desktop, com testes e publicação.

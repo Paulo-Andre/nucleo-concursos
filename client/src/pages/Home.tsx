@@ -26,6 +26,7 @@ import { AdminPanel } from "@/components/AdminPanel";
 import { AdminLibraryPanel } from "@/components/AdminLibraryPanel";
 import { AdminCommercePanel } from "@/components/AdminCommercePanel";
 import { CommercePanel } from "@/components/CommercePanel";
+import { PublicStorefront } from "@/components/PublicStorefront";
 import { rootAdminActionContainerClassName, rootAdminAreas } from "@/lib/rootAdminNavigation";
 import { CourseAccessRequired } from "@/components/CourseAccessRequired";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,14 +74,25 @@ function getDisciplinePerformance(state: StudyState) {
 export default function Home() {
   // The useAuth hook reads the local session created by the cadastro/login screen.
   const { user, loading, isAuthenticated, logout } = useAuth();
+  const [accessMode, setAccessMode] = useState<"login" | "register" | null>(null);
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(() => window.sessionStorage.getItem("nucleo-purchase-plan"));
+
+  const startPlanAcquisition = (planId: string) => {
+    window.sessionStorage.setItem("nucleo-purchase-plan", planId);
+    setPendingPlanId(planId);
+    setAccessMode("register");
+  };
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Carregando credencial...</div>;
-  if (!isAuthenticated) return <AccessGate onAuthenticated={() => window.location.reload()} />;
+  if (!isAuthenticated) {
+    if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onBackToStorefront={() => setAccessMode(null)} onAuthenticated={() => window.location.reload()} />;
+    return <PublicStorefront onLogin={() => setAccessMode("login")} onChoosePlan={startPlanAcquisition} />;
+  }
 
-  return <StudyWorkspace user={user!} logout={logout} />;
+  return <StudyWorkspace user={user!} logout={logout} initialCommercePlanId={pendingPlanId} onCommercePlanConsumed={() => { window.sessionStorage.removeItem("nucleo-purchase-plan"); setPendingPlanId(null); }} />;
 }
 
-function StudyWorkspace({ user, logout }: { user: { name: string; username: string | null; email: string | null; role: "user" | "admin" }; logout: () => Promise<void> }) {
+function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanConsumed }: { user: { name: string; username: string | null; email: string | null; role: "user" | "admin" }; logout: () => Promise<void>; initialCommercePlanId?: string | null; onCommercePlanConsumed: () => void }) {
 
   const [state, setState] = useState<StudyState>(emptyState);
   const [view, setView] = useState<View>("Painel");
@@ -98,7 +110,8 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
   const [accountOpen, setAccountOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [commerceOpen, setCommerceOpen] = useState(false);
+  const [commerceOpen, setCommerceOpen] = useState(Boolean(initialCommercePlanId));
+  const [commercePlanFocus, setCommercePlanFocus] = useState<string | null>(initialCommercePlanId ?? null);
   const [commerceAdminOpen, setCommerceAdminOpen] = useState(false);
   const accessQuery = trpc.study.access.useQuery(undefined, { refetchOnWindowFocus: false });
   const permittedContestIds = useMemo<ContestId[]>(() => {
@@ -121,6 +134,12 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
   useEffect(() => {
     window.localStorage.setItem("estudos-pf-active-contest", contestId);
   }, [contestId]);
+
+  useEffect(() => {
+    if (!initialCommercePlanId) return;
+    setCommercePlanFocus(initialCommercePlanId);
+    onCommercePlanConsumed();
+  }, [initialCommercePlanId, onCommercePlanConsumed]);
 
   const privateState = trpc.study.state.useQuery(undefined, { refetchOnWindowFocus: false });
   const centralQuestionsQuery = trpc.study.questions.list.useQuery(undefined, { refetchOnWindowFocus: false });
@@ -168,7 +187,7 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
   useEffect(() => { setQuickAnswer(null); }, [quickQuestion?.id]);
 
   if (user.role !== "admin" && accessQuery.isLoading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Verificando matrícula...</div>;
-  if (user.role !== "admin" && !accessQuery.data?.length) return <>{commerceOpen && <CommercePanel onClose={() => setCommerceOpen(false)} />}<CourseAccessRequired userName={user.name} onLogout={logout} onBrowsePlans={() => setCommerceOpen(true)} /></>;
+  if (user.role !== "admin" && !accessQuery.data?.length) return <>{commerceOpen && <CommercePanel initialPlanId={commercePlanFocus} onClose={() => { setCommerceOpen(false); setCommercePlanFocus(null); }} />}<CourseAccessRequired userName={user.name} onLogout={logout} onBrowsePlans={() => setCommerceOpen(true)} /></>;
 
   function updateState(updater: (current: StudyState) => StudyState) { setState((current) => updater(current)); }
 
@@ -287,7 +306,7 @@ function StudyWorkspace({ user, logout }: { user: { name: string; username: stri
       {accountOpen && <AccountPanel user={user} onClose={() => setAccountOpen(false)} />}
       {adminOpen && user.role === "admin" && <AdminPanel onClose={() => setAdminOpen(false)} />}
       {libraryOpen && user.role === "admin" && <AdminLibraryPanel onClose={() => setLibraryOpen(false)} />}
-      {commerceOpen && <CommercePanel onClose={() => setCommerceOpen(false)} />}
+      {commerceOpen && <CommercePanel initialPlanId={commercePlanFocus} onClose={() => { setCommerceOpen(false); setCommercePlanFocus(null); }} />}
       {commerceAdminOpen && user.role === "admin" && <AdminCommercePanel onClose={() => setCommerceAdminOpen(false)} />}
     </div>
   );
