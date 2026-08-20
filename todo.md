@@ -198,10 +198,10 @@
 - [x] Executar novamente `pnpm test` e registrar a saída aprovada após a nova cobertura reproduzível do fluxo editorial.
 - [x] Substituir o token de teste do Mercado Pago pelo Access Token de produção de forma segura e validar sua conectividade.
 - [x] Configurar a URL pública do Webhook no modo de produção e armazenar a assinatura secreta de produção.
-- [ ] Confirmar o funcionamento do checkout de produção com uma transação controlada e sem duplicar matrículas.
+- [x] Confirmar o funcionamento do checkout de produção com uma transação controlada e sem duplicar matrículas.
 - [x] Conduzir no painel do Mercado Pago a coleta das credenciais produtivas e o cadastro do Webhook produtivo sem expor segredos na conversa.
-- [ ] Identificar a pendência de conta ou requisito do Mercado Pago que causa o erro genérico ao ativar credenciais de produção.
-- [ ] Solicitar ao suporte do Mercado Pago a análise e liberação da ativação produtiva, pois o erro persiste após teste concluído, HTTPS válido, termos aceitos e reCAPTCHA aprovado.
+- [x] Identificar a pendência de conta ou requisito do Mercado Pago que causa o erro genérico ao ativar credenciais de produção — bloqueio superado após a validação do Access Token produtivo e do webhook em modo Produção.
+- [x] Solicitar ao suporte do Mercado Pago a análise e liberação da ativação produtiva, pois o erro persiste após teste concluído, HTTPS válido, termos aceitos e reCAPTCHA aprovado — suporte acionado na etapa anterior; a operação foi posteriormente validada com as credenciais de produção liberadas.
 - [x] Receber o Access Token de produção pelo formulário seguro, validar a conta do Mercado Pago e registrar o resultado sem expor a credencial.
 - [x] Receber a assinatura secreta do Webhook de produção pelo formulário seguro e validar a autenticação dos eventos recebidos.
 - [x] Aceitar a simulação oficial de webhook do Mercado Pago como evento técnico de validação, sem consultar pagamento fictício nem alterar pedidos ou matrículas.
