@@ -8,7 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ensureRootAccount } from "../auth/rootBootstrap";
-import { processMercadoPagoWebhook } from "../mercadoPago";
+import { processMercadoPagoWebhook, resolveMercadoPagoNotificationDataId } from "../mercadoPago";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -39,12 +39,11 @@ async function startServer() {
   registerStorageProxy(app);
   app.post("/api/payments/mercado-pago/webhook", async (req, res) => {
     try {
-      const queryDataId = req.query["data.id"];
-      const dataId = typeof queryDataId === "string"
-        ? queryDataId
-        : Array.isArray(queryDataId)
-          ? queryDataId.filter((value): value is string => typeof value === "string")
-          : typeof req.body?.data?.id === "string" ? req.body.data.id : undefined;
+      const dataId = resolveMercadoPagoNotificationDataId({
+        queryDataId: req.query["data.id"],
+        queryId: req.query.id,
+        body: req.body,
+      });
       const result = await processMercadoPagoWebhook({ xSignature: req.header("x-signature"), xRequestId: req.header("x-request-id"), dataId, topic: req.query.topic ?? req.body?.type });
       res.status(200).json({ received: true, result: result.action });
     } catch (error) {

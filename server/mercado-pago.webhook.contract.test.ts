@@ -1,13 +1,21 @@
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Payment } from "mercadopago";
-import { processMercadoPagoWebhook } from "./mercadoPago";
+import { processMercadoPagoWebhook, resolveMercadoPagoNotificationDataId } from "./mercadoPago";
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
 describe("contrato de segurança do webhook Mercado Pago", () => {
+  it("preserva o id de pagamento no formato legado para a validação da assinatura", () => {
+    expect(resolveMercadoPagoNotificationDataId({
+      queryDataId: undefined,
+      queryId: "174710137194",
+      body: undefined,
+    })).toBe("174710137194");
+  });
+
   it("rejeita notificação sem assinatura válida antes de consultar ou liberar pedido", async () => {
     await expect(processMercadoPagoWebhook({
       xSignature: "ts=1,v1=assinatura-invalida",

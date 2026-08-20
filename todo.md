@@ -185,3 +185,5 @@
 - [x] Configurar com segurança as credenciais do Mercado Pago e registrar a URL pública de notificação no painel do provedor.
 - [x] Estabilizar o teste de integração comercial para acomodar a latência transitória do banco, sem reduzir a cobertura do ciclo de pedido e matrícula.
 - [x] Confirmar que a rota pública do Webhook do Mercado Pago responde à requisição POST publicada, sem fallback para a página do cliente.
+- [ ] Validar uma compra aprovada no ambiente de testes com comprador de teste do Mercado Pago e confirmar a liberação automática de matrícula.
+- [ ] Investigar e corrigir a reconciliação automática quando um pagamento de teste aprovado não atualiza o pedido nem a matrícula.

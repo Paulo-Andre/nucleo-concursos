@@ -66,6 +66,37 @@ export type MercadoPagoWebhookInput = {
   topic?: unknown;
 };
 
+type MercadoPagoWebhookBody = {
+  data?: { id?: unknown };
+  id?: unknown;
+};
+
+function firstString(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    const first = value.find((entry): entry is string => typeof entry === "string");
+    return first;
+  }
+  return undefined;
+}
+
+/**
+ * O evento "Pagamentos (legacy)" pode enviar o identificador em `id`,
+ * enquanto os Webhooks atuais usam `data.id`. Ambos participam da assinatura
+ * HMAC e precisam chegar ao validador com o mesmo valor recebido.
+ */
+export function resolveMercadoPagoNotificationDataId(input: {
+  queryDataId: unknown;
+  queryId: unknown;
+  body: unknown;
+}): string | undefined {
+  const body = input.body && typeof input.body === "object" ? input.body as MercadoPagoWebhookBody : undefined;
+  return firstString(input.queryDataId)
+    ?? firstString(input.queryId)
+    ?? firstString(body?.data?.id)
+    ?? firstString(body?.id);
+}
+
 export async function processMercadoPagoWebhook(input: MercadoPagoWebhookInput) {
   if (input.topic && input.topic !== "payment") return { action: "ignored" as const };
   const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
