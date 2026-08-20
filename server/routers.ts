@@ -66,6 +66,7 @@ import {
 } from "./db";
 import { isValidCpf, normalizeCpf } from "./cpf";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
+import { clearSuccessfulLoginAttempt, isLoginAttemptAllowed, loginAttemptKeys, loginRetryAfterSeconds, recordFailedLoginAttempt } from "./auth/loginRateLimit";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
 import { storagePut } from "./storage";
 import {
@@ -259,9 +260,20 @@ export const appRouter = router({
       return { user: safeUser(user), ...session };
     }),
     login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3), password: passwordSchema })).mutation(async ({ input, ctx }) => {
+      const rateLimitKeys = loginAttemptKeys(ctx.req, input.identifier);
+      if (!isLoginAttemptAllowed(rateLimitKeys)) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `Muitas tentativas de acesso. Aguarde cerca de ${loginRetryAfterSeconds(rateLimitKeys)} segundos e tente novamente.` });
+      }
       const user = await getUserByIdentifier(input.identifier);
-      if (!user?.passwordHash || !(await verifyPassword(input.password, user.passwordHash))) throw invalidCredentials();
-      if (user.isBlocked) throw new TRPCError({ code: "FORBIDDEN", message: "Esta conta está bloqueada. Procure a administração." });
+      if (!user?.passwordHash || !(await verifyPassword(input.password, user.passwordHash))) {
+        recordFailedLoginAttempt(rateLimitKeys);
+        throw invalidCredentials();
+      }
+      if (user.isBlocked) {
+        recordFailedLoginAttempt(rateLimitKeys);
+        throw new TRPCError({ code: "FORBIDDEN", message: "Esta conta está bloqueada. Procure a administração." });
+      }
+      clearSuccessfulLoginAttempt(rateLimitKeys);
       const session = await startLocalSession(ctx, user.id);
       return { user: safeUser(user), ...session };
     }),
