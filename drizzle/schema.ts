@@ -30,6 +30,19 @@ export const authSessions = mysqlTable("authSessions", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [uniqueIndex("authSessions_userId_unique").on(table.userId), index("authSessions_expiresAt_idx").on(table.expiresAt)]);
 
+/** Tokens opacos de recuperação. Apenas o hash é persistido e cada uso encerra todas as sessões da conta. */
+export const passwordResetTokens = mysqlTable("passwordResetTokens", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  index("passwordResetTokens_userId_idx").on(table.userId),
+  index("passwordResetTokens_expiresAt_idx").on(table.expiresAt),
+]);
+
 /** Estado agregado necessário para XP, sequência e seleção de questões do estudante. */
 export const studyProfiles = mysqlTable("studyProfiles", {
   id: int("id").autoincrement().primaryKey(),

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Loader2, LockKeyhole, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck, UserPlus } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type AccessGateProps = { onAuthenticated: (hadActiveSession: boolean) => void; initialMode?: "login" | "register"; onBackToStorefront?: () => void; selectedPlanPending?: boolean };
+type AccessMode = "login" | "register" | "forgot" | "reset";
+type AccessGateProps = { onAuthenticated: (hadActiveSession: boolean) => void; initialMode?: AccessMode; onBackToStorefront?: () => void; selectedPlanPending?: boolean };
 
 function formatCpfInput(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -23,13 +24,16 @@ function hasValidCpfDigits(value: string) {
 }
 
 export default function AccessGate({ onAuthenticated, initialMode = "login", onBackToStorefront, selectedPlanPending = false }: AccessGateProps) {
-  const [mode, setMode] = useState<"login" | "register">(initialMode);
+  const [mode, setMode] = useState<AccessMode>(initialMode);
   const [message, setMessage] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", username: "", email: "", cpf: "", identifier: "", password: "", confirmation: "" });
+  const [form, setForm] = useState({ name: "", username: "", email: "", cpf: "", identifier: "", password: "", confirmation: "", resetPassword: "", resetConfirmation: "" });
+  const [resetToken] = useState(() => new URLSearchParams(window.location.search).get("reset") ?? "");
   const utils = trpc.useUtils();
   const login = trpc.auth.login.useMutation({ onSuccess: async result => { utils.auth.me.setData(undefined, result.user); await utils.auth.me.invalidate(); onAuthenticated(result.hadActiveSession); } });
   const register = trpc.auth.register.useMutation({ onSuccess: async result => { utils.auth.me.setData(undefined, result.user); await utils.auth.me.invalidate(); onAuthenticated(result.hadActiveSession); } });
-  const pending = login.isPending || register.isPending;
+  const requestReset = trpc.auth.requestPasswordReset.useMutation();
+  const resetPassword = trpc.auth.resetPassword.useMutation();
+  const pending = login.isPending || register.isPending || requestReset.isPending || resetPassword.isPending;
 
   function update(field: keyof typeof form, value: string) { setForm(current => ({ ...current, [field]: value })); }
   async function submit(event: React.FormEvent) {
@@ -37,9 +41,18 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
     setMessage(null);
     try {
       if (mode === "login") await login.mutateAsync({ identifier: form.identifier, password: form.password });
-      else {
+      else if (mode === "register") {
         if (!hasValidCpfDigits(form.cpf)) { setMessage("Informe um CPF válido."); return; }
         await register.mutateAsync({ name: form.name, username: form.username, email: form.email, cpf: form.cpf, password: form.password, passwordConfirmation: form.confirmation });
+      } else if (mode === "forgot") {
+        await requestReset.mutateAsync({ email: form.email });
+        setMessage("Se este e-mail estiver cadastrado, enviaremos um link de recuperação. Verifique também a caixa de spam.");
+      } else {
+        if (!resetToken) { setMessage("Este link de redefinição está incompleto. Solicite um novo e-mail."); return; }
+        await resetPassword.mutateAsync({ token: resetToken, newPassword: form.resetPassword, confirmation: form.resetConfirmation });
+        setMessage("Senha redefinida. Você já pode entrar com a nova senha.");
+        window.history.replaceState({}, "", window.location.pathname);
+        setMode("login");
       }
     } catch (error: any) {
       setMessage(error?.message || "Não foi possível concluir a operação.");
@@ -58,17 +71,18 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
       <div className="min-w-0 p-5 sm:p-12">
         {onBackToStorefront && <button type="button" onClick={onBackToStorefront} className="mb-6 inline-flex items-center gap-1 text-xs font-bold text-[#0e5a70] hover:underline">← Ver pacotes</button>}
         {selectedPlanPending && <p className="mb-5 rounded-xl border border-[#a9d0c5] bg-[#edf7f5] px-3 py-2 text-xs font-semibold leading-5 text-[#17644e]">Seu pacote está reservado para a próxima etapa. Crie sua conta ou entre para continuar a compra dentro da plataforma.</p>}
-        <div className="flex flex-wrap gap-x-7 border-b border-[#d8d0c1] text-sm font-bold"><button className={`-mb-px border-b-2 px-1 pb-3 ${mode === "login" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("login"); setMessage(null); }}>Entrar</button><button className={`-mb-px border-b-2 px-1 pb-3 ${mode === "register" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("register"); setMessage(null); }}><UserPlus className="mr-1.5 inline h-4 w-4" />Criar conta</button></div>
-        <div className="mt-7"><p className="text-[10px] font-bold tracking-[0.14em] text-[#5d777d] sm:tracking-[0.18em]">{mode === "login" ? "IDENTIFIQUE-SE" : "NOVA CREDENCIAL"}</p><h2 className="font-display mt-2 break-words text-2xl font-extrabold sm:text-3xl">{mode === "login" ? "Acesse seu dossiê." : "Comece seu registro."}</h2></div>
+        {(mode === "login" || mode === "register") ? <div className="flex flex-wrap gap-x-7 border-b border-[#d8d0c1] text-sm font-bold"><button type="button" className={`-mb-px border-b-2 px-1 pb-3 ${mode === "login" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("login"); setMessage(null); }}>Entrar</button><button type="button" className={`-mb-px border-b-2 px-1 pb-3 ${mode === "register" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("register"); setMessage(null); }}><UserPlus className="mr-1.5 inline h-4 w-4" />Criar conta</button></div> : <button type="button" className="inline-flex items-center gap-1 border-b border-[#d8d0c1] pb-3 text-xs font-bold text-[#0e5a70] hover:underline" onClick={() => { window.history.replaceState({}, "", window.location.pathname); setMode("login"); setMessage(null); }}><ArrowLeft className="h-4 w-4" />Voltar para entrar</button>}
+        <div className="mt-7"><p className="text-[10px] font-bold tracking-[0.14em] text-[#5d777d] sm:tracking-[0.18em]">{mode === "login" ? "IDENTIFIQUE-SE" : mode === "register" ? "NOVA CREDENCIAL" : mode === "forgot" ? "RECUPERAÇÃO SEGURA" : "NOVA SENHA"}</p><h2 className="font-display mt-2 break-words text-2xl font-extrabold sm:text-3xl">{mode === "login" ? "Acesse seu dossiê." : mode === "register" ? "Comece seu registro." : mode === "forgot" ? "Recupere seu acesso." : "Defina uma nova senha."}</h2></div>
         <form onSubmit={submit} className="mt-7 space-y-4">
           {mode === "register" && <><label className="block text-xs font-bold">Nome completo<Input value={form.name} onChange={event => update("name", event.target.value)} autoComplete="name" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">Nome de usuário<Input value={form.username} onChange={event => update("username", event.target.value.toLowerCase())} autoComplete="username" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">E-mail<Input type="email" value={form.email} onChange={event => update("email", event.target.value)} autoComplete="email" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">CPF<Input value={form.cpf} onChange={event => update("cpf", formatCpfInput(event.target.value))} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" aria-describedby="cpf-help" required /></label><p id="cpf-help" className="-mt-2 text-[11px] leading-4 text-[#6f7775]">Usamos somente números e confirmamos os dígitos verificadores.</p></>}
-          {mode === "login" && <label className="block text-xs font-bold">Usuário ou e-mail<Input value={form.identifier} onChange={event => update("identifier", event.target.value)} autoComplete="username" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>}
-          <label className="block text-xs font-bold">Senha<Input type="password" value={form.password} onChange={event => update("password", event.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>
-          {mode === "register" && <label className="block text-xs font-bold">Confirme a senha<Input type="password" value={form.confirmation} onChange={event => update("confirmation", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>}
+          {mode === "login" && <><label className="block text-xs font-bold">Usuário ou e-mail<Input value={form.identifier} onChange={event => update("identifier", event.target.value)} autoComplete="username" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">Senha<Input type="password" value={form.password} onChange={event => update("password", event.target.value)} autoComplete="current-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><button type="button" onClick={() => { setMode("forgot"); setMessage(null); }} className="-mt-1 text-xs font-bold text-[#0e5a70] hover:underline">Esqueci minha senha</button></>}
+          {mode === "register" && <><label className="block text-xs font-bold">Senha<Input type="password" value={form.password} onChange={event => update("password", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">Confirme a senha<Input type="password" value={form.confirmation} onChange={event => update("confirmation", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label></>}
+          {mode === "forgot" && <label className="block text-xs font-bold">E-mail cadastrado<Input type="email" value={form.email} onChange={event => update("email", event.target.value)} autoComplete="email" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>}
+          {mode === "reset" && <><p className="rounded-xl border border-[#b9d6cb] bg-[#edf8f4] px-3 py-2 text-xs leading-5 text-[#17644e]"><KeyRound className="mr-1 inline h-4 w-4" />Use uma senha de pelo menos 8 caracteres. Ao confirmar, seus acessos ativos serão encerrados por segurança.</p><label className="block text-xs font-bold">Nova senha<Input type="password" value={form.resetPassword} onChange={event => update("resetPassword", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-xs font-bold">Confirme a nova senha<Input type="password" value={form.resetConfirmation} onChange={event => update("resetConfirmation", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label></>}
           {message && <p role="alert" className="border border-[#b7503a]/40 bg-[#fff2ee] px-3 py-2 text-xs font-medium text-[#8f311f]">{message}</p>}
-          <Button type="submit" disabled={pending} className="mt-2 h-11 w-full bg-[#0e5a70] font-bold text-white hover:bg-[#09495b]">{pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{mode === "login" ? "Entrar na plataforma" : "Criar conta e entrar"}</Button>
+          <Button type="submit" disabled={pending} className="mt-2 h-11 w-full bg-[#0e5a70] font-bold text-white hover:bg-[#09495b]">{pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{mode === "login" ? "Entrar na plataforma" : mode === "register" ? "Criar conta e entrar" : mode === "forgot" ? <><Mail className="mr-2 h-4 w-4" />Enviar link de recuperação</> : "Salvar nova senha"}</Button>
         </form>
-        <p className="mt-6 text-xs leading-5 text-[#6f7775]">A recuperação por e-mail poderá ser ativada quando houver um serviço de correio transacional configurado. Por enquanto, a senha pode ser alterada no perfil ou redefinida pelo administrador.</p>
+        <p className="mt-6 text-xs leading-5 text-[#6f7775]">Para proteger sua conta, os links de recuperação são individuais, expiram em uma hora e não revelam se um e-mail está cadastrado.</p>
       </div>
     </section>
   </main>;

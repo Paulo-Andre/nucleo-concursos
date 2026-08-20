@@ -230,3 +230,8 @@
 - [x] Validar com teste um CPF novo e válido no cadastro local e publicar a correção de mensagens de conflito.
 - [x] Corrigir a matriz de estudo em larguras intermediárias e desktop para que título, descrição, contador de disciplinas e seletor não sejam comprimidos.
 - [x] Validar a matriz em 720 px, tablet e desktop, cobrir o breakpoint contra regressão e publicar a correção.
+- [x] Enviar automaticamente uma confirmação de compra ao aluno após o pagamento aprovado, usando um provedor de e-mail configurado com segurança.
+- [x] Implementar recuperação de senha por e-mail com token único, validade limitada, armazenamento seguro e tela de redefinição de senha.
+- [x] Criar no painel ROOT métricas comerciais de pedidos, pagamentos aprovados, receita, conversão e matrículas geradas.
+- [x] Preparar a plataforma para conectar um domínio próprio e documentar os registros de DNS que o titular deverá configurar.
+- [x] Cobrir os novos fluxos comerciais com testes, validação visual, documentação operacional e publicação.

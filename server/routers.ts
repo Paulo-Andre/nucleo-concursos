@@ -14,6 +14,7 @@ import {
   createManagedQuestion,
   deleteManagedQuestion,
   createLocalUser,
+  createPasswordResetToken,
   deleteManagedCourse,
   replaceSessionForUser,
   deleteManagedUser,
@@ -44,6 +45,7 @@ import {
   listStudyRoadmap,
   listUserEnrollments,
   completeStudyReviewItem,
+  consumePasswordResetToken,
   recordAnswer,
   recordSimulation,
   openStudyContent,
@@ -77,6 +79,7 @@ import {
   deleteCommerceCoupon,
   createCommerceOrder,
   createCommercePlan,
+  getCommerceMetrics,
   listManagedCommerceCoupons,
   listManagedCommerceOrders,
   listManagedCommercePlans,
@@ -87,6 +90,7 @@ import {
 } from "./commerce";
 import { createMercadoPagoCheckout } from "./mercadoPago";
 import { matchesAccountDeletionConfirmation } from "./accountDeletion";
+import { sendPasswordResetEmail } from "./email";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
 const passwordSchema = z.string().min(8, "A senha deve ter pelo menos 8 caracteres.").max(128);
@@ -298,6 +302,26 @@ export const appRouter = router({
       await startLocalSession(ctx, ctx.user.id);
       return { success: true };
     }),
+    requestPasswordReset: publicProcedure.input(z.object({ email: z.string().trim().toLowerCase().email("Informe um e-mail válido.").max(320) })).mutation(async ({ input, ctx }) => {
+      const user = await getUserByIdentifier(input.email);
+      if (user?.email && !user.isBlocked && user.email.toLowerCase() === input.email) {
+        const token = createSessionToken();
+        await createPasswordResetToken(user.id, hashSessionToken(token), new Date(Date.now() + 60 * 60 * 1000));
+        const resetUrl = `${requestOrigin(ctx.req)}/?reset=${encodeURIComponent(token)}`;
+        try {
+          await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl });
+        } catch (error) {
+          console.error("[auth] Falha ao enviar recuperação de senha", { userId: user.id, error: error instanceof Error ? error.message : "erro desconhecido" });
+        }
+      }
+      return { success: true } as const;
+    }),
+    resetPassword: publicProcedure.input(z.object({ token: z.string().trim().min(32).max(256), newPassword: passwordSchema, confirmation: passwordSchema })).mutation(async ({ input }) => {
+      if (input.newPassword !== input.confirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
+      const result = await consumePasswordResetToken(hashSessionToken(input.token), await hashPassword(input.newPassword));
+      if (!result) throw new TRPCError({ code: "BAD_REQUEST", message: "Este link é inválido, já foi utilizado ou expirou. Solicite uma nova recuperação." });
+      return { success: true } as const;
+    }),
     updateProfile: protectedProcedure.input(profileSchema).mutation(async ({ input, ctx }) => {
       const user = await updateUserProfile(ctx.user.id, input);
       if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Conta não encontrada." });
@@ -417,6 +441,7 @@ export const appRouter = router({
     grantEnrollment: adminProcedure.input(enrollmentSchema).mutation(async ({ input, ctx }) => grantCourseEnrollment(ctx.user.id, input.userId, input.courseId, input.startAt, input.expiresAt)),
     revokeEnrollment: adminProcedure.input(z.object({ userId: z.number().int().positive(), courseId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => import("./db").then(({ revokeCourseEnrollment }) => revokeCourseEnrollment(ctx.user.id, input.userId, input.courseId))),
     commerce: router({
+      metrics: adminProcedure.query(() => getCommerceMetrics()),
       plans: adminProcedure.query(() => listManagedCommercePlans()),
       uploadPlanImage: adminProcedure.input(contentImageSchema).mutation(async ({ input, ctx }) => {
         const base64 = input.base64.replace(/\s/g, "");

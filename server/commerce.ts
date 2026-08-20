@@ -11,6 +11,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { getDb, writeAdminAudit } from "./db";
+import { sendPurchaseConfirmation } from "./email";
 
 export type CommercePlanInput = {
   code: string;
@@ -273,6 +274,25 @@ export async function listManagedCommerceOrders(status?: typeof commerceOrders.$
   }));
 }
 
+export async function getCommerceMetrics() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [orders, transactions, activeEnrollments] = await Promise.all([
+    db.select({ status: commerceOrders.status, totalCents: commerceOrders.totalCents }).from(commerceOrders),
+    db.select({ status: commerceTransactions.status }).from(commerceTransactions),
+    db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(eq(courseEnrollments.status, "active")),
+  ]);
+  const paidOrders = orders.filter(order => order.status === "paid");
+  return {
+    totalOrders: orders.length,
+    paidOrders: paidOrders.length,
+    approvedPayments: transactions.filter(transaction => transaction.status === "approved").length,
+    revenueCents: paidOrders.reduce((total, order) => total + order.totalCents, 0),
+    conversionRate: orders.length ? Math.round((paidOrders.length / orders.length) * 10_000) / 100 : 0,
+    activeEnrollments: activeEnrollments.length,
+  };
+}
+
 export async function approveCommerceOrder(actorUserId: number, orderId: string, provider = "manual", providerReference?: string | null) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -302,6 +322,15 @@ export async function approveCommerceOrder(actorUserId: number, orderId: string,
   await writeAdminAudit(actorUserId, order.userId, "APROVACAO_DE_PEDIDO_COMERCIAL", `Pedido ${order.id} aprovado; ${courseIds.length} matrícula(s) concedida(s).`);
   const saved = (await db.select().from(commerceOrders).where(eq(commerceOrders.id, orderId)).limit(1))[0];
   if (!saved) throw new Error("Pedido não foi atualizado.");
+  const buyer = (await db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, order.userId)).limit(1))[0];
+  if (buyer?.email) {
+    void sendPurchaseConfirmation({
+      to: buyer.email,
+      name: buyer.name,
+      planTitle: item.titleSnapshot,
+      accessExpiresAt: new Date(now.getTime() + durationMs),
+    }).catch(error => console.error("[commerce] Falha ao enviar confirmação de compra", { orderId, error: error instanceof Error ? error.message : "erro desconhecido" }));
+  }
   return serializeOrder(saved);
 }
 

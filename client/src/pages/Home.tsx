@@ -74,7 +74,7 @@ function getDisciplinePerformance(state: StudyState) {
 export default function Home() {
   // The useAuth hook reads the local session created by the cadastro/login screen.
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [accessMode, setAccessMode] = useState<"login" | "register" | null>(null);
+  const [accessMode, setAccessMode] = useState<"login" | "register" | "reset" | null>(() => new URLSearchParams(window.location.search).get("reset") ? "reset" : null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(() => window.sessionStorage.getItem("nucleo-purchase-plan"));
 
   const startPlanAcquisition = (planId: string) => {
@@ -85,7 +85,7 @@ export default function Home() {
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Carregando credencial...</div>;
   if (!isAuthenticated) {
-    if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onBackToStorefront={() => setAccessMode(null)} onAuthenticated={(hadActiveSession) => { if (hadActiveSession) window.sessionStorage.setItem("nucleo-session-replaced-notice", "1"); window.location.reload(); }} />;
+    if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onBackToStorefront={() => { window.history.replaceState({}, "", window.location.pathname); setAccessMode(null); }} onAuthenticated={(hadActiveSession) => { if (hadActiveSession) window.sessionStorage.setItem("nucleo-session-replaced-notice", "1"); window.location.reload(); }} />;
     return <PublicStorefront onLogin={() => setAccessMode("login")} onChoosePlan={startPlanAcquisition} />;
   }
 

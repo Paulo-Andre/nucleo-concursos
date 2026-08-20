@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   adminAuditLogs,
@@ -21,6 +21,7 @@ import {
   InsertUser,
   questionChangelog,
   questionContentLinks,
+  passwordResetTokens,
   questions,
   reviewQueue,
   simulationRecords,
@@ -249,6 +250,34 @@ export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
+export async function createPasswordResetToken(userId: number, tokenHash: string, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.transaction(async (tx) => {
+    await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await tx.insert(passwordResetTokens).values({ id: crypto.randomUUID(), userId, tokenHash, expiresAt });
+  });
+}
+
+export async function consumePasswordResetToken(tokenHash: string, passwordHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const now = new Date();
+  return db.transaction(async (tx) => {
+    const token = (await tx.select().from(passwordResetTokens).where(and(
+      eq(passwordResetTokens.tokenHash, tokenHash),
+      gt(passwordResetTokens.expiresAt, now),
+      isNull(passwordResetTokens.usedAt),
+    )).limit(1))[0];
+    if (!token) return null;
+    const marked = await tx.update(passwordResetTokens).set({ usedAt: now }).where(and(eq(passwordResetTokens.id, token.id), isNull(passwordResetTokens.usedAt)));
+    if (!marked[0]?.affectedRows) return null;
+    await tx.update(users).set({ passwordHash }).where(eq(users.id, token.userId));
+    await tx.delete(authSessions).where(eq(authSessions.userId, token.userId));
+    return { userId: token.userId };
+  });
 }
 
 /** Converte a identidade proprietária existente para a conta local ROOT, preservando o userId e o histórico. */
