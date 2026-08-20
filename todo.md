@@ -202,7 +202,7 @@
 - [ ] Conduzir no painel do Mercado Pago a coleta das credenciais produtivas e o cadastro do Webhook produtivo sem expor segredos na conversa.
 - [ ] Identificar a pendência de conta ou requisito do Mercado Pago que causa o erro genérico ao ativar credenciais de produção.
 - [ ] Solicitar ao suporte do Mercado Pago a análise e liberação da ativação produtiva, pois o erro persiste após teste concluído, HTTPS válido, termos aceitos e reCAPTCHA aprovado.
-- [ ] Definir e documentar uma estratégia de domínio próprio e hospedagem sustentável, com continuidade operacional, backup e recuperação fora de uma única plataforma.
+- [x] Definir e documentar uma estratégia de domínio próprio e hospedagem sustentável, com continuidade operacional, backup e recuperação fora de uma única plataforma.
 - [x] Adicionar ao painel ROOT uma exportação segura e baixável dos dados da plataforma, sem segredos de infraestrutura, e documentar a restauração controlada do backup.
 - [x] Corrigir a exclusão ROOT de usuários renomeados e a identificação independente de maiúsculas/minúsculas, preservando a conta ROOT e a limpeza dos dados privados.
 - [x] Corrigir a exclusão ROOT de cupons existentes por identificador estável, preservando pedidos e transações já registrados.
@@ -215,3 +215,4 @@
 - [x] Permitir que o aluno monte um roteiro semanal com conteúdo, dia e horário e inicie a sessão prevista, preservando a prioridade de continuidade do conteúdo já iniciado.
 - [x] Permitir que o ROOT cadastre e edite de uma a três imagens de capa por plano comercial, exibindo-as como carrossel na vitrine e no catálogo autenticado.
 - [x] Corrigir a Gestão ROOT no celular para manter Negócios, Alunos e Conteúdos acessíveis, sem que o painel de produtos cubra a navegação lateral.
+- [x] Exibir os vídeos das aulas em um player incorporado na área de estudo, aceitando YouTube e fontes próprias e reduzindo a exposição a download direto.
