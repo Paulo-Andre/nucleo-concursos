@@ -79,9 +79,9 @@ export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
 
-    if (!ctx.user || ctx.user.isBlocked || ctx.user.role !== 'admin') {
-      throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
-    }
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sua sessão ROOT não está ativa. Saia da conta e entre novamente para continuar." });
+    if (ctx.user.isBlocked) throw new TRPCError({ code: "FORBIDDEN", message: "Esta conta está bloqueada e não pode usar a Gestão ROOT." });
+    if (ctx.user.role !== 'admin') throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
 
     return next({
       ctx: {

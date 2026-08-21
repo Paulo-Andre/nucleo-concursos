@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Ban, BookOpen, CalendarClock, CheckCircle2, ClipboardList, KeyRound, Loader2, PlusCircle, Search, ShieldAlert, Trash2, UserCog, UsersRound, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
+import { rootAccessMessage } from "@/lib/rootAccessMessage";
 
 type ManagedUser = { id: number; name: string; username: string | null; email: string | null; role: "user" | "admin"; isBlocked: boolean; createdAt: Date; lastSignedIn: Date };
 type ManagedCourse = { id: string; title: string; track: string; courseType: "concurso" | "tutorial"; courseArea: string; stateCode: string; description: string | null; coverImageUrl: string | null; isActive: boolean; createdAt: Date };
@@ -32,7 +33,7 @@ export function AdminPanel({ onClose, embedded = false, mode = "all" }: { onClos
   const revoke = trpc.admin.revokeEnrollment.useMutation({ onSuccess: async () => { setMessage("Acesso ao curso revogado."); await refresh(); }, onError: error => setMessage(error.message) });
   const createCourse = trpc.admin.createCourse.useMutation({ onSuccess: async () => { setMessage("Curso criado e registrado na auditoria."); await refresh(); }, onError: error => setMessage(error.message) });
   const updateCourse = trpc.admin.updateCourse.useMutation({ onSuccess: async () => { setMessage("Curso atualizado e registrado na auditoria."); await refresh(); }, onError: error => setMessage(error.message) });
-  const uploadCourseCover = trpc.admin.uploadCourseCover.useMutation({ onError: error => setMessage(error.message) });
+  const uploadCourseCover = trpc.admin.uploadCourseCover.useMutation({ onError: error => setMessage(rootAccessMessage(error)) });
   const setCourseActive = trpc.admin.setCourseActive.useMutation({ onSuccess: async () => { setMessage("Status do curso atualizado."); await refresh(); }, onError: error => setMessage(error.message) });
   const deleteCourse = trpc.admin.deleteCourse.useMutation({ onSuccess: async data => { setMessage(`Curso ${data.title} excluído. A biblioteca central foi preservada.`); await refresh(); }, onError: error => setMessage(error.message) });
   const update = trpc.admin.updateUser.useMutation({ onSuccess: async () => { setMessage("Dados da conta atualizados."); await refresh(); }, onError: error => setMessage(error.message) });

@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle2, ImagePlus, Loader2, Pencil, PlusCircle, Trash2 
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { getCourseClassificationOptions } from "@/lib/courseCatalogClassification";
+import { rootAccessMessage } from "@/lib/rootAccessMessage";
 
 type ManagedCourse = {
   id: string;
@@ -141,7 +142,7 @@ export function CourseCatalogManagementPanel() {
       setForm(value => ({ ...value, coverImageUrl: result.url }));
       setMessage("Capa enviada. Salve o curso para vinculá-la.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível enviar a capa.");
+      setMessage(rootAccessMessage(error));
     } finally {
       setUploading(false);
     }
@@ -195,6 +196,7 @@ export function CourseCatalogManagementPanel() {
 
         <label className="mt-4 block text-[11px] font-bold text-[#315a5d]">Descrição pedagógica<Input value={form.description} onChange={event => setForm(value => ({ ...value, description: event.target.value }))} placeholder="Descrição que aparecerá para orientar o aluno" className="mt-1 h-10 bg-white text-xs" /></label>
         <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]"><label className="flex min-w-0 items-center gap-2 rounded-lg border border-dashed border-[#9bc8bc] bg-white px-3 py-2 text-xs font-semibold text-[#315a5d]"><ImagePlus className="h-4 w-4 shrink-0" /><input type="file" accept="image/jpeg,image/png,image/webp" className="min-w-0 text-xs" onChange={event => void sendCover(event.target.files?.[0])} /><span className="shrink-0">{uploading ? "Enviando..." : "Capa JPG, PNG ou WEBP"}</span></label>{form.coverImageUrl && <button type="button" onClick={() => setForm(value => ({ ...value, coverImageUrl: "" }))} className="rounded-lg border border-[#c8dcd6] bg-white px-3 py-2 text-xs font-bold text-[#315a5d]">Remover capa</button>}</div>
+        <p className="mt-2 text-[10px] leading-4 text-[#567471]">Se a sessão administrativa tiver expirado, toque em <strong>Sair</strong>, entre novamente com o usuário <strong>paulo</strong> e escolha a imagem outra vez.</p>
         {form.coverImageUrl && <img src={form.coverImageUrl} alt="Prévia da capa do curso" className="mt-3 h-32 w-full rounded-xl border border-[#c6ddd6] object-cover" />}
         {editingCourseId && <button type="button" onClick={resetForm} className="mt-3 text-xs font-bold text-[#0e5a70] hover:underline">Cancelar edição</button>}
         {message && <p role="status" className="mt-4 rounded-lg border border-[#b9d6cb] bg-white p-3 text-xs font-semibold text-[#17644e]">{message}</p>}
