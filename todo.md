@@ -318,3 +318,5 @@
 - [x] Validar criação, edição, renovação de matrícula, múltiplos cursos, responsividade e publicação dos avisos.
 - [x] Corrigir a validação das capas de planos para aceitar imagens internas enviadas pelo formulário ROOT, além de URLs HTTPS externas.
 - [ ] Cobrir a validação de capa de plano e confirmar o salvamento pelo formulário mobile.
+- [x] Corrigir o formulário de planos para preservar e enviar os cursos liberados selecionados, inclusive em celular.
+- [x] Converter a validação de curso obrigatório em orientação compreensível para o ROOT e validar a criação do plano.
