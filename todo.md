@@ -236,3 +236,4 @@
 - [x] Preparar a plataforma para conectar um domínio próprio e documentar os registros de DNS que o titular deverá configurar.
 - [x] Cobrir os novos fluxos comerciais com testes, validação visual, documentação operacional e publicação.
 - [x] Avaliar e documentar uma estratégia de migração para hospedagem externa de menor custo, compatível com o servidor, banco, pagamentos e e-mails atuais.
+- [x] Comparar Railway e VPS Locaweb, incluindo custo fixo, recursos, responsabilidades de operação e roteiro de migração compatível com a plataforma.

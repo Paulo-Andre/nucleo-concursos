@@ -32,6 +32,21 @@ O Oracle Cloud Always Free pode rodar uma VM Arm sem cobrança dentro dos limite
 
 O registrador continua sendo independente da hospedagem. O domínio pode continuar onde foi comprado; no momento da troca, apenas os registros DNS serão apontados para o destino indicado pelo Railway. O domínio também deverá ser verificado no Resend para que os e-mails comerciais sejam enviados usando a identidade da marca.
 
+## Comparação adicional: VPS Locaweb
+
+Uma **VPS Linux da Locaweb com cobrança fixa em reais pode ser melhor que o Railway** se o plano escolhido tiver, no mínimo, **2 GB de RAM, 1 vCPU e SSD suficiente para o banco**, e se o objetivo principal for previsibilidade de custo. A Locaweb oferece acesso root, IP estático, snapshot, imagens com Node.js/MySQL/Nginx e a possibilidade de instalar e administrar o banco na mesma VPS.[4]
+
+O ponto decisivo é que uma VPS é um servidor sob nossa responsabilidade. Precisaremos configurar Docker ou Node.js, Nginx/Caddy, HTTPS, firewall, atualizações, monitoramento, rotina de backup do banco e restauração. O backup da Locaweb requer configuração de agente/rotina no painel; ele complementa, mas não substitui, um dump externo do banco.[5]
+
+| Cenário | Melhor escolha | Motivo |
+| --- | --- | --- |
+| Prioriza simplicidade operacional e implantação pelo GitHub | Railway Hobby | Banco e aplicação gerenciados com menos manutenção de servidor |
+| Prioriza valor fixo em reais e aceita manter um servidor | VPS Locaweb | Previsibilidade de custo, IP próprio e controle integral |
+| VPS anunciada com apenas 512 MB ou 1 GB de RAM | Não recomendar | Aplicação Node, banco MySQL e serviços de segurança competirão por memória |
+| VPS com 2 GB ou mais, backup e IP fixo | Recomendável | Capacidade inicial adequada para a fase de lançamento |
+
+Para o perfil da plataforma, a recomendação passa a ser: **VPS Locaweb é a opção economicamente melhor se o plano de cerca de R$ 25 for de pelo menos 2 GB de RAM; caso seja de 512 MB ou 1 GB, mantenha Railway.** Antes da contratação, confirme na tela do plano a memória, CPU, SSD, valor após eventual promoção e se backup é cobrado à parte.
+
 ## Referências
 
 [1] [Railway — Pricing](https://railway.com/pricing)
@@ -39,3 +54,7 @@ O registrador continua sendo independente da hospedagem. O domínio pode continu
 [2] [Render — Free instance limitations](https://render.com/docs/free)
 
 [3] [Oracle Cloud — Always Free resources](https://docs.oracle.com/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
+
+[4] [Locaweb — Servidor VPS](https://www.locaweb.com.br/servidor-vps/)
+
+[5] [Locaweb — Backup de Servidor Cloud Server PRO e VPS](https://www.locaweb.com.br/ajuda/wiki/backup-de-servidor-cloud-server-pro-vps/)
