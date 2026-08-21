@@ -158,7 +158,7 @@ const commercePlanSchema = z.object({
   code: commerceCodeSchema,
   title: z.string().trim().min(4, "Informe o nome do plano.").max(180),
   description: z.string().trim().max(3000).optional().or(z.literal("")),
-  coverImageUrls: z.array(z.string().trim().url("Informe uma URL válida para a imagem do plano.").max(2048)).max(3, "Adicione no máximo três imagens ao plano.").default([]),
+  coverImageUrls: z.array(z.string().trim().max(2048).refine(isAllowedCourseCoverUrl, "Informe uma URL HTTPS ou uma imagem enviada pela plataforma.")).max(3, "Adicione no máximo três imagens ao plano.").default([]),
   planType: z.enum(["course_access", "subscription"]),
   accessDurationDays: z.number().int().min(1, "Informe uma duração mínima de 1 dia.").max(3650),
   priceCents: z.number().int().min(0, "O preço não pode ser negativo.").max(100_000_000),

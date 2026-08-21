@@ -316,3 +316,5 @@
 - [x] Registrar o momento da marcação e exibir o aviso somente a alunos com matrícula ativa anterior a esse momento no curso vinculado.
 - [x] Ocultar individualmente o aviso quando o aluno elegível abrir o conteúdo, sem afetar os demais alunos.
 - [x] Validar criação, edição, renovação de matrícula, múltiplos cursos, responsividade e publicação dos avisos.
+- [x] Corrigir a validação das capas de planos para aceitar imagens internas enviadas pelo formulário ROOT, além de URLs HTTPS externas.
+- [ ] Cobrir a validação de capa de plano e confirmar o salvamento pelo formulário mobile.
