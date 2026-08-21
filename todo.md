@@ -238,3 +238,4 @@
 - [x] Avaliar e documentar uma estratégia de migração para hospedagem externa de menor custo, compatível com o servidor, banco, pagamentos e e-mails atuais.
 - [x] Comparar Railway e VPS Locaweb, incluindo custo fixo, recursos, responsabilidades de operação e roteiro de migração compatível com a plataforma.
 - [x] Confirmar no site oficial da Locaweb os recursos exatos do plano VPS econômico e sua adequação à plataforma.
+- [x] Criar e documentar uma tabela comparativa de custo, recursos e responsabilidades entre a hospedagem atual e a VPS Locaweb.

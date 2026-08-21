@@ -53,6 +53,22 @@ Na consulta de agosto de 2026, a página oficial da Locaweb exibe o **VPS 2 GB L
 
 Essa configuração tem capacidade inicial adequada para hospedar uma única instância da plataforma, o MySQL, Nginx/Caddy e as rotinas básicas de monitoramento, desde que a VPS seja configurada com limites de memória e backup. Assim, a recomendação está confirmada: **o VPS 2 GB da Locaweb é a melhor opção de custo fixo para o estágio inicial da Núcleo Concursos.**
 
+## Tabela de comparação: hospedagem atual × VPS Locaweb
+
+| Item | Manter na hospedagem atual | Migrar para VPS Locaweb 2 GB |
+| --- | --- | --- |
+| **Preço mensal da infraestrutura** | Depende do plano/condições da conta atual; deve ser confirmado no suporte ou painel da plataforma | **R$ 23,90/mês equivalente em contratação de 24 meses**; preço de tabela exibido: R$ 45,90 [4] |
+| **Servidor e publicação** | Gerenciados: o sistema publica novas versões e opera a aplicação | Inclusos, mas nós instalamos e administramos Node.js/Docker, proxy e processo de publicação |
+| **Banco de dados** | Gerenciado pela plataforma atual | Instalado e administrado na VPS; requer cópias de segurança próprias |
+| **HTTPS e domínio** | Gerenciados após apontamento do domínio | Precisam ser configurados na VPS (Caddy/Nginx + certificado) |
+| **Backups e recuperação** | Há exportação administrativa do banco já disponível no painel ROOT | Snapshot incluso e backup disponível, mas a rotina e a restauração precisam ser configuradas pelo administrador [5] |
+| **Segurança e atualizações** | Infraestrutura base gerenciada | Firewall, atualizações Linux, controle de acesso e monitoramento sob nossa responsabilidade |
+| **Recursos iniciais** | Escala conforme o plano contratado | 2 GB RAM, 2 vCPUs, 60 GB SSD e transferência ilimitada [4] |
+| **Mercado Pago e Resend** | Já estão integrados | Continuam os mesmos; só atualizamos URLs de webhook/retorno e variáveis protegidas |
+| **Risco de migração** | Nenhum; operação continua como está | Baixo se feito em paralelo, com banco copiado, testes e troca de DNS somente no final |
+
+> **Leitura prática:** a VPS reduz o custo de infraestrutura se você aceitar a administração técnica. O domínio, as taxas do Mercado Pago e eventuais custos de e-mail são independentes da hospedagem e permanecem nas duas opções.
+
 ## Referências
 
 [1] [Railway — Pricing](https://railway.com/pricing)
