@@ -261,3 +261,6 @@
 - [x] Criar uma medalha de destaque no topo da página de Competição do aluno, baseada no desempenho competitivo já persistido.
 - [x] Criar um selo pessoal de desempenho no cabeçalho da área do aluno, visível em todas as abas sem expor dados de simulados.
 - [x] Cobrir os critérios visuais de medalha e selo com testes, validação responsiva e publicação.
+- [x] Separar o selo pessoal do aluno da medalha da competição, usando exclusivamente acertos em simulados.
+- [x] Implementar dez níveis de selo pessoal, com avanço a cada vinte acertos acumulados em simulados, limitado a duzentos acertos.
+- [x] Cobrir a apuração dos selos de simulados, validar a interface móvel e publicar a atualização.
