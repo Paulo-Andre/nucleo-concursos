@@ -282,3 +282,6 @@
 - [x] Tornar claramente visível e editável o campo Tipo do curso, com as opções Concurso e Tutorial, na criação e edição ROOT.
 - [x] Corrigir o envio, a confirmação e a exibição da imagem de capa na criação e edição de cursos ROOT.
 - [x] Corrigir a prévia da página inicial nas Configurações ROOT para que carregue de forma estável antes do salvamento.
+- [x] Aceitar com segurança a URL interna retornada pelo envio de capa ao criar ou editar cursos ROOT.
+- [x] Separar Catálogo de cursos e Usuários registrados em páginas distintas, com navegação ROOT clara e responsiva.
+- [x] Mostrar no seletor do aluno somente cursos com matrícula ativa e incluir corretamente os cursos Tutorial liberados.

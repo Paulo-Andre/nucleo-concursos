@@ -1,5 +1,5 @@
 import { BookOpenCheck, BriefcaseBusiness, ContactRound, HardDriveDownload, Palette, Trophy, UsersRound, type LucideIcon } from "lucide-react";
-export type RootManagementSection = "business" | "students" | "contents" | "contacts" | "settings" | "competition" | "backup";
+export type RootManagementSection = "business" | "students" | "courses" | "contents" | "contacts" | "settings" | "competition" | "backup";
 
 export type RootManagementSectionDefinition = {
   id: RootManagementSection;
@@ -17,9 +17,15 @@ export const rootManagementSections: RootManagementSectionDefinition[] = [
   },
   {
     id: "students",
-    label: "Alunos",
-    description: "Contas, cursos, matrículas e auditoria.",
+    label: "Usuários",
+    description: "Contas, matrículas, acessos e auditoria.",
     icon: UsersRound,
+  },
+  {
+    id: "courses",
+    label: "Catálogo de cursos",
+    description: "Cursos, capas, tipo e disponibilidade.",
+    icon: BookOpenCheck,
   },
   {
     id: "contents",

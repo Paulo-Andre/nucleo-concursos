@@ -82,6 +82,7 @@ import {
   decideReview,
 } from "./db";
 import { isValidCpf, normalizeCpf } from "./cpf";
+import { isAllowedCourseCoverUrl } from "./courseCoverUrl";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
 import { clearSuccessfulLoginAttempt, isLoginAttemptAllowed, loginAttemptKeys, loginRetryAfterSeconds, recordFailedLoginAttempt } from "./auth/loginRateLimit";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
@@ -136,7 +137,7 @@ const courseSchema = z.object({
   track: z.string().trim().min(2, "Informe a trilha do curso.").max(32),
   courseType: z.enum(["concurso", "tutorial"]).default("concurso"),
   description: z.string().trim().max(1200).optional(),
-  coverImageUrl: z.string().trim().url("Informe uma URL válida para a capa.").max(1024).optional().or(z.literal("")),
+  coverImageUrl: z.string().trim().max(1024).refine(isAllowedCourseCoverUrl, "Informe uma URL HTTPS ou uma capa enviada pela plataforma.").optional().or(z.literal("")),
 });
 const courseUpdateSchema = courseSchema.omit({ id: true });
 const accountDeletionConfirmationSchema = z.string().trim().min(3, "Digite o nome ou usuário atual para confirmar.").max(160);

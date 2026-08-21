@@ -61,7 +61,8 @@ export function RootManagementPanel({ activeSection, onSectionChange, onClose }:
         <div className="relative min-h-0 flex-1 bg-[#f5f1e8]">
           <div className="root-management-embedded h-full">
             {activeSection === "business" && <AdminCommercePanel embedded />}
-            {activeSection === "students" && <AdminPanel embedded />}
+            {activeSection === "students" && <AdminPanel embedded mode="students" />}
+            {activeSection === "courses" && <AdminPanel embedded mode="courses" />}
             {activeSection === "contents" && <AdminLibraryPanel embedded />}
             {activeSection === "contacts" && <GlobalContactSettingsPanel />}
             {activeSection === "settings" && <div className="grid h-full min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(440px,.9fr)]"><div className="min-h-0"><GlobalSettingsPanel /></div><StorefrontLivePreview /></div>}
