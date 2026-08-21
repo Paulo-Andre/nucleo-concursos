@@ -376,9 +376,52 @@ export const defaultPlatformGeneralSettings = {
   heroBadge: "Estude com método, evolua com registro",
   heroTitle: "O próximo passo da sua preparação começa aqui.",
   heroDescription: "Escolha uma trilha, organize o estudo por conteúdo e acompanhe o que já foi consolidado. O acesso é individual, seguro e liberado somente após a confirmação do pagamento.",
+  loginButtonText: "Entrar",
+  heroPrimaryCtaText: "Ver pacotes disponíveis",
+  heroSecondaryCtaText: "Já tenho uma conta",
+  routineEyebrow: "UMA ROTINA EM TRÊS ETAPAS",
+  routineStepOneTitle: "Escolha sua trilha",
+  routineStepOneDescription: "Compare os pacotes ativos e selecione o que faz sentido para seu objetivo.",
+  routineStepTwoTitle: "Crie sua conta",
+  routineStepTwoDescription: "Seu histórico, seus simulados e sua evolução ficam ligados ao seu próprio acesso.",
+  routineStepThreeTitle: "Comece a estudar",
+  routineStepThreeDescription: "Após a confirmação do pagamento, as disciplinas da trilha ficam disponíveis.",
+  benefitOneTitle: "Conteúdo organizado",
+  benefitOneDescription: "Aulas e materiais distribuídos por trilha e disciplina.",
+  benefitTwoTitle: "Evolução individual",
+  benefitTwoDescription: "Progresso, revisões e simulados ficam registrados na sua conta.",
+  benefitThreeTitle: "Pagamento protegido",
+  benefitThreeDescription: "O checkout acontece no ambiente seguro do Mercado Pago.",
+  packagesEyebrow: "PACOTES PUBLICADOS PELO NÚCLEO",
+  packagesTitle: "Escolha a sua próxima trilha.",
+  packagesDescription: "Os pacotes abaixo são atualizados diretamente pelo catálogo administrativo. Ao escolher um deles, você cria sua conta antes de seguir para o pagamento.",
+  packagesLoadingText: "Carregando pacotes ativos...",
+  packagesEmptyText: "Ainda não há pacotes publicados. Volte em breve para consultar novas trilhas.",
+  highlightBadgeText: "OFERTA EM DESTAQUE",
+  includedCoursesLabel: "TRILHAS INCLUÍDAS",
+  planFallbackDescription: "Acesso organizado às trilhas incluídas neste pacote.",
+  planAccountNotice: "Primeiro você cria a conta. O pagamento acontece depois, em ambiente seguro.",
+  finalCtaEyebrow: "PRONTO PARA COMEÇAR?",
+  finalCtaTitle: "Sua preparação pode ter um ponto de partida claro.",
+  finalCtaDescription: "Conheça os pacotes ativos, escolha uma trilha e registre seu acesso para começar.",
+  finalCtaButtonText: "Conhecer pacotes",
+  footerPaymentText: "Acesso individual · Pagamento processado pelo Mercado Pago.",
   primaryColor: "#102F3A",
   backgroundColor: "#F6F1E7",
   textColor: "#173D4A",
+  heroTextColor: "#FFFDF7",
+  heroMutedTextColor: "#E4F0EE",
+  accentColor: "#8AD2C3",
+  accentTextColor: "#15353E",
+  surfaceColor: "#FFFDF8",
+  cardColor: "#FFFFFF",
+  surfaceAccentColor: "#DCEEE8",
+  borderColor: "#D9D0C1",
+  mutedTextColor: "#52716F",
+  iconBackgroundColor: "#E9F3F0",
+  iconColor: "#0E5A70",
+  buttonColor: "#0E5A70",
+  buttonHoverColor: "#09495B",
 } as const;
 
 export type PlatformGeneralSettingsInput = {
@@ -388,9 +431,52 @@ export type PlatformGeneralSettingsInput = {
   heroBadge: string;
   heroTitle: string;
   heroDescription: string;
+  loginButtonText: string;
+  heroPrimaryCtaText: string;
+  heroSecondaryCtaText: string;
+  routineEyebrow: string;
+  routineStepOneTitle: string;
+  routineStepOneDescription: string;
+  routineStepTwoTitle: string;
+  routineStepTwoDescription: string;
+  routineStepThreeTitle: string;
+  routineStepThreeDescription: string;
+  benefitOneTitle: string;
+  benefitOneDescription: string;
+  benefitTwoTitle: string;
+  benefitTwoDescription: string;
+  benefitThreeTitle: string;
+  benefitThreeDescription: string;
+  packagesEyebrow: string;
+  packagesTitle: string;
+  packagesDescription: string;
+  packagesLoadingText: string;
+  packagesEmptyText: string;
+  highlightBadgeText: string;
+  includedCoursesLabel: string;
+  planFallbackDescription: string;
+  planAccountNotice: string;
+  finalCtaEyebrow: string;
+  finalCtaTitle: string;
+  finalCtaDescription: string;
+  finalCtaButtonText: string;
+  footerPaymentText: string;
   primaryColor: string;
   backgroundColor: string;
   textColor: string;
+  heroTextColor: string;
+  heroMutedTextColor: string;
+  accentColor: string;
+  accentTextColor: string;
+  surfaceColor: string;
+  cardColor: string;
+  surfaceAccentColor: string;
+  borderColor: string;
+  mutedTextColor: string;
+  iconBackgroundColor: string;
+  iconColor: string;
+  buttonColor: string;
+  buttonHoverColor: string;
 };
 
 export async function getPlatformGeneralSettings() {
@@ -410,9 +496,52 @@ export async function savePlatformGeneralSettings(actorUserId: number, input: Pl
     heroBadge: input.heroBadge.trim(),
     heroTitle: input.heroTitle.trim(),
     heroDescription: input.heroDescription.trim(),
+    loginButtonText: input.loginButtonText.trim(),
+    heroPrimaryCtaText: input.heroPrimaryCtaText.trim(),
+    heroSecondaryCtaText: input.heroSecondaryCtaText.trim(),
+    routineEyebrow: input.routineEyebrow.trim(),
+    routineStepOneTitle: input.routineStepOneTitle.trim(),
+    routineStepOneDescription: input.routineStepOneDescription.trim(),
+    routineStepTwoTitle: input.routineStepTwoTitle.trim(),
+    routineStepTwoDescription: input.routineStepTwoDescription.trim(),
+    routineStepThreeTitle: input.routineStepThreeTitle.trim(),
+    routineStepThreeDescription: input.routineStepThreeDescription.trim(),
+    benefitOneTitle: input.benefitOneTitle.trim(),
+    benefitOneDescription: input.benefitOneDescription.trim(),
+    benefitTwoTitle: input.benefitTwoTitle.trim(),
+    benefitTwoDescription: input.benefitTwoDescription.trim(),
+    benefitThreeTitle: input.benefitThreeTitle.trim(),
+    benefitThreeDescription: input.benefitThreeDescription.trim(),
+    packagesEyebrow: input.packagesEyebrow.trim(),
+    packagesTitle: input.packagesTitle.trim(),
+    packagesDescription: input.packagesDescription.trim(),
+    packagesLoadingText: input.packagesLoadingText.trim(),
+    packagesEmptyText: input.packagesEmptyText.trim(),
+    highlightBadgeText: input.highlightBadgeText.trim(),
+    includedCoursesLabel: input.includedCoursesLabel.trim(),
+    planFallbackDescription: input.planFallbackDescription.trim(),
+    planAccountNotice: input.planAccountNotice.trim(),
+    finalCtaEyebrow: input.finalCtaEyebrow.trim(),
+    finalCtaTitle: input.finalCtaTitle.trim(),
+    finalCtaDescription: input.finalCtaDescription.trim(),
+    finalCtaButtonText: input.finalCtaButtonText.trim(),
+    footerPaymentText: input.footerPaymentText.trim(),
     primaryColor: input.primaryColor.toUpperCase(),
     backgroundColor: input.backgroundColor.toUpperCase(),
     textColor: input.textColor.toUpperCase(),
+    heroTextColor: input.heroTextColor.toUpperCase(),
+    heroMutedTextColor: input.heroMutedTextColor.toUpperCase(),
+    accentColor: input.accentColor.toUpperCase(),
+    accentTextColor: input.accentTextColor.toUpperCase(),
+    surfaceColor: input.surfaceColor.toUpperCase(),
+    cardColor: input.cardColor.toUpperCase(),
+    surfaceAccentColor: input.surfaceAccentColor.toUpperCase(),
+    borderColor: input.borderColor.toUpperCase(),
+    mutedTextColor: input.mutedTextColor.toUpperCase(),
+    iconBackgroundColor: input.iconBackgroundColor.toUpperCase(),
+    iconColor: input.iconColor.toUpperCase(),
+    buttonColor: input.buttonColor.toUpperCase(),
+    buttonHoverColor: input.buttonHoverColor.toUpperCase(),
     updatedByUserId: actorUserId,
   };
   await db.insert(platformGeneralSettings).values({ id: 1, ...values }).onDuplicateKeyUpdate({ set: values });
@@ -537,6 +666,81 @@ export async function saveCompetitionSettings(actorUserId: number, input: Compet
   await db.insert(competitionSettings).values({ id: 1, ...values }).onDuplicateKeyUpdate({ set: values });
   await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_COMPETICAO", `Regras atualizadas: ${input.questionsPerRound} questões por rodada, ${input.pointsPerCorrect} ponto(s) por acerto e ${input.pointsPerWrong} ponto(s) por erro.`);
   return getCompetitionSettings();
+}
+
+type BrazilDateParts = { year: number; month: number; day: number; weekday: number; hour: number; minute: number; second: number };
+export type CompetitionWeekWindow = { key: string; startsAt: Date };
+
+const brazilDateFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  weekday: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
+function getBrazilDateParts(date: Date): BrazilDateParts {
+  const parts = new Map(brazilDateFormatter.formatToParts(date).map(part => [part.type, part.value]));
+  const weekday = new Map([["Sun", 0], ["Mon", 1], ["Tue", 2], ["Wed", 3], ["Thu", 4], ["Fri", 5], ["Sat", 6]]).get(parts.get("weekday") ?? "");
+  if (weekday === undefined) throw new Error("Não foi possível identificar o dia da semana em Brasília.");
+  return {
+    year: Number(parts.get("year")),
+    month: Number(parts.get("month")),
+    day: Number(parts.get("day")),
+    weekday,
+    hour: Number(parts.get("hour")),
+    minute: Number(parts.get("minute")),
+    second: Number(parts.get("second")),
+  };
+}
+
+function getBrazilOffsetMs(utcDate: Date) {
+  const parts = getBrazilDateParts(utcDate);
+  return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - utcDate.getTime();
+}
+
+function brazilLocalDateToUtc(year: number, month: number, day: number, hour: number, minute: number, second = 0) {
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  const firstPass = new Date(guess.getTime() - getBrazilOffsetMs(guess));
+  return new Date(guess.getTime() - getBrazilOffsetMs(firstPass));
+}
+
+/**
+ * Cada ciclo começa no domingo às 23h59 no fuso de Brasília. A chave também
+ * mantém o callback idempotente caso a plataforma execute uma nova tentativa.
+ */
+export function getCompetitionWeekWindow(now = new Date()): CompetitionWeekWindow {
+  const brazil = getBrazilDateParts(now);
+  const afterWeeklyReset = brazil.weekday === 0 && (brazil.hour > 23 || (brazil.hour === 23 && brazil.minute >= 59));
+  const daysSinceCycleStart = brazil.weekday === 0 ? (afterWeeklyReset ? 0 : 7) : brazil.weekday;
+  const localCycleDay = new Date(Date.UTC(brazil.year, brazil.month - 1, brazil.day - daysSinceCycleStart));
+  const year = localCycleDay.getUTCFullYear();
+  const month = localCycleDay.getUTCMonth() + 1;
+  const day = localCycleDay.getUTCDate();
+  const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  return { key, startsAt: brazilLocalDateToUtc(year, month, day, 23, 59) };
+}
+
+export function shouldRegisterWeeklyCompetitionCycle(currentKey: string | null | undefined, now = new Date()) {
+  return currentKey !== getCompetitionWeekWindow(now).key;
+}
+
+/** Registra o novo período exibido, mantendo todas as respostas e rodadas históricas no banco. */
+export async function runWeeklyCompetitionReset(taskUid: string, now = new Date()) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const row = (await db.select().from(competitionSettings).where(eq(competitionSettings.weeklyResetCronTaskUid, taskUid)).limit(1))[0];
+  if (!row) return { status: "orphan" as const };
+  const window = getCompetitionWeekWindow(now);
+  if (!shouldRegisterWeeklyCompetitionCycle(row.weeklyCycleKey, now)) {
+    return { status: "already_current" as const, ...window };
+  }
+  await db.update(competitionSettings).set({ weeklyCycleKey: window.key, weeklyCycleStartedAt: window.startsAt }).where(eq(competitionSettings.id, row.id));
+  return { status: "reset" as const, ...window };
 }
 
 export function getCompetitionMonthWindow(now = new Date()) {
@@ -720,9 +924,11 @@ export async function submitCompetitionAnswer(userId: number, input: { roundId: 
 export async function getCompetitionRanking(courseId?: string) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+  const window = getCompetitionWeekWindow();
+  const afterCycleStart = gt(competitionAnswers.answeredAt, new Date(window.startsAt.getTime() - 1));
   const answers = courseId
-    ? await db.select().from(competitionAnswers).where(eq(competitionAnswers.courseId, courseId))
-    : await db.select().from(competitionAnswers);
+    ? await db.select().from(competitionAnswers).where(and(eq(competitionAnswers.courseId, courseId), afterCycleStart))
+    : await db.select().from(competitionAnswers).where(afterCycleStart);
   if (!answers.length) return [] as CompetitionRankingRow[];
   const userIds = Array.from(new Set(answers.map(answer => answer.userId)));
   const userRows = await db.select({ id: users.id, name: users.name, username: users.username }).from(users).where(inArray(users.id, userIds));
@@ -835,6 +1041,10 @@ export async function getStudyState(userId: number) {
     db.select().from(studyAnswers).where(eq(studyAnswers.userId, userId)).orderBy(desc(studyAnswers.answeredAt)),
     db.select().from(simulationRecords).where(eq(simulationRecords.userId, userId)).orderBy(desc(simulationRecords.completedAt)),
   ]);
+  const weeklyWindow = getCompetitionWeekWindow();
+  const weeklySimulationCorrect = simulations
+    .filter(simulation => simulation.completedAt.getTime() >= weeklyWindow.startsAt.getTime())
+    .reduce((total, simulation) => total + simulation.correct, 0);
   return {
     completedModules: modules.map(item => item.moduleId),
     answers: answers.reverse().map(item => ({ questionId: item.questionId, correct: item.correct, answeredAt: item.answeredAt.toISOString() })),
@@ -852,6 +1062,7 @@ export async function getStudyState(userId: number) {
     lastStudyDate: profile.lastStudyDate ?? undefined,
     studyDates: parseStringArray(profile.studyDatesJson),
     usedQuestionIds: parseStringArray(profile.usedQuestionIdsJson),
+    weeklySimulationCorrect,
   };
 }
 

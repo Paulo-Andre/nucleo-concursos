@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ensureRootAccount } from "../auth/rootBootstrap";
 import { processMercadoPagoWebhook, resolveMercadoPagoNotificationDataId } from "../mercadoPago";
+import { weeklyResetHandler } from "../weeklyReset";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -66,6 +67,7 @@ async function startServer() {
       res.status(400).json({ received: false });
     }
   });
+  app.post("/api/scheduled/weeklyReset", weeklyResetHandler);
   // tRPC API
   app.use(
     "/api/trpc",

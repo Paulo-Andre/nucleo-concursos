@@ -273,3 +273,8 @@
 - [x] Ocultar Competição, Revisão e Simulados para alunos matriculados apenas em cursos do tipo Tutorial, preservando todas as abas para cursos Concurso.
 - [x] Impedir o acesso direto às funcionalidades de Competição, Revisão e Simulados quando o aluno possuir somente matrícula em cursos Tutorial.
 - [x] Cobrir tipos de curso e permissões de Tutorial com testes, validação responsiva e publicação.
+- [x] Reiniciar semanalmente o ranking e a medalha da Competição aos domingos às 23h59 no horário de Brasília, sem apagar o histórico de respostas.
+- [x] Reiniciar semanalmente o selo pessoal baseado em simulados aos domingos às 23h59 no horário de Brasília, preservando o histórico de estudo.
+- [x] Ampliar as Configurações gerais ROOT para editar todos os textos e cores compartilhados da página principal.
+- [x] Aplicar as configurações de identidade às demais páginas que reutilizam as mesmas informações e estilos.
+- [x] Cobrir ciclos semanais e configurações ampliadas com testes, validação visual, agendamento e publicação.

@@ -21,9 +21,11 @@ export type StudyState = {
   lastStudyDate?: string;
   studyDates: string[];
   usedQuestionIds: string[];
+  /** Acertos de simulados desde o último ciclo semanal de Brasília. */
+  weeklySimulationCorrect: number;
 };
 
-export const emptyState: StudyState = { completedModules: [], answers: [], simulations: [], xp: 0, studyDates: [], usedQuestionIds: [] };
+export const emptyState: StudyState = { completedModules: [], answers: [], simulations: [], xp: 0, studyDates: [], usedQuestionIds: [], weeklySimulationCorrect: 0 };
 export const storageKey = "estudos-pf-operational-state-v1";
 
 export function loadState(): StudyState {
