@@ -37,3 +37,22 @@ O ROOT encontra **Competição** dentro de **Gestão ROOT**. Nesse painel, é po
 | Limpar ranking por concurso | Selecione o concurso, digite exatamente `LIMPAR RANKING` e confirme. Somente as rodadas e respostas daquele recorte são removidas. |
 
 Cada limpeza registra uma entrada de auditoria administrativa. A limpeza é irreversível para as pontuações removidas; portanto, o ROOT deve exportar o backup administrativo antes da operação quando precisar preservar um histórico externo.
+
+## Variedade das rodadas e histórico pessoal
+
+Com **252 questões publicadas** na biblioteca no momento desta atualização, a competição prioriza automaticamente questões que o aluno ainda não respondeu em rodadas anteriores. Caso a quantidade inédita não seja suficiente para completar a rodada configurada, a plataforma só então utiliza questões já respondidas como complemento. Essa regra vale para a seleção geral e para o recorte de cada concurso, sem reutilizar registros de simulados.
+
+O aluno encontra, abaixo do ranking, a área **Meta mensal e histórico**. Ela permite alternar entre o recorte geral e cada concurso, consultar as rodadas recentes e verificar número de respostas, acertos, pontos obtidos e data da rodada. Uma rodada ainda aberta aparece como **em andamento** e passa a compor o histórico concluído quando todas as questões forem respondidas.
+
+## Meta mensal e reconhecimento
+
+O ROOT configura a meta em **Gestão ROOT → Competição → Meta e reconhecimento do mês**. A meta exige simultaneamente uma quantidade de pontos e de rodadas concluídas. O título e a descrição do reconhecimento são mensagens exibidas ao aluno depois que ambos os requisitos forem atingidos; a plataforma não concede pontos extras nem entrega prêmio automaticamente.
+
+| Configuração | Limite e efeito |
+| --- | --- |
+| Meta de pontos | Pontos competitivos que o aluno deve acumular no mês. |
+| Rodadas concluídas | Quantidade mínima de rodadas integralmente respondidas no mês. |
+| Título e descrição | Texto do reconhecimento que aparece após a conquista. |
+| Meta mensal ativa | Permite ocultar a campanha sem apagar histórico ou ranking. |
+
+O mês é identificado pelo calendário de Brasília e apurado sob demanda sempre que a área de competição é aberta. Assim, a virada mensal não depende de robôs, tarefas programadas ou do navegador do usuário permanecer aberto.

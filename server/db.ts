@@ -10,6 +10,7 @@ import {
   commercePlans,
   commerceTransactions,
   competitionAnswers,
+  competitionMonthlyGoals,
   competitionRounds,
   competitionSettings,
   completedModules,
@@ -432,6 +433,22 @@ export type CompetitionSettingsInput = {
   isActive: boolean;
 };
 
+export const defaultCompetitionMonthlyGoal = {
+  targetPoints: 100,
+  targetCompletedRounds: 5,
+  rewardTitle: "Destaque mensal",
+  rewardDescription: "Reconhecimento definido pela administração para quem concluir a meta do mês.",
+  isActive: true,
+} as const;
+
+export type CompetitionMonthlyGoalInput = {
+  targetPoints: number;
+  targetCompletedRounds: number;
+  rewardTitle: string;
+  rewardDescription: string;
+  isActive: boolean;
+};
+
 type CompetitionQuestion = {
   id: number;
   statement: string;
@@ -490,6 +507,7 @@ export function evaluateCompetitionAnswer(answerJson: string, submittedAnswer: b
 export type CompetitionRankingAnswer = { userId: number; pointsEarned: number; correct: boolean };
 export type CompetitionRankingUser = { id: number; name: string; username: string | null };
 export type CompetitionRankingRow = { position: number; userId: number; name: string; username: string | null; totalPoints: number; totalAnswered: number; totalCorrect: number };
+export type CompetitionHistoryRow = { id: string; courseId: string | null; createdAt: Date; completedAt: Date | null; totalQuestions: number; answeredQuestions: number; correctAnswers: number; earnedPoints: number };
 
 export function buildCompetitionRanking(answers: CompetitionRankingAnswer[], participants: CompetitionRankingUser[]) {
   const byUser = new Map<number, { totalPoints: number; totalAnswered: number; totalCorrect: number }>();
@@ -521,6 +539,38 @@ export async function saveCompetitionSettings(actorUserId: number, input: Compet
   return getCompetitionSettings();
 }
 
+export function getCompetitionMonthWindow(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(now);
+  const year = Number(parts.find(part => part.type === "year")?.value);
+  const month = Number(parts.find(part => part.type === "month")?.value);
+  const startsAt = new Date(Date.UTC(year, month - 1, 1));
+  const endsAt = new Date(Date.UTC(year, month, 1));
+  return { period: `${year}-${String(month).padStart(2, "0")}`, startsAt, endsAt };
+}
+
+export async function getCompetitionMonthlyGoal() {
+  const db = await getDb();
+  if (!db) return { ...defaultCompetitionMonthlyGoal, updatedAt: null };
+  const row = await db.select().from(competitionMonthlyGoals).where(eq(competitionMonthlyGoals.id, 1)).limit(1);
+  return { ...defaultCompetitionMonthlyGoal, ...(row[0] ?? {}) };
+}
+
+export async function saveCompetitionMonthlyGoal(actorUserId: number, input: CompetitionMonthlyGoalInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const values = {
+    targetPoints: input.targetPoints,
+    targetCompletedRounds: input.targetCompletedRounds,
+    rewardTitle: input.rewardTitle.trim(),
+    rewardDescription: input.rewardDescription.trim(),
+    isActive: input.isActive,
+    updatedByUserId: actorUserId,
+  };
+  await db.insert(competitionMonthlyGoals).values({ id: 1, ...values }).onDuplicateKeyUpdate({ set: values });
+  await writeAdminAudit(actorUserId, null, "ATUALIZACAO_META_MENSAL_COMPETICAO", `Meta mensal atualizada: ${values.targetPoints} ponto(s), ${values.targetCompletedRounds} rodada(s) concluída(s) e reconhecimento “${values.rewardTitle}”.`);
+  return getCompetitionMonthlyGoal();
+}
+
 export async function listCompetitionCourses() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -550,6 +600,12 @@ function shuffleCompetitionQuestions<T>(items: T[]) {
   return copy;
 }
 
+export function prioritizeUnseenCompetitionQuestions<T extends { id: number }>(candidates: T[], answeredQuestionIds: Set<number>, questionsPerRound: number) {
+  const unseen = candidates.filter(question => !answeredQuestionIds.has(question.id));
+  const repeated = candidates.filter(question => answeredQuestionIds.has(question.id));
+  return [...shuffleCompetitionQuestions(unseen), ...shuffleCompetitionQuestions(repeated)].slice(0, questionsPerRound);
+}
+
 export async function createCompetitionRound(userId: number, courseId: string | undefined, allowedCourseIds: string[], isAdmin: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -557,7 +613,8 @@ export async function createCompetitionRound(userId: number, courseId: string | 
   if (!settings.isActive) throw new Error("A competição está temporariamente pausada pela administração.");
   if (courseId && !isAdmin && !allowedCourseIds.includes(courseId)) throw new Error("Você não possui acesso ativo a este concurso.");
   const candidates = await getCompetitionQuestionsForCourse(courseId);
-  const selected = shuffleCompetitionQuestions(candidates).slice(0, settings.questionsPerRound);
+  const previousAnswers = await db.select({ questionId: competitionAnswers.questionId }).from(competitionAnswers).where(eq(competitionAnswers.userId, userId));
+  const selected = prioritizeUnseenCompetitionQuestions(candidates, new Set(previousAnswers.map(answer => answer.questionId)), settings.questionsPerRound);
   if (!selected.length) throw new Error("Ainda não há questões publicadas para iniciar esta competição.");
   const roundId = crypto.randomUUID();
   await db.insert(competitionRounds).values({ id: roundId, userId, courseId: courseId ?? null, questionIdsJson: JSON.stringify(selected.map(question => question.id)) });
@@ -633,6 +690,58 @@ export async function getCompetitionRanking(courseId?: string) {
 export async function getMyCompetitionScore(userId: number, courseId?: string) {
   const ranking = await getCompetitionRanking(courseId);
   return ranking.find(row => row.userId === userId) ?? { position: null, userId, name: null, username: null, totalPoints: 0, totalAnswered: 0, totalCorrect: 0 };
+}
+
+export async function getMyCompetitionHistory(userId: number, courseId?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rounds = courseId
+    ? await db.select().from(competitionRounds).where(and(eq(competitionRounds.userId, userId), eq(competitionRounds.courseId, courseId))).orderBy(desc(competitionRounds.createdAt)).limit(20)
+    : await db.select().from(competitionRounds).where(eq(competitionRounds.userId, userId)).orderBy(desc(competitionRounds.createdAt)).limit(20);
+  if (!rounds.length) return [] as CompetitionHistoryRow[];
+  const answers = await db.select().from(competitionAnswers).where(inArray(competitionAnswers.roundId, rounds.map(round => round.id)));
+  const answersByRound = new Map<string, typeof answers>();
+  for (const answer of answers) answersByRound.set(answer.roundId, [...(answersByRound.get(answer.roundId) ?? []), answer]);
+  return rounds.map(round => {
+    const roundAnswers = answersByRound.get(round.id) ?? [];
+    return {
+      id: round.id,
+      courseId: round.courseId,
+      createdAt: round.createdAt,
+      completedAt: round.completedAt,
+      totalQuestions: parseCompetitionQuestionIds(round.questionIdsJson).length,
+      answeredQuestions: roundAnswers.length,
+      correctAnswers: roundAnswers.filter(answer => answer.correct).length,
+      earnedPoints: roundAnswers.reduce((total, answer) => total + answer.pointsEarned, 0),
+    };
+  });
+}
+
+export async function getMyMonthlyCompetitionGoal(userId: number, courseId?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [goal, window] = await Promise.all([getCompetitionMonthlyGoal(), Promise.resolve(getCompetitionMonthWindow())]);
+  const answerWhere = courseId
+    ? and(eq(competitionAnswers.userId, userId), eq(competitionAnswers.courseId, courseId), gt(competitionAnswers.answeredAt, new Date(window.startsAt.getTime() - 1)))
+    : and(eq(competitionAnswers.userId, userId), gt(competitionAnswers.answeredAt, new Date(window.startsAt.getTime() - 1)));
+  const roundWhere = courseId
+    ? and(eq(competitionRounds.userId, userId), eq(competitionRounds.courseId, courseId), gt(competitionRounds.createdAt, new Date(window.startsAt.getTime() - 1)))
+    : and(eq(competitionRounds.userId, userId), gt(competitionRounds.createdAt, new Date(window.startsAt.getTime() - 1)));
+  const [answers, rounds] = await Promise.all([
+    db.select({ pointsEarned: competitionAnswers.pointsEarned }).from(competitionAnswers).where(answerWhere),
+    db.select({ completedAt: competitionRounds.completedAt }).from(competitionRounds).where(roundWhere),
+  ]);
+  const earnedPoints = answers.reduce((total, answer) => total + answer.pointsEarned, 0);
+  const completedRounds = rounds.filter(round => Boolean(round.completedAt)).length;
+  return {
+    ...goal,
+    ...window,
+    earnedPoints,
+    completedRounds,
+    remainingPoints: Math.max(0, goal.targetPoints - earnedPoints),
+    remainingCompletedRounds: Math.max(0, goal.targetCompletedRounds - completedRounds),
+    achieved: goal.isActive && earnedPoints >= goal.targetPoints && completedRounds >= goal.targetCompletedRounds,
+  };
 }
 
 export async function clearCompetitionRanking(actorUserId: number, courseId?: string) {

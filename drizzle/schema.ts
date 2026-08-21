@@ -472,6 +472,18 @@ export const competitionSettings = mysqlTable("competitionSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+/** Meta e reconhecimento mensal da competição. O período é calculado sob demanda, sem cron. */
+export const competitionMonthlyGoals = mysqlTable("competitionMonthlyGoals", {
+  id: int("id").primaryKey(),
+  targetPoints: int("targetPoints").notNull().default(100),
+  targetCompletedRounds: int("targetCompletedRounds").notNull().default(5),
+  rewardTitle: varchar("rewardTitle", { length: 160 }).notNull().default("Destaque mensal"),
+  rewardDescription: varchar("rewardDescription", { length: 500 }).notNull().default("Reconhecimento definido pela administração para quem concluir a meta do mês."),
+  isActive: boolean("isActive").notNull().default(true),
+  updatedByUserId: int("updatedByUserId"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 /** Uma rodada é um recorte próprio de questões, preservado fora das tabelas de simulado. */
 export const competitionRounds = mysqlTable("competitionRounds", {
   id: varchar("id", { length: 64 }).primaryKey(),

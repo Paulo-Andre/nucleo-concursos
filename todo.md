@@ -254,3 +254,7 @@
 - [x] Persistir pontuação e ranking global de alunos, com filtro opcional por concurso.
 - [x] Criar controles ROOT para configurar pontos por resposta, limpar ranking com segurança e revisar regras da competição.
 - [x] Cobrir competição e configurações gerais com testes, validação visual, documentação e publicação.
+- [x] Ampliar a variedade de questões elegíveis nas rodadas de competição sem reutilizar respostas de simulados.
+- [x] Criar histórico pessoal de rodadas, respostas, pontuação e desempenho competitivo por aluno.
+- [x] Criar metas mensais e premiação configuráveis pelo ROOT, calculadas sem tarefa periódica e sem afetar simulados.
+- [x] Cobrir a ampliação da competição com testes, validação visual, documentação e publicação.

@@ -31,6 +31,9 @@ import {
   getCompetitionRanking,
   getCompetitionRound,
   getCompetitionSettings,
+  getCompetitionMonthlyGoal,
+  getMyCompetitionHistory,
+  getMyMonthlyCompetitionGoal,
   getMyCompetitionScore,
   dismissDailyQuickCheck,
   grantCourseEnrollment,
@@ -58,6 +61,7 @@ import {
   openStudyContent,
   removeStudyReviewItem,
   saveNote,
+  saveCompetitionMonthlyGoal,
   saveCompetitionSettings,
   saveStudyReviewItem,
   saveStudyRoadmapItem,
@@ -379,6 +383,8 @@ export const appRouter = router({
     courses: protectedProcedure.query(() => listCompetitionCourses()),
     ranking: protectedProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input }) => getCompetitionRanking(input.courseId)),
     myScore: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyCompetitionScore(ctx.user.id, input.courseId)),
+    history: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyCompetitionHistory(ctx.user.id, input.courseId)),
+    monthlyGoal: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyMonthlyCompetitionGoal(ctx.user.id, input.courseId)),
     startRound: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).mutation(async ({ input, ctx }) => {
       const access = ctx.user.role === "admin" ? [] : await getUserCourseAccess(ctx.user.id);
       return createCompetitionRound(ctx.user.id, input.courseId, access.map(enrollment => enrollment.courseId), ctx.user.role === "admin");
@@ -456,6 +462,14 @@ export const appRouter = router({
         questionsPerRound: z.number().int().min(5, "A rodada deve ter ao menos 5 questões.").max(50),
         isActive: z.boolean(),
       })).mutation(({ input, ctx }) => saveCompetitionSettings(ctx.user.id, input)),
+      getMonthlyGoal: adminProcedure.query(() => getCompetitionMonthlyGoal()),
+      saveMonthlyGoal: adminProcedure.input(z.object({
+        targetPoints: z.number().int().min(1, "Informe ao menos 1 ponto para a meta.").max(100000),
+        targetCompletedRounds: z.number().int().min(1, "Informe ao menos 1 rodada para a meta.").max(500),
+        rewardTitle: z.string().trim().min(3, "Informe o título do reconhecimento.").max(160),
+        rewardDescription: z.string().trim().min(10, "Descreva o reconhecimento mensal.").max(500),
+        isActive: z.boolean(),
+      })).mutation(({ input, ctx }) => saveCompetitionMonthlyGoal(ctx.user.id, input)),
       clearRanking: adminProcedure.input(z.object({ courseId: courseIdSchema.optional(), confirmation: z.literal("LIMPAR RANKING") })).mutation(({ input, ctx }) => clearCompetitionRanking(ctx.user.id, input.courseId)),
     }),
     backup: router({
