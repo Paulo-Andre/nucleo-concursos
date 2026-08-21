@@ -278,3 +278,5 @@
 - [x] Ampliar as Configurações gerais ROOT para editar todos os textos e cores compartilhados da página principal.
 - [x] Aplicar as configurações de identidade às demais páginas que reutilizam as mesmas informações e estilos.
 - [x] Cobrir ciclos semanais e configurações ampliadas com testes, validação visual, agendamento e publicação.
+- [x] Exibir uma prévia completa, responsiva e em tempo real da página inicial nas Configurações gerais ROOT antes do salvamento.
+- [x] Tornar claramente visível e editável o campo Tipo do curso, com as opções Concurso e Tutorial, na criação e edição ROOT.

@@ -1,19 +1,32 @@
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { ArrowRight, BookOpenCheck, Check, ChevronRight, Clock3, CreditCard, GraduationCap, Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { formatStorefrontCurrency, storefrontCourseLabel, storefrontPlanCta, storefrontPlanType, type PublicStorefrontPlan } from "@/lib/publicStorefront";
 import { PlanCoverCarousel } from "@/components/PlanCoverCarousel";
 import { GlobalContactLinks } from "@/components/GlobalContactLinks";
+import { isTrustedStorefrontPreviewMessage } from "@/lib/storefrontPreview";
 
-type PublicStorefrontProps = { onLogin: () => void; onChoosePlan: (planId: string) => void };
+type PublicStorefrontProps = { onLogin: () => void; onChoosePlan: (planId: string) => void; previewMode?: boolean };
+type StorefrontPreviewSettings = Record<string, string | null | undefined>;
 type PaletteStyle = CSSProperties & Record<"--button-hover", string>;
 const alpha = (color: string, opacity: number) => `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`;
 function scrollToPackages() { document.getElementById("pacotes")?.scrollIntoView({ behavior: "smooth", block: "start" }); }
 
-export function PublicStorefront({ onLogin, onChoosePlan }: PublicStorefrontProps) {
+export function PublicStorefront({ onLogin, onChoosePlan, previewMode = false }: PublicStorefrontProps) {
   const plans = trpc.commerce.plans.useQuery(undefined, { refetchOnWindowFocus: false });
   const settingsQuery = trpc.platform.settings.useQuery(undefined, { refetchOnWindowFocus: false });
-  const stored = settingsQuery.data;
+  const [previewSettings, setPreviewSettings] = useState<StorefrontPreviewSettings | null>(null);
+  useEffect(() => {
+    if (!previewMode) return;
+    const receivePreview = (event: MessageEvent) => {
+      if (!isTrustedStorefrontPreviewMessage(event.origin, window.location.origin, event.data?.type)) return;
+      setPreviewSettings(event.data.settings as StorefrontPreviewSettings);
+    };
+    window.addEventListener("message", receivePreview);
+    window.parent.postMessage({ type: "nucleo-storefront-preview-ready" }, window.location.origin);
+    return () => window.removeEventListener("message", receivePreview);
+  }, [previewMode]);
+  const stored = previewSettings ?? settingsQuery.data;
   const settings = {
     logoUrl: stored?.logoUrl ?? null, brandName: stored?.brandName ?? "Núcleo Concursos", brandTagline: stored?.brandTagline ?? "Preparo multidisciplinar", heroBadge: stored?.heroBadge ?? "Estude com método, evolua com registro", heroTitle: stored?.heroTitle ?? "O próximo passo da sua preparação começa aqui.", heroDescription: stored?.heroDescription ?? "Escolha uma trilha, organize o estudo por conteúdo e acompanhe o que já foi consolidado. O acesso é individual, seguro e liberado somente após a confirmação do pagamento.",
     loginButtonText: stored?.loginButtonText ?? "Entrar", heroPrimaryCtaText: stored?.heroPrimaryCtaText ?? "Ver pacotes disponíveis", heroSecondaryCtaText: stored?.heroSecondaryCtaText ?? "Já tenho uma conta", routineEyebrow: stored?.routineEyebrow ?? "UMA ROTINA EM TRÊS ETAPAS", routineStepOneTitle: stored?.routineStepOneTitle ?? "Escolha sua trilha", routineStepOneDescription: stored?.routineStepOneDescription ?? "Compare os pacotes ativos e selecione o que faz sentido para seu objetivo.", routineStepTwoTitle: stored?.routineStepTwoTitle ?? "Crie sua conta", routineStepTwoDescription: stored?.routineStepTwoDescription ?? "Seu histórico, seus simulados e sua evolução ficam ligados ao seu próprio acesso.", routineStepThreeTitle: stored?.routineStepThreeTitle ?? "Comece a estudar", routineStepThreeDescription: stored?.routineStepThreeDescription ?? "Após a confirmação do pagamento, as disciplinas da trilha ficam disponíveis.",

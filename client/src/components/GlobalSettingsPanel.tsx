@@ -60,6 +60,9 @@ export function GlobalSettingsPanel() {
     })) as SettingsForm;
     setForm(next);
   }, [query.data]);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("nucleo-settings-preview-draft", { detail: form }));
+  }, [form]);
   const save = trpc.admin.settings.save.useMutation({ onSuccess: async () => { setMessage("Configurações gerais aplicadas à vitrine e às áreas compartilhadas."); await Promise.all([utils.admin.settings.get.invalidate(), utils.platform.settings.invalidate()]); }, onError: error => setMessage(error.message) });
   const upload = trpc.admin.settings.uploadLogo.useMutation({ onSuccess: ({ url }) => { setForm(current => ({ ...current, logoUrl: url })); setMessage("Logo enviada. Salve as configurações para aplicá-la."); }, onError: error => setMessage(error.message) });
   const set = <K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) => setForm(current => ({ ...current, [key]: value }));
