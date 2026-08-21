@@ -35,6 +35,7 @@ import { SimulationSealIdentity, getSimulationSealIdentity } from "@/lib/simulat
 import { canOpenTutorialView, isTutorialCourseExperience } from "@/lib/tutorialCourse";
 import { isStorefrontPreviewMode } from "@/lib/storefrontPreview";
 import { resolveVisibleStudyCourseId, visibleStudyCourses } from "@/lib/studyCourseAccess";
+import { resolveStudyWorkspaceAccessState } from "@/lib/studyWorkspaceAccess";
 
 type View = "Painel" | "Conteúdo" | "Roteiro" | "Simulados" | "Competição" | "Revisar" | "Histórico" | "Cursos";
 type SimulationQuestion = StudyQuestion & { persistentQuestionId?: number };
@@ -146,9 +147,15 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
     iconColor: platformSettingsQuery.data?.iconColor ?? "#0e5a70",
     buttonColor: platformSettingsQuery.data?.buttonColor ?? "#0e5a70",
   };
-  const accessQuery = trpc.study.access.useQuery(undefined, { refetchOnWindowFocus: false });
   const courseCatalogQuery = trpc.study.courseCatalog.useQuery(undefined, { refetchOnWindowFocus: false });
   const permittedCourses = useMemo<StudyCourseOption[]>(() => visibleStudyCourses((courseCatalogQuery.data ?? []) as StudyCourseOption[]), [courseCatalogQuery.data]);
+  const workspaceAccessState = resolveStudyWorkspaceAccessState({
+    isAdmin: user.role === "admin",
+    catalogLoading: courseCatalogQuery.isLoading,
+    catalogError: courseCatalogQuery.isError,
+    permittedCourseCount: permittedCourses.length,
+  });
+  const hasConfirmedCourseAccess = workspaceAccessState === "available";
   const permittedContestIds = useMemo(() => permittedCourses.map(course => course.id), [permittedCourses]);
   const effectiveContestId = resolveVisibleStudyCourseId(permittedCourses, contestId, activeContestId);
   const activeCourse = useMemo(() => permittedCourses.find(course => course.id === effectiveContestId) ?? null, [permittedCourses, effectiveContestId]);
@@ -186,11 +193,11 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
     if (sessionReplacementNotice) window.sessionStorage.removeItem("nucleo-session-replaced-notice");
   }, [sessionReplacementNotice]);
 
-  const privateState = trpc.study.state.useQuery(undefined, { refetchOnWindowFocus: false });
-  const centralQuestionsQuery = trpc.study.questions.list.useQuery(undefined, { refetchOnWindowFocus: false });
+  const privateState = trpc.study.state.useQuery(undefined, { enabled: hasConfirmedCourseAccess, refetchOnWindowFocus: false });
+  const centralQuestionsQuery = trpc.study.questions.list.useQuery(undefined, { enabled: hasConfirmedCourseAccess, refetchOnWindowFocus: false });
   const dailyCheckQuery = trpc.study.dailyCheck.useQuery({ courseId: effectiveContestId }, { enabled: user.role !== "admin" && permittedContestIds.includes(effectiveContestId), refetchOnWindowFocus: false });
-  const personalReviewsQuery = trpc.study.review.list.useQuery(undefined, { enabled: !tutorialCourse, refetchOnWindowFocus: false });
-  const canUseActiveCourse = user.role === "admin" || permittedContestIds.includes(effectiveContestId);
+  const personalReviewsQuery = trpc.study.review.list.useQuery(undefined, { enabled: hasConfirmedCourseAccess && !tutorialCourse, refetchOnWindowFocus: false });
+  const canUseActiveCourse = hasConfirmedCourseAccess && (user.role === "admin" || permittedContestIds.includes(effectiveContestId));
   const contentProgressQuery = trpc.study.contentProgress.get.useQuery({ courseId: effectiveContestId }, { enabled: canUseActiveCourse, refetchOnWindowFocus: false });
   const roadmapQuery = trpc.study.roadmap.list.useQuery({ courseId: effectiveContestId }, { enabled: canUseActiveCourse, refetchOnWindowFocus: false });
   const personalCompetitionScoreQuery = trpc.competition.myScore.useQuery({}, { enabled: canUseActiveCourse && !tutorialCourse, refetchOnWindowFocus: false });
@@ -254,8 +261,9 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
 
   useEffect(() => { setQuickAnswer(null); }, [quickQuestion?.id]);
 
-  if (user.role !== "admin" && accessQuery.isLoading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Verificando matrícula...</div>;
-  if (user.role !== "admin" && !accessQuery.data?.length) return <>{commerceOpen && <CommercePanel initialPlanId={commercePlanFocus} onClose={() => { setCommerceOpen(false); setCommercePlanFocus(null); }} />}<CourseAccessRequired userName={user.name} onLogout={logout} onBrowsePlans={() => setCommerceOpen(true)} /></>;
+  if (workspaceAccessState === "loading") return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Preparando sua área de estudos...</div>;
+  if (workspaceAccessState === "error") return <div className="grid min-h-screen place-items-center bg-[#152d38] p-5 text-center text-[#e8e4d9]"><div><p className="text-sm font-bold">Não foi possível confirmar seus cursos agora.</p><button type="button" onClick={() => void courseCatalogQuery.refetch()} className="mt-4 min-h-11 rounded-lg border border-[#a3d6ca] px-4 text-xs font-bold tracking-wide text-[#e8e4d9] hover:bg-white/10">TENTAR NOVAMENTE</button></div></div>;
+  if (workspaceAccessState === "no-course") return <>{commerceOpen && <CommercePanel initialPlanId={commercePlanFocus} onClose={() => { setCommerceOpen(false); setCommercePlanFocus(null); }} />}<CourseAccessRequired userName={user.name} onLogout={logout} onBrowsePlans={() => setCommerceOpen(true)} /></>;
 
   function updateState(updater: (current: StudyState) => StudyState) { setState((current) => updater(current)); }
 

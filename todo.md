@@ -320,3 +320,5 @@
 - [ ] Cobrir a validação de capa de plano e confirmar o salvamento pelo formulário mobile.
 - [x] Corrigir o formulário de planos para preservar e enviar os cursos liberados selecionados, inclusive em celular.
 - [x] Converter a validação de curso obrigatório em orientação compreensível para o ROOT e validar a criação do plano.
+- [ ] Diagnosticar e corrigir a exibição do selo “Conteúdo novo” ou “Conteúdo atualizado” para alunos com matrícula elegível.
+- [x] Eliminar a tela transitória de matrícula e a montagem duplicada da área do aluno ao iniciar uma sessão autenticada.
