@@ -176,6 +176,13 @@
       "when": 1787328909021,
       "tag": "0024_freezing_the_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1787340149516,
+      "tag": "0025_gray_enchantress",
+      "breakpoints": true
     }
   ]
 }

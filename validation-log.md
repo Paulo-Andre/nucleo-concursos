@@ -11,3 +11,7 @@ A ação **Cursos para comprar** foi aberta na conta ROOT. O título da área mu
 ## 21 de agosto de 2026 — Catálogo ROOT
 
 Na prévia autenticada, o menu administrativo foi aberto com os oito atalhos. A medição dos cartões de **Negócios**, **Usuários**, **Catálogo de cursos**, **Conteúdos**, **Contatos**, **Configurações**, **Competição** e **Backup** confirmou intervalos verticais separados, sem sobreposição. O formulário de curso apresenta, sob a seção **Classificação para os filtros de busca**, os seletores de **Área de atuação** e **Estado ou abrangência**; os cartões existentes exibem a classificação atualmente salva.
+
+## 21 de agosto de 2026 — Alertas da plataforma
+
+Na prévia autenticada com perfil ROOT, a área **Alertas** apareceu no Centro de comando sem afetar os demais atalhos. A tela apresentou os três níveis visuais — **Melhoria**, **Aviso** e **Urgência** —, as duas audiências — **Todos os alunos** e **Um curso específico** — e o seletor de cursos ativos foi exibido ao escolher o público segmentado. Nenhum alerta de teste foi enviado durante a validação.

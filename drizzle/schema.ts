@@ -60,6 +60,33 @@ export const studyProfiles = mysqlTable("studyProfiles", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [uniqueIndex("studyProfiles_userId_unique").on(table.userId)]);
 
+/** Comunicados operacionais enviados pelo ROOT, para todos os alunos ou para um curso específico. */
+export const platformAlerts = mysqlTable("platformAlerts", {
+  id: int("id").autoincrement().primaryKey(),
+  level: mysqlEnum("level", ["improvement", "warning", "urgent"]).notNull().default("improvement"),
+  message: text("message").notNull(),
+  audience: mysqlEnum("audience", ["all", "course"]).notNull().default("all"),
+  courseId: varchar("courseId", { length: 80 }),
+  isActive: boolean("isActive").notNull().default(true),
+  createdByUserId: int("createdByUserId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("platformAlerts_active_created_idx").on(table.isActive, table.createdAt),
+  index("platformAlerts_course_idx").on(table.courseId),
+]);
+
+/** Registro individual de fechamento: fechar um alerta não altera a experiência dos demais alunos. */
+export const platformAlertDismissals = mysqlTable("platformAlertDismissals", {
+  id: int("id").autoincrement().primaryKey(),
+  alertId: int("alertId").notNull(),
+  userId: int("userId").notNull(),
+  dismissedAt: timestamp("dismissedAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("platformAlertDismissals_alert_user_unique").on(table.alertId, table.userId),
+  index("platformAlertDismissals_user_idx").on(table.userId),
+]);
+
 /** Módulos concluídos — uma linha por estudante e módulo. */
 export const completedModules = mysqlTable("completedModules", {
   id: int("id").autoincrement().primaryKey(),

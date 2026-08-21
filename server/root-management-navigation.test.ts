@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import { rootManagementSections } from "../client/src/lib/rootManagementNavigation";
 
 describe("navegação unificada da gestão ROOT", () => {
-  it("mantém áreas distintas para negócios, usuários, catálogo de cursos, conteúdos, contatos, configurações, competição e backup", () => {
+  it("mantém áreas distintas para negócios, usuários, catálogo, conteúdos, alertas, contatos, configurações, competição e backup", () => {
     expect(rootManagementSections.map((section) => section.id)).toEqual([
       "business",
       "students",
       "courses",
       "contents",
+      "alerts",
       "contacts",
       "settings",
       "competition",

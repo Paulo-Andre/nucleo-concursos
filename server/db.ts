@@ -27,6 +27,8 @@ import {
   questionChangelog,
   questionContentLinks,
   passwordResetTokens,
+  platformAlertDismissals,
+  platformAlerts,
   questions,
   reviewQueue,
   simulationRecords,
@@ -51,6 +53,7 @@ import { isValidCpf, normalizeCpf } from "./cpf";
 import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
 import { storagePut } from "./storage";
 import { serializeAdminBackup, type AdminBackupData } from "./adminBackup";
+import { isPlatformAlertVisibleForUser, type PlatformAlertAudience, type PlatformAlertLevel } from "./platformAlerts";
 
 type UserUpsertInput = {
   openId: string;
@@ -1452,7 +1455,7 @@ export async function createAdministrativeBackup(actorUserId: number) {
     backupUsers, profileRows, completedModuleRows, answerRows, reviewItemRows, simulationRecordRows, noteRows, contentProgressRows, roadmapRows,
     auditRows, courseRows, planRows, planCourseRows, couponRows, orderRows, orderItemRows, transactionRows, enrollmentRows,
     disciplineRows, contentRows, questionRows, courseDisciplineRows, disciplineContentRows, questionContentLinkRows, simulationQuestionRows,
-    reviewQueueRows, questionChangelogRows, contentChangelogRows, contactRows,
+    reviewQueueRows, questionChangelogRows, contentChangelogRows, contactRows, platformAlertRows, platformAlertDismissalRows,
   ] = await Promise.all([
     db.select({ id: users.id, openId: users.openId, name: users.name, username: users.username, email: users.email, cpf: users.cpf, loginMethod: users.loginMethod, role: users.role, isBlocked: users.isBlocked, createdAt: users.createdAt, updatedAt: users.updatedAt, lastSignedIn: users.lastSignedIn }).from(users),
     db.select().from(studyProfiles), db.select().from(completedModules), db.select().from(studyAnswers), db.select().from(studyReviewItems),
@@ -1462,6 +1465,7 @@ export async function createAdministrativeBackup(actorUserId: number) {
     db.select().from(courseEnrollments), db.select().from(disciplines), db.select().from(contents), db.select().from(questions),
     db.select().from(courseDisciplines), db.select().from(disciplineContents), db.select().from(questionContentLinks), db.select().from(simulationQuestions),
     db.select().from(reviewQueue), db.select().from(questionChangelog), db.select().from(contentChangelog), db.select().from(globalContactSettings),
+    db.select().from(platformAlerts), db.select().from(platformAlertDismissals),
   ]);
   const data: AdminBackupData = {
     users: backupUsers,
@@ -1473,6 +1477,7 @@ export async function createAdministrativeBackup(actorUserId: number) {
     courseDisciplines: courseDisciplineRows, disciplineContents: disciplineContentRows, questionContentLinks: questionContentLinkRows,
     simulationQuestions: simulationQuestionRows, reviewQueue: reviewQueueRows, questionChangelog: questionChangelogRows,
     contentChangelog: contentChangelogRows, globalContactSettings: contactRows,
+    platformAlerts: platformAlertRows, platformAlertDismissals: platformAlertDismissalRows,
   };
   const exportedAt = new Date();
   const payload = serializeAdminBackup(data, exportedAt);
@@ -1853,6 +1858,85 @@ export async function getUserCourseAccess(userId: number) {
     sql`${courseEnrollments.expiresAt} > NOW()`,
   ));
   return rows.map(serializeEnrollment);
+}
+
+export async function listActivePlatformAlertsForUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const [activeAlerts, activeEnrollments, dismissals] = await Promise.all([
+    db.select().from(platformAlerts).where(eq(platformAlerts.isActive, true)).orderBy(desc(platformAlerts.createdAt)),
+    getUserCourseAccess(userId),
+    db.select({ alertId: platformAlertDismissals.alertId }).from(platformAlertDismissals).where(eq(platformAlertDismissals.userId, userId)),
+  ]);
+  const activeCourseIds = new Set(activeEnrollments.map(enrollment => enrollment.courseId));
+  const dismissedAlertIds = new Set(dismissals.map(row => row.alertId));
+
+  return activeAlerts.filter(alert => isPlatformAlertVisibleForUser(alert, activeCourseIds, dismissedAlertIds));
+}
+
+export async function dismissPlatformAlertForUser(userId: number, alertId: number) {
+  const visibleAlerts = await listActivePlatformAlertsForUser(userId);
+  if (!visibleAlerts.some(alert => alert.id === alertId)) throw new Error("Este alerta não está disponível para a sua conta.");
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  await db.insert(platformAlertDismissals).values({ alertId, userId }).onDuplicateKeyUpdate({ set: { dismissedAt: new Date() } });
+  return { alertId };
+}
+
+export async function createPlatformAlert(actorUserId: number, input: { level: PlatformAlertLevel; message: string; audience: PlatformAlertAudience; courseId?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const courseId = input.audience === "course" ? input.courseId?.trim() || null : null;
+  if (input.audience === "course" && !courseId) throw new Error("Selecione o curso que receberá este alerta.");
+  let courseTitle: string | null = null;
+  if (courseId) {
+    const course = await db.select({ id: courses.id, title: courses.title }).from(courses).where(eq(courses.id, courseId)).limit(1);
+    if (!course[0]) throw new Error("Curso não encontrado para segmentação do alerta.");
+    courseTitle = course[0].title;
+  }
+  const result = await db.insert(platformAlerts).values({
+    level: input.level,
+    message: input.message.trim(),
+    audience: input.audience,
+    courseId,
+    createdByUserId: actorUserId,
+  });
+  const alertId = Number(result[0].insertId);
+  await writeAdminAudit(actorUserId, null, "ENVIO_DE_ALERTA", `Alerta ${input.level} enviado para ${input.audience === "all" ? "todos os alunos" : `matrículas ativas de ${courseTitle}`}.`);
+  const created = await db.select().from(platformAlerts).where(eq(platformAlerts.id, alertId)).limit(1);
+  if (!created[0]) throw new Error("Alerta não foi salvo.");
+  return created[0];
+}
+
+export async function listManagedPlatformAlerts() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [alerts, courseRows, dismissals] = await Promise.all([
+    db.select().from(platformAlerts).orderBy(desc(platformAlerts.createdAt)),
+    db.select({ id: courses.id, title: courses.title }).from(courses),
+    db.select({ alertId: platformAlertDismissals.alertId }).from(platformAlertDismissals),
+  ]);
+  const courseTitles = new Map(courseRows.map(course => [course.id, course.title]));
+  const dismissalCounts = dismissals.reduce<Map<number, number>>((counts, dismissal) => {
+    counts.set(dismissal.alertId, (counts.get(dismissal.alertId) ?? 0) + 1);
+    return counts;
+  }, new Map());
+  return alerts.map(alert => ({
+    ...alert,
+    courseTitle: alert.courseId ? courseTitles.get(alert.courseId) ?? alert.courseId : null,
+    dismissalCount: dismissalCounts.get(alert.id) ?? 0,
+  }));
+}
+
+export async function setPlatformAlertActive(actorUserId: number, alertId: number, isActive: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await db.select({ id: platformAlerts.id }).from(platformAlerts).where(eq(platformAlerts.id, alertId)).limit(1);
+  if (!existing[0]) throw new Error("Alerta não encontrado.");
+  await db.update(platformAlerts).set({ isActive }).where(eq(platformAlerts.id, alertId));
+  await writeAdminAudit(actorUserId, null, isActive ? "REATIVACAO_DE_ALERTA" : "ENCERRAMENTO_DE_ALERTA", `Alerta ${alertId} ${isActive ? "reativado" : "encerrado"}.`);
+  return { alertId, isActive };
 }
 
 /** Cursos e capas que podem ser apresentados na área de estudos do usuário autenticado. */

@@ -8,6 +8,7 @@ import {
   completeStudyModule,
   completeStudyContent,
   clearCompetitionRanking,
+  createPlatformAlert,
   createAdministrativeBackup,
   createCompetitionRound,
   createManagedContent,
@@ -80,6 +81,10 @@ import {
   submitForReview,
   submitCompetitionAnswer,
   decideReview,
+  dismissPlatformAlertForUser,
+  listActivePlatformAlertsForUser,
+  listManagedPlatformAlerts,
+  setPlatformAlertActive,
 } from "./db";
 import { isValidCpf, normalizeCpf } from "./cpf";
 import { isAllowedCourseCoverUrl } from "./courseCoverUrl";
@@ -173,6 +178,16 @@ const commerceOrderStatusSchema = z.enum(["pending_payment", "paid", "cancelled"
 const knowledgeStatusSchema = z.enum(["draft", "review", "approved", "published", "inactive"]);
 const questionTypeSchema = z.enum(["certo_errado", "multipla_escolha"]);
 const difficultySchema = z.enum(["basic", "intermediate", "advanced"]);
+const platformAlertLevelSchema = z.enum(["improvement", "warning", "urgent"]);
+const platformAlertAudienceSchema = z.enum(["all", "course"]);
+const platformAlertSchema = z.object({
+  level: platformAlertLevelSchema,
+  message: z.string().trim().min(4, "Escreva uma mensagem com ao menos 4 caracteres.").max(1600, "Use no máximo 1.600 caracteres."),
+  audience: platformAlertAudienceSchema,
+  courseId: courseIdSchema.nullable().optional(),
+}).superRefine((input, context) => {
+  if (input.audience === "course" && !input.courseId) context.addIssue({ code: "custom", path: ["courseId"], message: "Selecione o curso que receberá o alerta." });
+});
 const entityIdSchema = z.number().int().positive();
 const studyTimeSchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Informe um horário válido no formato HH:MM.");
 const contentSchema = z.object({
@@ -420,6 +435,8 @@ export const appRouter = router({
   platform: router({
     contacts: publicProcedure.query(() => import("./db").then(({ getGlobalContactSettings }) => getGlobalContactSettings())),
     settings: publicProcedure.query(() => import("./db").then(({ getPlatformGeneralSettings }) => getPlatformGeneralSettings())),
+    alerts: protectedProcedure.query(({ ctx }) => listActivePlatformAlertsForUser(ctx.user.id)),
+    dismissAlert: protectedProcedure.input(z.object({ alertId: entityIdSchema })).mutation(({ input, ctx }) => dismissPlatformAlertForUser(ctx.user.id, input.alertId)),
   }),
   admin: router({
     users: adminProcedure.input(z.object({ search: z.string().trim().max(80).optional() })).query(({ input }) => listManagedUsers(input.search)),
@@ -437,6 +454,11 @@ export const appRouter = router({
     }),
     setCourseActive: adminProcedure.input(z.object({ courseId: courseIdSchema, isActive: z.boolean() })).mutation(({ input, ctx }) => setManagedCourseActive(ctx.user.id, input.courseId, input.isActive)),
     deleteCourse: adminProcedure.input(z.object({ courseId: courseIdSchema, confirmation: courseIdSchema })).mutation(({ input, ctx }) => deleteManagedCourse(ctx.user.id, input.courseId, input.confirmation)),
+    alerts: router({
+      list: adminProcedure.query(() => listManagedPlatformAlerts()),
+      create: adminProcedure.input(platformAlertSchema).mutation(({ input, ctx }) => createPlatformAlert(ctx.user.id, input)),
+      setActive: adminProcedure.input(z.object({ alertId: entityIdSchema, isActive: z.boolean() })).mutation(({ input, ctx }) => setPlatformAlertActive(ctx.user.id, input.alertId, input.isActive)),
+    }),
     contacts: router({
       get: adminProcedure.query(() => import("./db").then(({ getGlobalContactSettings }) => getGlobalContactSettings())),
       save: adminProcedure.input(z.object({

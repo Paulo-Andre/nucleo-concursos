@@ -8,6 +8,7 @@ import { GlobalContactSettingsPanel } from "@/components/GlobalContactSettingsPa
 import { GlobalSettingsPanel } from "@/components/GlobalSettingsPanel";
 import { StorefrontLivePreview } from "@/components/StorefrontLivePreview";
 import { CompetitionAdminPanel } from "@/components/CompetitionAdminPanel";
+import { AlertAdminPanel } from "@/components/AlertAdminPanel";
 import { rootManagementSections, type RootManagementSection } from "@/lib/rootManagementNavigation";
 
 export type { RootManagementSection } from "@/lib/rootManagementNavigation";
@@ -65,6 +66,7 @@ export function RootManagementPanel({ activeSection, onSectionChange, onClose }:
             {activeSection === "students" && <AdminPanel embedded mode="students" />}
             {activeSection === "courses" && <CourseCatalogManagementPanel />}
             {activeSection === "contents" && <AdminLibraryPanel embedded />}
+            {activeSection === "alerts" && <AlertAdminPanel />}
             {activeSection === "contacts" && <GlobalContactSettingsPanel />}
             {activeSection === "settings" && <div className="grid h-full min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(440px,.9fr)]"><div className="min-h-0"><GlobalSettingsPanel /></div><StorefrontLivePreview /></div>}
             {activeSection === "competition" && <CompetitionAdminPanel />}

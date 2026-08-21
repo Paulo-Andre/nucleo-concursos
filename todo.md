@@ -297,3 +297,8 @@
 - [x] Corrigir a sobreposição de informações e a hierarquia visual do menu no painel ROOT de Catálogo de cursos.
 - [x] Tornar claros e persistentes, no cadastro e edição do curso, os campos comerciais que relacionam o curso aos filtros de pesquisa.
 - [x] Validar visualmente, na prévia autenticada, o Catálogo ROOT com menu estável e os seletores de Área de atuação e Estado ou abrangência.
+- [ ] Diagnosticar e corrigir o bloqueio de publicação por tempo excedido identificado após o último checkpoint.
+- [x] Criar alertas persistentes de melhoria, aviso e urgência, com fechamento individual por aluno.
+- [x] Permitir que o ROOT componha alertas e escolha todos os alunos ou os matriculados em um curso específico.
+- [x] Exibir alertas fecháveis na página inicial do aluno, com identidade visual verde, laranja ou vermelha conforme a prioridade.
+- [x] Validar permissões, segmentação, fechamento individual e interface responsiva do sistema de alertas.
