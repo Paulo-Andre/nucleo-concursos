@@ -1884,7 +1884,7 @@ export async function dismissPlatformAlertForUser(userId: number, alertId: numbe
   return { alertId };
 }
 
-export async function createPlatformAlert(actorUserId: number, input: { level: PlatformAlertLevel; message: string; audience: PlatformAlertAudience; courseId?: string | null }) {
+export async function createPlatformAlert(actorUserId: number, input: { level: PlatformAlertLevel; title: string; message: string; audience: PlatformAlertAudience; courseId?: string | null }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const courseId = input.audience === "course" ? input.courseId?.trim() || null : null;
@@ -1897,13 +1897,14 @@ export async function createPlatformAlert(actorUserId: number, input: { level: P
   }
   const result = await db.insert(platformAlerts).values({
     level: input.level,
+    title: input.title.trim(),
     message: input.message.trim(),
     audience: input.audience,
     courseId,
     createdByUserId: actorUserId,
   });
   const alertId = Number(result[0].insertId);
-  await writeAdminAudit(actorUserId, null, "ENVIO_DE_ALERTA", `Alerta ${input.level} enviado para ${input.audience === "all" ? "todos os alunos" : `matrículas ativas de ${courseTitle}`}.`);
+  await writeAdminAudit(actorUserId, null, "ENVIO_DE_ALERTA", `Alerta "${input.title.trim()}" (${input.level}) enviado para ${input.audience === "all" ? "todos os alunos" : `matrículas ativas de ${courseTitle}`}.`);
   const created = await db.select().from(platformAlerts).where(eq(platformAlerts.id, alertId)).limit(1);
   if (!created[0]) throw new Error("Alerta não foi salvo.");
   return created[0];

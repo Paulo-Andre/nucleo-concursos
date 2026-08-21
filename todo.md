@@ -304,3 +304,6 @@
 - [x] Validar permissões, segmentação, fechamento individual e interface responsiva do sistema de alertas.
 - [x] Corrigir a falha de permissão no envio de imagem de capa pelo Catálogo ROOT.
 - [ ] Confirmar com uma sessão ROOT renovada o envio de capa e sua persistência no curso após a publicação da correção.
+- [x] Permitir que o ROOT edite livremente o título e a mensagem de cada alerta.
+- [x] Exibir os alertas como janela flutuante fechável, sem deslocar a estrutura do Painel do aluno.
+- [x] Validar o envio para todos os alunos ou somente para matrículas ativas de um curso, incluindo título e janela flutuante.

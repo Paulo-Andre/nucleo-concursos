@@ -182,6 +182,7 @@ const platformAlertLevelSchema = z.enum(["improvement", "warning", "urgent"]);
 const platformAlertAudienceSchema = z.enum(["all", "course"]);
 const platformAlertSchema = z.object({
   level: platformAlertLevelSchema,
+  title: z.string().trim().min(2, "Informe um título com ao menos 2 caracteres.").max(180, "Use no máximo 180 caracteres."),
   message: z.string().trim().min(4, "Escreva uma mensagem com ao menos 4 caracteres.").max(1600, "Use no máximo 1.600 caracteres."),
   audience: platformAlertAudienceSchema,
   courseId: courseIdSchema.nullable().optional(),

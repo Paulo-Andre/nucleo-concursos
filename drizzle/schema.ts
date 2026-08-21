@@ -64,6 +64,7 @@ export const studyProfiles = mysqlTable("studyProfiles", {
 export const platformAlerts = mysqlTable("platformAlerts", {
   id: int("id").autoincrement().primaryKey(),
   level: mysqlEnum("level", ["improvement", "warning", "urgent"]).notNull().default("improvement"),
+  title: varchar("title", { length: 180 }).notNull().default("Comunicado da plataforma"),
   message: text("message").notNull(),
   audience: mysqlEnum("audience", ["all", "course"]).notNull().default("all"),
   courseId: varchar("courseId", { length: 80 }),
