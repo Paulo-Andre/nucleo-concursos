@@ -4,6 +4,8 @@ import { AdminBackupPanel } from "@/components/AdminBackupPanel";
 import { AdminLibraryPanel } from "@/components/AdminLibraryPanel";
 import { AdminPanel } from "@/components/AdminPanel";
 import { GlobalContactSettingsPanel } from "@/components/GlobalContactSettingsPanel";
+import { GlobalSettingsPanel } from "@/components/GlobalSettingsPanel";
+import { CompetitionAdminPanel } from "@/components/CompetitionAdminPanel";
 import { rootManagementSections, type RootManagementSection } from "@/lib/rootManagementNavigation";
 
 export type { RootManagementSection } from "@/lib/rootManagementNavigation";
@@ -61,6 +63,8 @@ export function RootManagementPanel({ activeSection, onSectionChange, onClose }:
             {activeSection === "students" && <AdminPanel embedded />}
             {activeSection === "contents" && <AdminLibraryPanel embedded />}
             {activeSection === "contacts" && <GlobalContactSettingsPanel />}
+            {activeSection === "settings" && <GlobalSettingsPanel />}
+            {activeSection === "competition" && <CompetitionAdminPanel />}
             {activeSection === "backup" && <AdminBackupPanel />}
           </div>
         </div>

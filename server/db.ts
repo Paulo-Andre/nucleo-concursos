@@ -9,6 +9,9 @@ import {
   commercePlanCourses,
   commercePlans,
   commerceTransactions,
+  competitionAnswers,
+  competitionRounds,
+  competitionSettings,
   completedModules,
   contentChangelog,
   contents,
@@ -19,6 +22,7 @@ import {
   disciplines,
   globalContactSettings,
   InsertUser,
+  platformGeneralSettings,
   questionChangelog,
   questionContentLinks,
   passwordResetTokens,
@@ -362,6 +366,288 @@ export async function saveGlobalContactSettings(actorUserId: number, input: Glob
   await db.insert(globalContactSettings).values({ id: 1, email, telegramUrl, updatedByUserId: actorUserId })
     .onDuplicateKeyUpdate({ set: { email, telegramUrl, updatedByUserId: actorUserId } });
   return getGlobalContactSettings();
+}
+
+export const defaultPlatformGeneralSettings = {
+  logoUrl: null,
+  brandName: "Núcleo Concursos",
+  brandTagline: "Preparo multidisciplinar",
+  heroBadge: "Estude com método, evolua com registro",
+  heroTitle: "O próximo passo da sua preparação começa aqui.",
+  heroDescription: "Escolha uma trilha, organize o estudo por conteúdo e acompanhe o que já foi consolidado. O acesso é individual, seguro e liberado somente após a confirmação do pagamento.",
+  primaryColor: "#102F3A",
+  backgroundColor: "#F6F1E7",
+  textColor: "#173D4A",
+} as const;
+
+export type PlatformGeneralSettingsInput = {
+  logoUrl?: string | null;
+  brandName: string;
+  brandTagline: string;
+  heroBadge: string;
+  heroTitle: string;
+  heroDescription: string;
+  primaryColor: string;
+  backgroundColor: string;
+  textColor: string;
+};
+
+export async function getPlatformGeneralSettings() {
+  const db = await getDb();
+  if (!db) return { ...defaultPlatformGeneralSettings, updatedAt: null };
+  const row = await db.select().from(platformGeneralSettings).where(eq(platformGeneralSettings.id, 1)).limit(1);
+  return { ...defaultPlatformGeneralSettings, ...(row[0] ?? {}) };
+}
+
+export async function savePlatformGeneralSettings(actorUserId: number, input: PlatformGeneralSettingsInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const values = {
+    logoUrl: input.logoUrl?.trim() || null,
+    brandName: input.brandName.trim(),
+    brandTagline: input.brandTagline.trim(),
+    heroBadge: input.heroBadge.trim(),
+    heroTitle: input.heroTitle.trim(),
+    heroDescription: input.heroDescription.trim(),
+    primaryColor: input.primaryColor.toUpperCase(),
+    backgroundColor: input.backgroundColor.toUpperCase(),
+    textColor: input.textColor.toUpperCase(),
+    updatedByUserId: actorUserId,
+  };
+  await db.insert(platformGeneralSettings).values({ id: 1, ...values }).onDuplicateKeyUpdate({ set: values });
+  return getPlatformGeneralSettings();
+}
+
+export const defaultCompetitionSettings = {
+  pointsPerCorrect: 10,
+  pointsPerWrong: 0,
+  questionsPerRound: 10,
+  isActive: true,
+} as const;
+
+export type CompetitionSettingsInput = {
+  pointsPerCorrect: number;
+  pointsPerWrong: number;
+  questionsPerRound: number;
+  isActive: boolean;
+};
+
+type CompetitionQuestion = {
+  id: number;
+  statement: string;
+  questionType: "certo_errado" | "multipla_escolha";
+  options: string[];
+  difficulty: "basic" | "intermediate" | "advanced";
+  source: string | null;
+  banca: string | null;
+  year: number | null;
+};
+
+function parseCompetitionOptions(raw: string | null) {
+  try {
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((option): option is string => typeof option === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function toCompetitionQuestion(question: typeof questions.$inferSelect): CompetitionQuestion {
+  return {
+    id: question.id,
+    statement: question.statement,
+    questionType: question.questionType,
+    options: parseCompetitionOptions(question.optionsJson),
+    difficulty: question.difficulty,
+    source: question.source,
+    banca: question.banca,
+    year: question.year,
+  };
+}
+
+function parseCompetitionQuestionIds(raw: string) {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id): id is number => Number.isInteger(id) && id > 0) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function evaluateCompetitionAnswer(answerJson: string, submittedAnswer: boolean | string) {
+  let expectedAnswer: unknown;
+  try {
+    expectedAnswer = JSON.parse(answerJson);
+  } catch {
+    throw new Error("A resposta oficial desta questão está inválida.");
+  }
+  if (typeof expectedAnswer !== typeof submittedAnswer || (typeof expectedAnswer !== "boolean" && typeof expectedAnswer !== "string")) {
+    throw new Error("Formato de resposta incompatível com a questão.");
+  }
+  return expectedAnswer === submittedAnswer;
+}
+
+export type CompetitionRankingAnswer = { userId: number; pointsEarned: number; correct: boolean };
+export type CompetitionRankingUser = { id: number; name: string; username: string | null };
+export type CompetitionRankingRow = { position: number; userId: number; name: string; username: string | null; totalPoints: number; totalAnswered: number; totalCorrect: number };
+
+export function buildCompetitionRanking(answers: CompetitionRankingAnswer[], participants: CompetitionRankingUser[]) {
+  const byUser = new Map<number, { totalPoints: number; totalAnswered: number; totalCorrect: number }>();
+  for (const answer of answers) {
+    const current = byUser.get(answer.userId) ?? { totalPoints: 0, totalAnswered: 0, totalCorrect: 0 };
+    current.totalPoints += answer.pointsEarned;
+    current.totalAnswered += 1;
+    if (answer.correct) current.totalCorrect += 1;
+    byUser.set(answer.userId, current);
+  }
+  const rows = participants.filter(user => byUser.has(user.id)).map(user => ({ userId: user.id, name: user.name, username: user.username, ...(byUser.get(user.id) ?? { totalPoints: 0, totalAnswered: 0, totalCorrect: 0 }) }))
+    .sort((a, b) => b.totalPoints - a.totalPoints || b.totalCorrect - a.totalCorrect || a.name.localeCompare(b.name));
+  return rows.map((row, index) => ({ position: index + 1, ...row }));
+}
+
+export async function getCompetitionSettings() {
+  const db = await getDb();
+  if (!db) return { ...defaultCompetitionSettings, updatedAt: null };
+  const row = await db.select().from(competitionSettings).where(eq(competitionSettings.id, 1)).limit(1);
+  return { ...defaultCompetitionSettings, ...(row[0] ?? {}) };
+}
+
+export async function saveCompetitionSettings(actorUserId: number, input: CompetitionSettingsInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const values = { ...input, updatedByUserId: actorUserId };
+  await db.insert(competitionSettings).values({ id: 1, ...values }).onDuplicateKeyUpdate({ set: values });
+  await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_COMPETICAO", `Regras atualizadas: ${input.questionsPerRound} questões por rodada, ${input.pointsPerCorrect} ponto(s) por acerto e ${input.pointsPerWrong} ponto(s) por erro.`);
+  return getCompetitionSettings();
+}
+
+export async function listCompetitionCourses() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  return db.select({ id: courses.id, title: courses.title, track: courses.track }).from(courses).where(eq(courses.isActive, true)).orderBy(courses.title);
+}
+
+async function getCompetitionQuestionsForCourse(courseId?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  if (!courseId) return db.select().from(questions).where(eq(questions.status, "published"));
+  const links = await db.select({ questionId: questionContentLinks.questionId })
+    .from(questionContentLinks)
+    .innerJoin(disciplineContents, eq(questionContentLinks.contentId, disciplineContents.contentId))
+    .innerJoin(courseDisciplines, eq(disciplineContents.disciplineId, courseDisciplines.disciplineId))
+    .where(eq(courseDisciplines.courseId, courseId));
+  const ids = Array.from(new Set(links.map(link => link.questionId)));
+  if (!ids.length) return [];
+  return db.select().from(questions).where(and(eq(questions.status, "published"), inArray(questions.id, ids)));
+}
+
+function shuffleCompetitionQuestions<T>(items: T[]) {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[target]] = [copy[target]!, copy[index]!];
+  }
+  return copy;
+}
+
+export async function createCompetitionRound(userId: number, courseId: string | undefined, allowedCourseIds: string[], isAdmin: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const settings = await getCompetitionSettings();
+  if (!settings.isActive) throw new Error("A competição está temporariamente pausada pela administração.");
+  if (courseId && !isAdmin && !allowedCourseIds.includes(courseId)) throw new Error("Você não possui acesso ativo a este concurso.");
+  const candidates = await getCompetitionQuestionsForCourse(courseId);
+  const selected = shuffleCompetitionQuestions(candidates).slice(0, settings.questionsPerRound);
+  if (!selected.length) throw new Error("Ainda não há questões publicadas para iniciar esta competição.");
+  const roundId = crypto.randomUUID();
+  await db.insert(competitionRounds).values({ id: roundId, userId, courseId: courseId ?? null, questionIdsJson: JSON.stringify(selected.map(question => question.id)) });
+  return { id: roundId, courseId: courseId ?? null, total: selected.length, questions: selected.map(toCompetitionQuestion) };
+}
+
+export async function getCompetitionRound(userId: number, roundId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select().from(competitionRounds).where(and(eq(competitionRounds.id, roundId), eq(competitionRounds.userId, userId))).limit(1);
+  const round = rows[0];
+  if (!round) throw new Error("Rodada competitiva não encontrada.");
+  const questionIds = parseCompetitionQuestionIds(round.questionIdsJson);
+  if (!questionIds.length) throw new Error("Esta rodada não possui questões válidas.");
+  const foundQuestions = await db.select().from(questions).where(inArray(questions.id, questionIds));
+  const byId = new Map(foundQuestions.map(question => [question.id, question]));
+  const answerRows = await db.select({ questionId: competitionAnswers.questionId }).from(competitionAnswers).where(eq(competitionAnswers.roundId, round.id));
+  const answeredQuestionIds = answerRows.map(answer => answer.questionId);
+  return {
+    id: round.id,
+    courseId: round.courseId,
+    completedAt: round.completedAt,
+    total: questionIds.length,
+    answeredQuestionIds,
+    questions: questionIds.map(id => byId.get(id)).filter((question): question is typeof questions.$inferSelect => Boolean(question)).map(toCompetitionQuestion),
+  };
+}
+
+export async function submitCompetitionAnswer(userId: number, input: { roundId: string; questionId: number; submittedAnswer: boolean | string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const roundRows = await db.select().from(competitionRounds).where(and(eq(competitionRounds.id, input.roundId), eq(competitionRounds.userId, userId))).limit(1);
+  const round = roundRows[0];
+  if (!round) throw new Error("Rodada competitiva não encontrada.");
+  if (round.completedAt) throw new Error("Esta rodada já foi concluída.");
+  if (!parseCompetitionQuestionIds(round.questionIdsJson).includes(input.questionId)) throw new Error("Esta questão não pertence à rodada atual.");
+  const previous = await db.select({ id: competitionAnswers.id }).from(competitionAnswers).where(and(eq(competitionAnswers.roundId, round.id), eq(competitionAnswers.questionId, input.questionId))).limit(1);
+  if (previous[0]) throw new Error("Esta questão já foi respondida nesta rodada.");
+  const questionRows = await db.select().from(questions).where(eq(questions.id, input.questionId)).limit(1);
+  const question = questionRows[0];
+  if (!question || question.status !== "published") throw new Error("Esta questão não está mais disponível.");
+  const correct = evaluateCompetitionAnswer(question.answerJson, input.submittedAnswer);
+  const settings = await getCompetitionSettings();
+  const pointsEarned = correct ? settings.pointsPerCorrect : -settings.pointsPerWrong;
+  await db.insert(competitionAnswers).values({
+    roundId: round.id,
+    userId,
+    questionId: input.questionId,
+    courseId: round.courseId,
+    submittedAnswerJson: JSON.stringify(input.submittedAnswer),
+    correct,
+    pointsEarned,
+  });
+  const answered = await db.select({ count: sql<number>`count(*)` }).from(competitionAnswers).where(eq(competitionAnswers.roundId, round.id));
+  const total = parseCompetitionQuestionIds(round.questionIdsJson).length;
+  const completed = Number(answered[0]?.count ?? 0) >= total;
+  if (completed) await db.update(competitionRounds).set({ completedAt: new Date() }).where(eq(competitionRounds.id, round.id));
+  return { correct, pointsEarned, explanation: question.explanation, completed };
+}
+
+export async function getCompetitionRanking(courseId?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const answers = courseId
+    ? await db.select().from(competitionAnswers).where(eq(competitionAnswers.courseId, courseId))
+    : await db.select().from(competitionAnswers);
+  if (!answers.length) return [] as CompetitionRankingRow[];
+  const userIds = Array.from(new Set(answers.map(answer => answer.userId)));
+  const userRows = await db.select({ id: users.id, name: users.name, username: users.username }).from(users).where(inArray(users.id, userIds));
+  return buildCompetitionRanking(answers, userRows);
+}
+
+export async function getMyCompetitionScore(userId: number, courseId?: string) {
+  const ranking = await getCompetitionRanking(courseId);
+  return ranking.find(row => row.userId === userId) ?? { position: null, userId, name: null, username: null, totalPoints: 0, totalAnswered: 0, totalCorrect: 0 };
+}
+
+export async function clearCompetitionRanking(actorUserId: number, courseId?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const answerWhere = courseId ? eq(competitionAnswers.courseId, courseId) : undefined;
+  const roundWhere = courseId ? eq(competitionRounds.courseId, courseId) : undefined;
+  const countRows = answerWhere
+    ? await db.select({ count: sql<number>`count(*)` }).from(competitionAnswers).where(answerWhere)
+    : await db.select({ count: sql<number>`count(*)` }).from(competitionAnswers);
+  if (answerWhere) await db.delete(competitionAnswers).where(answerWhere); else await db.delete(competitionAnswers);
+  if (roundWhere) await db.delete(competitionRounds).where(roundWhere); else await db.delete(competitionRounds);
+  const deletedAnswers = Number(countRows[0]?.count ?? 0);
+  await writeAdminAudit(actorUserId, null, "LIMPEZA_DE_RANKING_COMPETICAO", courseId ? `Ranking da competição do concurso ${courseId} limpo com ${deletedAnswers} resposta(s) removida(s).` : `Ranking global da competição limpo com ${deletedAnswers} resposta(s) removida(s).`);
+  return { deletedAnswers };
 }
 
 async function ensureStudyProfile(userId: number) {

@@ -15,25 +15,38 @@ function scrollToPackages() {
 
 export function PublicStorefront({ onLogin, onChoosePlan }: PublicStorefrontProps) {
   const plans = trpc.commerce.plans.useQuery(undefined, { refetchOnWindowFocus: false });
+  const settingsQuery = trpc.platform.settings.useQuery(undefined, { refetchOnWindowFocus: false });
   const catalog = (plans.data ?? []) as PublicStorefrontPlan[];
+  const storedSettings = settingsQuery.data;
+  const settings = {
+    logoUrl: storedSettings?.logoUrl ?? null,
+    brandName: storedSettings?.brandName ?? "Núcleo Concursos",
+    brandTagline: storedSettings?.brandTagline ?? "Preparo multidisciplinar",
+    heroBadge: storedSettings?.heroBadge ?? "Estude com método, evolua com registro",
+    heroTitle: storedSettings?.heroTitle ?? "O próximo passo da sua preparação começa aqui.",
+    heroDescription: storedSettings?.heroDescription ?? "Escolha uma trilha, organize o estudo por conteúdo e acompanhe o que já foi consolidado. O acesso é individual, seguro e liberado somente após a confirmação do pagamento.",
+    primaryColor: storedSettings?.primaryColor ?? "#102f3a",
+    backgroundColor: storedSettings?.backgroundColor ?? "#f6f1e7",
+    textColor: storedSettings?.textColor ?? "#173d4a",
+  };
 
-  return <main className="min-h-screen overflow-x-hidden bg-[#f6f1e7] text-[#173d4a]">
-    <section className="relative isolate overflow-hidden bg-[#102f3a] text-[#fffdf7]">
+  return <main className="min-h-screen overflow-x-hidden" style={{ backgroundColor: settings.backgroundColor, color: settings.textColor }}>
+    <section className="relative isolate overflow-hidden text-[#fffdf7]" style={{ backgroundColor: settings.primaryColor }}>
       <div className="absolute inset-0 -z-10 opacity-70 [background-image:radial-gradient(circle_at_15%_15%,rgba(130,207,191,.22),transparent_26%),radial-gradient(circle_at_83%_72%,rgba(222,167,85,.18),transparent_22%),linear-gradient(115deg,transparent_0,rgba(255,255,255,.025)_48%,transparent_48.5%)]" />
       <div className="mx-auto max-w-7xl px-4 sm:px-7 lg:px-10">
         <header className="flex items-center justify-between gap-4 border-b border-white/15 py-4 sm:py-5">
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex min-w-0 items-center gap-2.5 text-left" aria-label="Voltar ao início">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e8e4d9] text-[#0e5a70]"><ShieldCheck className="h-5 w-5" /></span>
-            <span className="min-w-0"><span className="font-display block truncate text-base font-extrabold tracking-tight sm:text-lg">NÚCLEO <span className="text-[#82cfbf]">CONCURSOS</span></span><span className="block text-[8px] font-bold tracking-[.17em] text-[#aac2c4] sm:text-[9px]">PREPARO MULTIDISCIPLINAR</span></span>
+            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#e8e4d9] text-[#0e5a70]">{settings.logoUrl ? <img src={settings.logoUrl} alt="Logo" className="h-full w-full object-contain" /> : <ShieldCheck className="h-5 w-5" />}</span>
+            <span className="min-w-0"><span className="font-display block truncate text-base font-extrabold tracking-tight sm:text-lg">{settings.brandName}</span><span className="block truncate text-[8px] font-bold tracking-[.17em] text-[#aac2c4] sm:text-[9px]">{settings.brandTagline}</span></span>
           </button>
           <button onClick={onLogin} className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#a5d8cd]/50 bg-white/5 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/10 sm:px-4"><LockKeyhole className="h-4 w-4 text-[#9bdacd]" />Entrar</button>
         </header>
 
         <div className="grid gap-10 py-14 sm:py-20 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:py-24">
           <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-[#86cfc0]/40 bg-[#1a4750] px-3 py-1.5 text-[10px] font-bold tracking-[.16em] text-[#a9e0d5]"><Sparkles className="h-3.5 w-3.5" />ESTUDE COM MÉTODO, EVOLUA COM REGISTRO</p>
-            <h1 className="font-display mt-5 max-w-3xl text-[clamp(2.55rem,8vw,5.35rem)] font-extrabold leading-[.98] tracking-[-.045em]">O próximo passo da sua preparação começa aqui.</h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-[#c8dcda] sm:text-lg">Escolha uma trilha, organize o estudo por conteúdo e acompanhe o que já foi consolidado. O acesso é individual, seguro e liberado somente após a confirmação do pagamento.</p>
+            <p className="inline-flex items-center gap-2 rounded-full border border-[#86cfc0]/40 bg-black/15 px-3 py-1.5 text-[10px] font-bold tracking-[.16em] text-[#d7f4ee]"><Sparkles className="h-3.5 w-3.5" />{settings.heroBadge.toUpperCase()}</p>
+            <h1 className="font-display mt-5 max-w-3xl text-[clamp(2.55rem,8vw,5.35rem)] font-extrabold leading-[.98] tracking-[-.045em]">{settings.heroTitle}</h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-[#e4f0ee] sm:text-lg">{settings.heroDescription}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row"><button onClick={scrollToPackages} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#8ad2c3] px-5 text-sm font-extrabold text-[#15353e] transition hover:bg-[#b4e8dd]">Ver pacotes disponíveis <ArrowRight className="h-4 w-4" /></button><button onClick={onLogin} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 px-5 text-sm font-bold text-white transition hover:bg-white/10">Já tenho uma conta <ChevronRight className="h-4 w-4" /></button></div>
           </div>
           <aside className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#163f49] p-5 shadow-[0_24px_65px_rgba(0,0,0,.24)] sm:p-7">
@@ -60,7 +73,7 @@ export function PublicStorefront({ onLogin, onChoosePlan }: PublicStorefrontProp
 
     <section id="pacotes" className="scroll-mt-4 px-4 py-14 sm:px-7 sm:py-20 lg:px-10">
       <div className="mx-auto max-w-7xl">
-        <div className="max-w-2xl"><p className="eyebrow text-[#176a5a]">PACOTES PUBLICADOS PELO NÚCLEO</p><h2 className="font-display mt-3 text-[clamp(2rem,6vw,3.5rem)] font-extrabold leading-[1.02] tracking-[-.035em]">Escolha a sua próxima trilha.</h2><p className="mt-4 text-sm leading-6 text-[#52716f] sm:text-base">Os pacotes abaixo são atualizados diretamente pelo catálogo administrativo. Ao escolher um deles, você cria sua conta antes de seguir para o pagamento.</p></div>
+        <div className="max-w-2xl"><p className="eyebrow text-[#176a5a]">PACOTES PUBLICADOS PELO NÚCLEO</p><h2 style={{ color: settings.textColor }} className="font-display mt-3 text-[clamp(2rem,6vw,3.5rem)] font-extrabold leading-[1.02] tracking-[-.035em]">Escolha a sua próxima trilha.</h2><p className="mt-4 text-sm leading-6 text-[#52716f] sm:text-base">Os pacotes abaixo são atualizados diretamente pelo catálogo administrativo. Ao escolher um deles, você cria sua conta antes de seguir para o pagamento.</p></div>
         {plans.isLoading ? <div className="grid min-h-72 place-items-center"><div className="flex items-center gap-3 text-sm font-semibold text-[#52716f]"><Loader2 className="h-5 w-5 animate-spin text-[#0e5a70]" />Carregando pacotes ativos...</div></div> : !catalog.length ? <div className="mt-8 rounded-2xl border border-dashed border-[#b8cfc8] bg-[#fffdf8] p-8 text-sm leading-6 text-[#52716f]">Ainda não há pacotes publicados. Volte em breve para consultar novas trilhas.</div> : <div className="mt-9 grid gap-5 lg:grid-cols-2 xl:grid-cols-3">{catalog.map(plan => <article key={plan.id} className={`relative flex min-w-0 flex-col rounded-2xl border p-5 shadow-[0_12px_28px_rgba(22,61,74,.06)] ${plan.isHighlighted ? "border-[#0e5a70] bg-[#eef8f5]" : "border-[#d9d0c1] bg-[#fffdf8]"}`}>
           {plan.isHighlighted && <span className="absolute -top-3 left-5 rounded-full bg-[#0e5a70] px-3 py-1 text-[10px] font-bold tracking-[.12em] text-white">OFERTA EM DESTAQUE</span>}
           <PlanCoverCarousel images={plan.coverImageUrls} planTitle={plan.title} />
@@ -76,6 +89,6 @@ export function PublicStorefront({ onLogin, onChoosePlan }: PublicStorefrontProp
 
     <section className="px-4 pb-14 sm:px-7 sm:pb-20 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-2xl bg-[#dceee8] p-6 sm:p-9 lg:flex-row lg:items-center lg:justify-between"><div className="max-w-2xl"><p className="eyebrow text-[#176a5a]">PRONTO PARA COMEÇAR?</p><h2 className="font-display mt-2 text-2xl font-extrabold text-[#173d4a] sm:text-3xl">Sua preparação pode ter um ponto de partida claro.</h2><p className="mt-3 text-sm leading-6 text-[#456965]">Conheça os pacotes ativos, escolha uma trilha e registre seu acesso para começar.</p></div><button onClick={scrollToPackages} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#173d4a] px-5 text-sm font-extrabold text-white transition hover:bg-[#0e5a70]">Conhecer pacotes <ArrowRight className="h-4 w-4" /></button></div></section>
 
-    <footer className="border-t border-[#d9d0c1] bg-[#fffdf8] px-4 py-7 sm:px-7 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#597370]"><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p className="font-bold text-[#315a5d]">NÚCLEO CONCURSOS</p><p>Acesso individual · Pagamento processado pelo Mercado Pago.</p></div><GlobalContactLinks /></div></footer>
+    <footer className="border-t border-[#d9d0c1] bg-[#fffdf8] px-4 py-7 sm:px-7 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#597370]"><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p style={{ color: settings.textColor }} className="font-bold">{settings.brandName}</p><p>Acesso individual · Pagamento processado pelo Mercado Pago.</p></div><GlobalContactLinks /></div></footer>
   </main>;
 }

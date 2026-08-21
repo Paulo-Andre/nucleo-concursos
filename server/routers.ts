@@ -7,7 +7,9 @@ import { adminProcedure, enrollmentRequiredProcedure, protectedProcedure, public
 import {
   completeStudyModule,
   completeStudyContent,
+  clearCompetitionRanking,
   createAdministrativeBackup,
+  createCompetitionRound,
   createManagedContent,
   createManagedCourse,
   createManagedDiscipline,
@@ -26,6 +28,10 @@ import {
   getUserCourseAccess,
   getUserByCpf,
   getDailyQuickCheck,
+  getCompetitionRanking,
+  getCompetitionRound,
+  getCompetitionSettings,
+  getMyCompetitionScore,
   dismissDailyQuickCheck,
   grantCourseEnrollment,
   getUserById,
@@ -39,6 +45,7 @@ import {
   listStudyQuestions,
   listStudyCourseCatalog,
   listManagedUsers,
+  listCompetitionCourses,
   listQuestionChangelog,
   listReviewQueue,
   listStudyReviewItems,
@@ -51,6 +58,7 @@ import {
   openStudyContent,
   removeStudyReviewItem,
   saveNote,
+  saveCompetitionSettings,
   saveStudyReviewItem,
   saveStudyRoadmapItem,
   setUserBlocked,
@@ -65,6 +73,7 @@ import {
   updateUserProfile,
   writeAdminAudit,
   submitForReview,
+  submitCompetitionAnswer,
   decideReview,
 } from "./db";
 import { isValidCpf, normalizeCpf } from "./cpf";
@@ -365,6 +374,22 @@ export const appRouter = router({
     note: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).query(({ input, ctx }) => import("./db").then(({ getNote }) => getNote(ctx.user.id, input.moduleId))),
     saveNote: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80), content: z.string().trim().max(12000) })).mutation(({ input, ctx }) => saveNote(ctx.user.id, input.moduleId, input.content)),
   }),
+  competition: router({
+    settings: protectedProcedure.query(() => getCompetitionSettings()),
+    courses: protectedProcedure.query(() => listCompetitionCourses()),
+    ranking: protectedProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input }) => getCompetitionRanking(input.courseId)),
+    myScore: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyCompetitionScore(ctx.user.id, input.courseId)),
+    startRound: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).mutation(async ({ input, ctx }) => {
+      const access = ctx.user.role === "admin" ? [] : await getUserCourseAccess(ctx.user.id);
+      return createCompetitionRound(ctx.user.id, input.courseId, access.map(enrollment => enrollment.courseId), ctx.user.role === "admin");
+    }),
+    round: enrollmentRequiredProcedure.input(z.object({ roundId: z.string().uuid() })).query(({ input, ctx }) => getCompetitionRound(ctx.user.id, input.roundId)),
+    submitAnswer: enrollmentRequiredProcedure.input(z.object({
+      roundId: z.string().uuid(),
+      questionId: entityIdSchema,
+      submittedAnswer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]),
+    })).mutation(({ input, ctx }) => submitCompetitionAnswer(ctx.user.id, input)),
+  }),
   commerce: router({
     plans: publicProcedure.query(() => listPublicCommercePlans()),
     myOrders: protectedProcedure.query(({ ctx }) => listUserCommerceOrders(ctx.user.id)),
@@ -376,6 +401,7 @@ export const appRouter = router({
   }),
   platform: router({
     contacts: publicProcedure.query(() => import("./db").then(({ getGlobalContactSettings }) => getGlobalContactSettings())),
+    settings: publicProcedure.query(() => import("./db").then(({ getPlatformGeneralSettings }) => getPlatformGeneralSettings())),
   }),
   admin: router({
     users: adminProcedure.input(z.object({ search: z.string().trim().max(80).optional() })).query(({ input }) => listManagedUsers(input.search)),
@@ -399,6 +425,38 @@ export const appRouter = router({
         email: z.string().trim().email("Informe um e-mail válido.").max(320).optional().or(z.literal("")),
         telegramUrl: z.string().trim().url("Informe um link válido.").max(500).optional().or(z.literal("")),
       })).mutation(({ input, ctx }) => import("./db").then(({ saveGlobalContactSettings }) => saveGlobalContactSettings(ctx.user.id, input))),
+    }),
+    settings: router({
+      get: adminProcedure.query(() => import("./db").then(({ getPlatformGeneralSettings }) => getPlatformGeneralSettings())),
+      save: adminProcedure.input(z.object({
+        logoUrl: z.string().trim().url("Informe um link de logo válido.").max(1000).optional().or(z.literal("")),
+        brandName: z.string().trim().min(2, "Informe o nome da marca.").max(120),
+        brandTagline: z.string().trim().max(180),
+        heroBadge: z.string().trim().max(180),
+        heroTitle: z.string().trim().min(4, "Informe o título principal.").max(320),
+        heroDescription: z.string().trim().min(10, "Informe uma descrição mais completa.").max(1000),
+        primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Use uma cor hexadecimal, como #102F3A."),
+        backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Use uma cor hexadecimal, como #F6F1E7."),
+        textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Use uma cor hexadecimal, como #173D4A."),
+      })).mutation(({ input, ctx }) => import("./db").then(({ savePlatformGeneralSettings }) => savePlatformGeneralSettings(ctx.user.id, input))),
+      uploadLogo: adminProcedure.input(contentImageSchema).mutation(async ({ input, ctx }) => {
+        const base64 = input.base64.replace(/\s/g, "");
+        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) throw new TRPCError({ code: "BAD_REQUEST", message: "A imagem enviada não está em um formato válido." });
+        const bytes = Buffer.from(base64, "base64");
+        if (!bytes.length || bytes.length > 4 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Envie uma imagem JPG, PNG ou WEBP de até 4 MB." });
+        const stored = await storagePut(`platform-settings/${ctx.user.id}/${crypto.randomUUID()}.${imageExtension(input.mimeType)}`, bytes, input.mimeType);
+        return { url: stored.url };
+      }),
+    }),
+    competition: router({
+      getSettings: adminProcedure.query(() => getCompetitionSettings()),
+      saveSettings: adminProcedure.input(z.object({
+        pointsPerCorrect: z.number().int().min(1, "Informe ao menos 1 ponto por acerto.").max(1000),
+        pointsPerWrong: z.number().int().min(0).max(100),
+        questionsPerRound: z.number().int().min(5, "A rodada deve ter ao menos 5 questões.").max(50),
+        isActive: z.boolean(),
+      })).mutation(({ input, ctx }) => saveCompetitionSettings(ctx.user.id, input)),
+      clearRanking: adminProcedure.input(z.object({ courseId: courseIdSchema.optional(), confirmation: z.literal("LIMPAR RANKING") })).mutation(({ input, ctx }) => clearCompetitionRanking(ctx.user.id, input.courseId)),
     }),
     backup: router({
       export: adminProcedure.mutation(({ ctx }) => createAdministrativeBackup(ctx.user.id)),

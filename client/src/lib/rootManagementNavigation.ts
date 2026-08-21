@@ -1,6 +1,5 @@
-import { BookOpenCheck, BriefcaseBusiness, ContactRound, HardDriveDownload, UsersRound, type LucideIcon } from "lucide-react";
-
-export type RootManagementSection = "business" | "students" | "contents" | "contacts" | "backup";
+import { BookOpenCheck, BriefcaseBusiness, ContactRound, HardDriveDownload, Palette, Trophy, UsersRound, type LucideIcon } from "lucide-react";
+export type RootManagementSection = "business" | "students" | "contents" | "contacts" | "settings" | "competition" | "backup";
 
 export type RootManagementSectionDefinition = {
   id: RootManagementSection;
@@ -33,6 +32,18 @@ export const rootManagementSections: RootManagementSectionDefinition[] = [
     label: "Contatos",
     description: "E-mail e Telegram exibidos a todos os usuários.",
     icon: ContactRound,
+  },
+  {
+    id: "settings",
+    label: "Configurações",
+    description: "Logo, frases e cores da identidade visual.",
+    icon: Palette,
+  },
+  {
+    id: "competition",
+    label: "Competição",
+    description: "Ranking, pontuação e regras do quiz.",
+    icon: Trophy,
   },
   {
     id: "backup",

@@ -247,3 +247,10 @@
 - [x] Mapear temas gerais de concursos além da área policial para ampliar a biblioteca reutilizável.
 - [x] Criar disciplinas, conteúdos e questões autorais das áreas gerais priorizadas, mantendo-os sem vínculo automático com PF, PRF, PM ou outros cursos policiais.
 - [x] Validar, documentar e publicar a nova expansão curricular geral.
+- [x] Criar a página ROOT de Configurações gerais com controles persistentes de identidade visual.
+- [x] Permitir alterar logo, frases da página inicial, cor de fundo e cor dos textos sem editar código.
+- [x] Aplicar as configurações publicadas às áreas pública e autenticada, com testes, validação visual e documentação de uso.
+- [x] Criar área independente de Competição com quiz próprio, sem reaproveitar nem alterar os resultados dos simulados.
+- [x] Persistir pontuação e ranking global de alunos, com filtro opcional por concurso.
+- [x] Criar controles ROOT para configurar pontos por resposta, limpar ranking com segurança e revisar regras da competição.
+- [x] Cobrir competição e configurações gerais com testes, validação visual, documentação e publicação.

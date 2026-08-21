@@ -445,6 +445,63 @@ export const globalContactSettings = mysqlTable("globalContactSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+/** Identidade visual e textos públicos, controlados exclusivamente pelo ROOT. */
+export const platformGeneralSettings = mysqlTable("platformGeneralSettings", {
+  id: int("id").primaryKey(),
+  logoUrl: varchar("logoUrl", { length: 1000 }),
+  brandName: varchar("brandName", { length: 120 }),
+  brandTagline: varchar("brandTagline", { length: 180 }),
+  heroBadge: varchar("heroBadge", { length: 180 }),
+  heroTitle: varchar("heroTitle", { length: 320 }),
+  heroDescription: text("heroDescription"),
+  primaryColor: varchar("primaryColor", { length: 7 }),
+  backgroundColor: varchar("backgroundColor", { length: 7 }),
+  textColor: varchar("textColor", { length: 7 }),
+  updatedByUserId: int("updatedByUserId"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/** Regras da competição, definidas pelo ROOT e independentes de simulados e XP. */
+export const competitionSettings = mysqlTable("competitionSettings", {
+  id: int("id").primaryKey(),
+  pointsPerCorrect: int("pointsPerCorrect").notNull().default(10),
+  pointsPerWrong: int("pointsPerWrong").notNull().default(0),
+  questionsPerRound: int("questionsPerRound").notNull().default(10),
+  isActive: boolean("isActive").notNull().default(true),
+  updatedByUserId: int("updatedByUserId"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/** Uma rodada é um recorte próprio de questões, preservado fora das tabelas de simulado. */
+export const competitionRounds = mysqlTable("competitionRounds", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  courseId: varchar("courseId", { length: 80 }),
+  questionIdsJson: text("questionIdsJson").notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [
+  index("competitionRounds_user_created_idx").on(table.userId, table.createdAt),
+  index("competitionRounds_course_idx").on(table.courseId),
+]);
+
+/** Respostas competitivas; não alimentam studyAnswers, simulationRecords ou XP. */
+export const competitionAnswers = mysqlTable("competitionAnswers", {
+  id: int("id").autoincrement().primaryKey(),
+  roundId: varchar("roundId", { length: 64 }).notNull(),
+  userId: int("userId").notNull(),
+  questionId: int("questionId").notNull(),
+  courseId: varchar("courseId", { length: 80 }),
+  submittedAnswerJson: text("submittedAnswerJson").notNull(),
+  correct: boolean("correct").notNull(),
+  pointsEarned: int("pointsEarned").notNull(),
+  answeredAt: timestamp("answeredAt").defaultNow().notNull(),
+}, table => [
+  uniqueIndex("competitionAnswers_round_question_unique").on(table.roundId, table.questionId),
+  index("competitionAnswers_user_course_idx").on(table.userId, table.courseId),
+  index("competitionAnswers_ranking_idx").on(table.courseId, table.pointsEarned),
+]);
+
 export type User = typeof users.$inferSelect;
 export type Course = typeof courses.$inferSelect;
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
