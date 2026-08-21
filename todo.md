@@ -239,3 +239,8 @@
 - [x] Comparar Railway e VPS Locaweb, incluindo custo fixo, recursos, responsabilidades de operação e roteiro de migração compatível com a plataforma.
 - [x] Confirmar no site oficial da Locaweb os recursos exatos do plano VPS econômico e sua adequação à plataforma.
 - [x] Criar e documentar uma tabela comparativa de custo, recursos e responsabilidades entre a hospedagem atual e a VPS Locaweb.
+- [x] Mapear provas, simulados e aulas públicas como referência para expandir a matriz curricular por concurso.
+- [x] Criar disciplinas, conteúdos pedagógicos e questões originais, sem copiar obras de terceiros, e vinculá-los às trilhas adequadas.
+- [x] Registrar links externos de aulas somente quando permitidos e validar a navegação, a organização e a publicação da expansão curricular.
+- [x] Verificar e documentar a autorização de reprodução, adaptação e redistribuição do material externo antes de importá-lo.
+- [x] Usar o PCI Concursos somente como referência de temas e links públicos, mantendo disciplinas, conteúdos e questões inteiramente originais.
