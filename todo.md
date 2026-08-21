@@ -244,3 +244,6 @@
 - [x] Registrar links externos de aulas somente quando permitidos e validar a navegação, a organização e a publicação da expansão curricular.
 - [x] Verificar e documentar a autorização de reprodução, adaptação e redistribuição do material externo antes de importá-lo.
 - [x] Usar o PCI Concursos somente como referência de temas e links públicos, mantendo disciplinas, conteúdos e questões inteiramente originais.
+- [x] Mapear temas gerais de concursos além da área policial para ampliar a biblioteca reutilizável.
+- [x] Criar disciplinas, conteúdos e questões autorais das áreas gerais priorizadas, mantendo-os sem vínculo automático com PF, PRF, PM ou outros cursos policiais.
+- [x] Validar, documentar e publicar a nova expansão curricular geral.
