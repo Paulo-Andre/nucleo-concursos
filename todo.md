@@ -290,3 +290,7 @@
 - [x] Permitir que o ROOT classifique os cursos por área comercial e estado para alimentar os filtros.
 - [x] Validar a página de descoberta, a compra e a experiência móvel antes da publicação.
 - [x] Exibir filtros de cursos de forma clara na seção inicial de pacotes e na janela Planos Núcleo Concursos.
+- [x] Exibir filtros funcionais diretamente acima dos pacotes da página inicial, sem exigir abertura de outra página.
+- [x] Manter o catálogo de compra dentro da conta do aluno, com menu lateral e navegação disponíveis.
+- [x] Validar na vitrine desktop e móvel a presença dos filtros antes dos pacotes, inclusive o estado sem resultados.
+- [x] Validar na conta autenticada que “Cursos para comprar” abre o catálogo sem remover o menu lateral.

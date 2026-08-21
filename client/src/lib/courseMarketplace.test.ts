@@ -12,6 +12,8 @@ describe("filtros do catálogo comercial", () => {
     expect(filterMarketplacePlans(plans, { search: "", state: "BA", area: "", kind: "all" }).map(plan => plan.id)).toEqual(["saude"]);
     expect(filterMarketplacePlans(plans, { search: "", state: "", area: "", kind: "tutorial" }).map(plan => plan.id)).toEqual(["saude"]);
     expect(filterMarketplacePlans(plans, { search: "federal", state: "", area: "", kind: "all" }).map(plan => plan.id)).toEqual(["pf"]);
+    expect(filterMarketplacePlans(plans, { search: "cálculos", state: "BA", area: "Saúde", kind: "tutorial" }).map(plan => plan.id)).toEqual(["saude"]);
+    expect(filterMarketplacePlans(plans, { search: "", state: "BA", area: "Policial/Militar", kind: "all" })).toEqual([]);
   });
   it("gera opções de filtros diretamente dos cursos publicados", () => {
     expect(marketplaceFilterOptions(plans)).toEqual({ states: ["BA", "Nacional"], areas: ["Policial/Militar", "Saúde"] });

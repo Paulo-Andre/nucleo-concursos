@@ -35,7 +35,7 @@ import { canOpenTutorialView, isTutorialCourseExperience } from "@/lib/tutorialC
 import { isStorefrontPreviewMode } from "@/lib/storefrontPreview";
 import { resolveVisibleStudyCourseId, visibleStudyCourses } from "@/lib/studyCourseAccess";
 
-type View = "Painel" | "Conteúdo" | "Roteiro" | "Simulados" | "Competição" | "Revisar" | "Histórico";
+type View = "Painel" | "Conteúdo" | "Roteiro" | "Simulados" | "Competição" | "Revisar" | "Histórico" | "Cursos";
 type SimulationQuestion = StudyQuestion & { persistentQuestionId?: number };
 type ActiveSimulation = { questions: SimulationQuestion[]; index: number; answers: Record<string, boolean>; startedAt: number } | null;
 type PersonalReviewItem = { id: number; questionKey: string; snapshot: { statement: string; answer: boolean; explanation: string; discipline: string; subject: string; source?: string }; status: "pending" | "mastered"; createdAt: string; reviewedAt: string | null };
@@ -93,7 +93,7 @@ export default function Home() {
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Carregando credencial...</div>;
   if (storefrontPreview) return <PublicStorefront previewMode onLogin={() => undefined} onChoosePlan={() => undefined} />;
-  if (courseMarketplacePath) {
+  if (courseMarketplacePath && !isAuthenticated) {
     const openPlan = (planId: string) => { window.sessionStorage.setItem("nucleo-purchase-plan", planId); if (isAuthenticated) window.location.assign(`/?purchase=${encodeURIComponent(planId)}`); else { setPendingPlanId(planId); setAccessMode("register"); } };
     return <CourseMarketplace onChoosePlan={openPlan} onBack={() => { window.location.assign(isAuthenticated ? "/" : "/"); }} />;
   }
@@ -102,13 +102,13 @@ export default function Home() {
     return <PublicStorefront onLogin={() => setAccessMode("login")} onChoosePlan={startPlanAcquisition} />;
   }
 
-  return <StudyWorkspace user={user!} logout={logout} initialCommercePlanId={pendingPlanId} onCommercePlanConsumed={() => { window.sessionStorage.removeItem("nucleo-purchase-plan"); setPendingPlanId(null); }} />;
+  return <StudyWorkspace user={user!} logout={logout} initialView={courseMarketplacePath ? "Cursos" : "Painel"} initialCommercePlanId={pendingPlanId} onCommercePlanConsumed={() => { window.sessionStorage.removeItem("nucleo-purchase-plan"); setPendingPlanId(null); }} />;
 }
 
-function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanConsumed }: { user: { name: string; username: string | null; email: string | null; role: "user" | "admin" }; logout: () => Promise<void>; initialCommercePlanId?: string | null; onCommercePlanConsumed: () => void }) {
+function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCommercePlanConsumed }: { user: { name: string; username: string | null; email: string | null; role: "user" | "admin" }; logout: () => Promise<void>; initialView: View; initialCommercePlanId?: string | null; onCommercePlanConsumed: () => void }) {
 
   const [state, setState] = useState<StudyState>(emptyState);
-  const [view, setView] = useState<View>("Painel");
+  const [view, setView] = useState<View>(initialView);
   const [menuOpen, setMenuOpen] = useState(false);
   const [contestId, setContestId] = useState<string>(() => {
     const stored = window.localStorage.getItem("estudos-pf-active-contest");
@@ -364,7 +364,7 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
         </div>
           <div className="mb-5 border-y border-white/10 px-3 py-3"><p className="text-[9px] font-bold tracking-[0.2em] text-[#8faeb5]">REGISTRO DE PREPARO</p><p className="font-display mt-1 text-sm font-bold text-white">{activeCourseRole}</p></div>
         <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7e99a1]">Áreas do arquivo</p>
-        <nav className="space-y-1">{visibleNavigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}<a href="/cursos" className="nav-item"><BookOpen className="h-4 w-4" />Cursos para comprar</a><button onClick={() => { setCommerceOpen(true); setMenuOpen(false); }} className="nav-item"><CreditCard className="h-4 w-4" />Planos e acessos</button>{user.role === "admin" && <button onClick={() => { setRootManagementSection("business"); setRootManagementOpen(true); setMenuOpen(false); }} className="nav-item"><ShieldCheck className="h-4 w-4" />Gestão ROOT</button>}</nav>
+        <nav className="space-y-1">{visibleNavigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}<button onClick={() => { setView("Cursos"); setMenuOpen(false); }} className={`nav-item ${view === "Cursos" ? "nav-item-active" : ""}`}><BookOpen className="h-4 w-4" />Cursos para comprar</button><button onClick={() => { setCommerceOpen(true); setMenuOpen(false); }} className="nav-item"><CreditCard className="h-4 w-4" />Planos e acessos</button>{user.role === "admin" && <button onClick={() => { setRootManagementSection("business"); setRootManagementOpen(true); setMenuOpen(false); }} className="nav-item"><ShieldCheck className="h-4 w-4" />Gestão ROOT</button>}</nav>
         <div className="mt-auto border-t border-white/10 pt-5">
           <div className="flex gap-4 px-2"><div className="relative h-32 w-3 border border-white/15 bg-black/20"><span className="absolute inset-x-0 top-1/4 h-px bg-white/35" /><span className="absolute inset-x-0 top-1/2 h-px bg-white/35" /><span className="absolute inset-x-0 top-3/4 h-px bg-white/35" /><div className="absolute bottom-0 w-full transition-all duration-300" style={{ height: `${level.progress}%`, backgroundColor: brand.accentColor }} /></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span style={{ color: brand.heroMutedTextColor }} className="text-[10px] font-bold uppercase tracking-[0.17em]">Credencial</span><span style={{ borderColor: brand.accentColor, color: brand.accentColor }} className="border px-1.5 py-0.5 text-[9px] font-bold tracking-wider">REG-01</span></div><p style={{ color: brand.heroTextColor }} className="font-display mt-2 text-sm font-bold">Nível {level.index}</p><p style={{ color: brand.heroMutedTextColor }} className="text-xs">{level.label}</p><p style={{ color: brand.heroMutedTextColor }} className="mt-2 text-[10px]">{level.current} / {level.next} XP</p><p style={{ color: brand.heroMutedTextColor }} className="mt-1 text-[9px] font-bold tracking-[0.14em]">MARCO DE TREINAMENTO</p></div><div style={{ borderColor: brand.accentColor }} className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 text-center"><span style={{ color: brand.heroTextColor }} className="font-display text-sm font-extrabold">{state.xp}</span><span style={{ color: brand.accentColor }} className="-mt-1 text-[7px] font-bold tracking-wider">XP</span></div></div>
           <GlobalContactLinks variant="sidebar" />
@@ -385,6 +385,7 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
           {!tutorialCourse && view === "Competição" && <><CompetitionMedal identity={personalCompetitionIdentity} totalPoints={personalCompetitionScoreQuery.data?.totalPoints ?? 0} position={personalCompetitionScoreQuery.data?.position ?? null} loading={personalCompetitionScoreQuery.isLoading} /><CompetitionArea defaultCourseId={effectiveContestId} /><CompetitionProgressPanel defaultCourseId={effectiveContestId} /></>}
           {!tutorialCourse && view === "Revisar" && <ReviewArea state={state} modules={availableModules} personalReviews={(personalReviewsQuery.data ?? []) as PersonalReviewItem[]} personalReviewsLoading={personalReviewsQuery.isLoading} onStartQuestion={(question) => { setManualQuickQuestion(question); setQuickAnswer(null); setView("Painel"); }} onCompletePersonalReview={completePersonalReview} onRemovePersonalReview={removePersonalReview} reviewPending={completePersonalReviewMutation.isPending || removePersonalReviewMutation.isPending} />}
           {view === "Histórico" && <HistoryArea state={state} />}
+          {view === "Cursos" && <CourseMarketplace onChoosePlan={(planId) => { setCommercePlanFocus(planId); setCommerceOpen(true); }} onBack={() => setView("Painel")} />}
         </>}</div>
       </main>
           {view === "Painel" && !simulation && !simulationResult && quickQuestion && (manualQuickQuestion !== null || !dailyCheckQuery.data?.dismissed) && <QuickCheck question={quickQuestion} answer={quickAnswer} correct={quickCorrect} reviewSaved={((personalReviewsQuery.data ?? []) as PersonalReviewItem[]).some(item => item.questionKey === quickQuestion.id)} reviewPending={addPersonalReviewMutation.isPending} onSaveForReview={() => addToPersonalReview(quickQuestion)} onAnswer={(answer) => { setQuickAnswer(answer); registerAnswer(quickQuestion, answer === quickQuestion.answer); }} onDismiss={() => manualQuickQuestion ? setManualQuickQuestion(null) : dismissDailyCheckMutation.mutate({ courseId: effectiveContestId })} />}
