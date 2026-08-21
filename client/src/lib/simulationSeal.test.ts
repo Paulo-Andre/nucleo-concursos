@@ -7,13 +7,13 @@ describe("selo pessoal de simulados", () => {
   });
 
   it("avança exatamente um selo a cada vinte acertos acumulados", () => {
-    expect(getSimulationSealIdentity(20)).toMatchObject({ level: 1, shortLabel: "SELO 1", nextLevelAt: 40 });
-    expect(getSimulationSealIdentity(80)).toMatchObject({ level: 4, shortLabel: "SELO 4", nextLevelAt: 100 });
-    expect(getSimulationSealIdentity(199)).toMatchObject({ level: 9, shortLabel: "SELO 9", nextLevelAt: 200 });
+    expect(getSimulationSealIdentity(20)).toMatchObject({ level: 1, shortLabel: "INICIANTE", nextLevelAt: 40 });
+    expect(getSimulationSealIdentity(80)).toMatchObject({ level: 4, shortLabel: "TÁTICO", nextLevelAt: 100 });
+    expect(getSimulationSealIdentity(199)).toMatchObject({ level: 9, shortLabel: "EXPERT", nextLevelAt: 200 });
   });
 
   it("limita o reconhecimento ao décimo selo a partir de duzentos acertos", () => {
-    expect(getSimulationSealIdentity(200)).toMatchObject({ level: 10, shortLabel: "SELO 10", nextLevelAt: null, tone: "gold" });
-    expect(getSimulationSealIdentity(245)).toMatchObject({ level: 10, shortLabel: "SELO 10", nextLevelAt: null });
+    expect(getSimulationSealIdentity(200)).toMatchObject({ level: 10, shortLabel: "MESTRE", nextLevelAt: null, tone: "gold" });
+    expect(getSimulationSealIdentity(245)).toMatchObject({ level: 10, shortLabel: "MESTRE", nextLevelAt: null });
   });
 });

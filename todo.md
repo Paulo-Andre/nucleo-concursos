@@ -264,3 +264,5 @@
 - [x] Separar o selo pessoal do aluno da medalha da competição, usando exclusivamente acertos em simulados.
 - [x] Implementar dez níveis de selo pessoal, com avanço a cada vinte acertos acumulados em simulados, limitado a duzentos acertos.
 - [x] Cobrir a apuração dos selos de simulados, validar a interface móvel e publicar a atualização.
+- [x] Substituir a nomenclatura numérica dos dez selos pessoais por títulos motivacionais, preservando os intervalos de acertos em simulados.
+- [x] Validar os títulos, limites de progressão e apresentação responsiva dos novos selos antes da publicação.
