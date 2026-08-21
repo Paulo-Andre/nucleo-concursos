@@ -47,6 +47,12 @@ O ponto decisivo é que uma VPS é um servidor sob nossa responsabilidade. Preci
 
 Para o perfil da plataforma, a recomendação passa a ser: **VPS Locaweb é a opção economicamente melhor se o plano de cerca de R$ 25 for de pelo menos 2 GB de RAM; caso seja de 512 MB ou 1 GB, mantenha Railway.** Antes da contratação, confirme na tela do plano a memória, CPU, SSD, valor após eventual promoção e se backup é cobrado à parte.
 
+### Confirmação do plano econômico no site oficial
+
+Na consulta de agosto de 2026, a página oficial da Locaweb exibe o **VPS 2 GB Linux** por preço de tabela de **R$ 45,90**, com desconto de 35%, resultando em **R$ 23,90 por mês equivalente em contratação de 24 meses**. A mesma oferta informa **2 vCPUs, 60 GB de SSD e transferência ilimitada**.[4]
+
+Essa configuração tem capacidade inicial adequada para hospedar uma única instância da plataforma, o MySQL, Nginx/Caddy e as rotinas básicas de monitoramento, desde que a VPS seja configurada com limites de memória e backup. Assim, a recomendação está confirmada: **o VPS 2 GB da Locaweb é a melhor opção de custo fixo para o estágio inicial da Núcleo Concursos.**
+
 ## Referências
 
 [1] [Railway — Pricing](https://railway.com/pricing)
