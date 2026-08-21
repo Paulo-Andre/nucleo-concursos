@@ -269,3 +269,7 @@
 - [x] Auditar a distribuição de respostas corretas nas questões elegíveis de competição e simulados, com atenção às questões de Certo ou Errado.
 - [x] Selecionar questões de forma balanceada nas rodadas de competição e simulados, sem modificar os gabaritos verdadeiros nem o histórico existente.
 - [x] Cobrir o equilíbrio de alternativas com testes, validar a experiência e publicar a atualização.
+- [x] Adicionar o tipo persistente de curso Concurso ou Tutorial na criação e edição ROOT, mantendo os cursos atuais como Concurso.
+- [x] Ocultar Competição, Revisão e Simulados para alunos matriculados apenas em cursos do tipo Tutorial, preservando todas as abas para cursos Concurso.
+- [x] Impedir o acesso direto às funcionalidades de Competição, Revisão e Simulados quando o aluno possuir somente matrícula em cursos Tutorial.
+- [x] Cobrir tipos de curso e permissões de Tutorial com testes, validação responsiva e publicação.

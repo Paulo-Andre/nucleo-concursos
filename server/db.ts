@@ -574,7 +574,7 @@ export async function saveCompetitionMonthlyGoal(actorUserId: number, input: Com
 export async function listCompetitionCourses() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  return db.select({ id: courses.id, title: courses.title, track: courses.track }).from(courses).where(eq(courses.isActive, true)).orderBy(courses.title);
+  return db.select({ id: courses.id, title: courses.title, track: courses.track }).from(courses).where(and(eq(courses.isActive, true), eq(courses.courseType, "concurso"))).orderBy(courses.title);
 }
 
 async function getCompetitionQuestionsForCourse(courseId?: string) {
@@ -1313,6 +1313,7 @@ export type ManagedCourseInput = {
   id: string;
   title: string;
   track: string;
+  courseType?: "concurso" | "tutorial";
   description?: string | null;
   coverImageUrl?: string | null;
 };
@@ -1339,6 +1340,7 @@ export async function createManagedCourse(actorUserId: number, input: ManagedCou
     id: input.id,
     title: input.title,
     track: input.track,
+    courseType: input.courseType ?? "concurso",
     description: input.description?.trim() || null,
     coverImageUrl: input.coverImageUrl?.trim() || null,
     isActive: true,
@@ -1358,6 +1360,7 @@ export async function updateManagedCourse(actorUserId: number, courseId: string,
   await db.update(courses).set({
     title: input.title,
     track: input.track,
+    courseType: input.courseType ?? "concurso",
     description: input.description?.trim() || null,
     coverImageUrl: input.coverImageUrl?.trim() || null,
   }).where(eq(courses.id, courseId));
@@ -1643,6 +1646,7 @@ export async function listStudyCourseCatalog(userId: number, includeInactive = f
     id: courses.id,
     title: courses.title,
     track: courses.track,
+    courseType: courses.courseType,
     description: courses.description,
     coverImageUrl: courses.coverImageUrl,
     isActive: courses.isActive,
@@ -1653,6 +1657,21 @@ export async function listStudyCourseCatalog(userId: number, includeInactive = f
   const courseIds = activeEnrollments.map(enrollment => enrollment.courseId);
   if (!courseIds.length) return [];
   return db.select(fields).from(courses).where(and(eq(courses.isActive, true), inArray(courses.id, courseIds)));
+}
+
+/** Determina se o aluno possui ao menos uma matrícula vigente em curso do tipo Concurso. */
+export async function userHasActiveContestCourse(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const activeEnrollments = await getUserCourseAccess(userId);
+  const courseIds = activeEnrollments.map(enrollment => enrollment.courseId);
+  if (!courseIds.length) return false;
+  const matched = await db.select({ id: courses.id }).from(courses).where(and(
+    eq(courses.isActive, true),
+    eq(courses.courseType, "concurso"),
+    inArray(courses.id, courseIds),
+  )).limit(1);
+  return Boolean(matched[0]);
 }
 
 export async function grantCourseEnrollment(actorUserId: number, userId: number, courseId: string, startAt: Date, expiresAt: Date) {

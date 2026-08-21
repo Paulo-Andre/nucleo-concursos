@@ -75,6 +75,7 @@ import {
   updateManagedQuestion,
   updateUserPassword,
   updateUserProfile,
+  userHasActiveContestCourse,
   writeAdminAudit,
   submitForReview,
   submitCompetitionAnswer,
@@ -133,6 +134,7 @@ const courseSchema = z.object({
   id: courseIdSchema,
   title: z.string().trim().min(4, "Informe o título do curso.").max(180),
   track: z.string().trim().min(2, "Informe a trilha do curso.").max(32),
+  courseType: z.enum(["concurso", "tutorial"]).default("concurso"),
   description: z.string().trim().max(1200).optional(),
   coverImageUrl: z.string().trim().url("Informe uma URL válida para a capa.").max(1024).optional().or(z.literal("")),
 });
@@ -239,6 +241,13 @@ function safeUser(user: NonNullable<Parameters<typeof getStudyState>[0]> extends
 function invalidCredentials() {
   return new TRPCError({ code: "UNAUTHORIZED", message: "Usuário ou senha inválidos." });
 }
+
+const contestEnrollmentRequiredProcedure = enrollmentRequiredProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user.role !== "admin" && !(await userHasActiveContestCourse(ctx.user.id))) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Este recurso está disponível apenas para matrículas em cursos do tipo Concurso." });
+  }
+  return next({ ctx });
+});
 
 async function startLocalSession(ctx: { req: any; res: any }, userId: number) {
   const token = createSessionToken();
@@ -359,7 +368,7 @@ export const appRouter = router({
       save: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, disciplineId: entityIdSchema, weekday: z.number().int().min(0).max(6), isActive: z.boolean().default(true) })).mutation(({ input, ctx }) => saveStudyRoadmapItem(ctx.user.id, input, ctx.user.role === "admin")),
       remove: enrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyRoadmapItem(ctx.user.id, input.id)),
     }),
-    submitSimulation: enrollmentRequiredProcedure.input(z.object({
+    submitSimulation: contestEnrollmentRequiredProcedure.input(z.object({
       id: z.string().min(1).max(64), total: z.number().int().positive(), correct: z.number().int().nonnegative(), errors: z.number().int().nonnegative(), elapsedSeconds: z.number().int().nonnegative(),
       byDiscipline: metricSchema, byBlock: metricSchema,
       answers: z.array(z.object({ questionId: z.string().min(1).max(80), correct: z.boolean() })),
@@ -370,10 +379,10 @@ export const appRouter = router({
       list: enrollmentRequiredProcedure.query(() => listStudyQuestions()),
     }),
     review: router({
-      list: enrollmentRequiredProcedure.query(({ ctx }) => listStudyReviewItems(ctx.user.id)),
-      add: enrollmentRequiredProcedure.input(z.object({ questionKey: z.string().trim().min(1).max(80), snapshot: studyReviewSnapshotSchema })).mutation(({ input, ctx }) => saveStudyReviewItem(ctx.user.id, input)),
-      complete: enrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => completeStudyReviewItem(ctx.user.id, input.id)),
-      remove: enrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyReviewItem(ctx.user.id, input.id)),
+      list: contestEnrollmentRequiredProcedure.query(({ ctx }) => listStudyReviewItems(ctx.user.id)),
+      add: contestEnrollmentRequiredProcedure.input(z.object({ questionKey: z.string().trim().min(1).max(80), snapshot: studyReviewSnapshotSchema })).mutation(({ input, ctx }) => saveStudyReviewItem(ctx.user.id, input)),
+      complete: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => completeStudyReviewItem(ctx.user.id, input.id)),
+      remove: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyReviewItem(ctx.user.id, input.id)),
     }),
     note: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).query(({ input, ctx }) => import("./db").then(({ getNote }) => getNote(ctx.user.id, input.moduleId))),
     saveNote: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80), content: z.string().trim().max(12000) })).mutation(({ input, ctx }) => saveNote(ctx.user.id, input.moduleId, input.content)),
@@ -382,15 +391,15 @@ export const appRouter = router({
     settings: protectedProcedure.query(() => getCompetitionSettings()),
     courses: protectedProcedure.query(() => listCompetitionCourses()),
     ranking: protectedProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input }) => getCompetitionRanking(input.courseId)),
-    myScore: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyCompetitionScore(ctx.user.id, input.courseId)),
-    history: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyCompetitionHistory(ctx.user.id, input.courseId)),
-    monthlyGoal: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyMonthlyCompetitionGoal(ctx.user.id, input.courseId)),
-    startRound: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).mutation(async ({ input, ctx }) => {
+    myScore: contestEnrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyCompetitionScore(ctx.user.id, input.courseId)),
+    history: contestEnrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyCompetitionHistory(ctx.user.id, input.courseId)),
+    monthlyGoal: contestEnrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).query(({ input, ctx }) => getMyMonthlyCompetitionGoal(ctx.user.id, input.courseId)),
+    startRound: contestEnrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema.optional() })).mutation(async ({ input, ctx }) => {
       const access = ctx.user.role === "admin" ? [] : await getUserCourseAccess(ctx.user.id);
       return createCompetitionRound(ctx.user.id, input.courseId, access.map(enrollment => enrollment.courseId), ctx.user.role === "admin");
     }),
-    round: enrollmentRequiredProcedure.input(z.object({ roundId: z.string().uuid() })).query(({ input, ctx }) => getCompetitionRound(ctx.user.id, input.roundId)),
-    submitAnswer: enrollmentRequiredProcedure.input(z.object({
+    round: contestEnrollmentRequiredProcedure.input(z.object({ roundId: z.string().uuid() })).query(({ input, ctx }) => getCompetitionRound(ctx.user.id, input.roundId)),
+    submitAnswer: contestEnrollmentRequiredProcedure.input(z.object({
       roundId: z.string().uuid(),
       questionId: entityIdSchema,
       submittedAnswer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]),

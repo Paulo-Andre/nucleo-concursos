@@ -148,6 +148,13 @@
       "when": 1787311154818,
       "tag": "0020_hesitant_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1787317417189,
+      "tag": "0021_short_iron_fist",
+      "breakpoints": true
     }
   ]
 }

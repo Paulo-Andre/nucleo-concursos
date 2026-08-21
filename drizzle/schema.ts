@@ -161,6 +161,7 @@ export const courses = mysqlTable("courses", {
   id: varchar("id", { length: 80 }).primaryKey(),
   title: varchar("title", { length: 180 }).notNull(),
   track: varchar("track", { length: 32 }).notNull(),
+  courseType: mysqlEnum("courseType", ["concurso", "tutorial"]).notNull().default("concurso"),
   description: text("description"),
   coverImageUrl: varchar("coverImageUrl", { length: 1024 }),
   isActive: boolean("isActive").notNull().default(true),
