@@ -29,6 +29,7 @@ import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 import { CourseAccessRequired } from "@/components/CourseAccessRequired";
 import { Textarea } from "@/components/ui/textarea";
 import { simulationAnswerFeedback } from "@/lib/simulationReviewHelpers";
+import { CompetitionIdentity, getCompetitionIdentity } from "@/lib/competitionIdentity";
 
 type View = "Painel" | "Conteúdo" | "Roteiro" | "Simulados" | "Competição" | "Revisar" | "Histórico";
 type SimulationQuestion = StudyQuestion & { persistentQuestionId?: number };
@@ -163,6 +164,7 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
   const canUseActiveCourse = user.role === "admin" || permittedContestIds.includes(effectiveContestId);
   const contentProgressQuery = trpc.study.contentProgress.get.useQuery({ courseId: effectiveContestId }, { enabled: canUseActiveCourse, refetchOnWindowFocus: false });
   const roadmapQuery = trpc.study.roadmap.list.useQuery({ courseId: effectiveContestId }, { enabled: canUseActiveCourse, refetchOnWindowFocus: false });
+  const personalCompetitionScoreQuery = trpc.competition.myScore.useQuery({}, { enabled: canUseActiveCourse, refetchOnWindowFocus: false });
   const answerMutation = trpc.study.answer.useMutation();
   const moduleMutation = trpc.study.completeModule.useMutation();
   const openContentMutation = trpc.study.contentProgress.open.useMutation({ onSuccess: () => void contentProgressQuery.refetch() });
@@ -186,6 +188,12 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
   const streak = currentStreak(state.studyDates);
   const disciplinePerformance = useMemo(() => getDisciplinePerformance(state), [state]);
   const studiedPercent = percentage(state.completedModules.filter((moduleId) => availableModuleIds.has(moduleId)).length, availableModules.length);
+  const personalCompetitionIdentity = getCompetitionIdentity({
+    position: personalCompetitionScoreQuery.data?.position ?? null,
+    totalPoints: personalCompetitionScoreQuery.data?.totalPoints ?? 0,
+    totalAnswered: personalCompetitionScoreQuery.data?.totalAnswered ?? 0,
+    totalCorrect: personalCompetitionScoreQuery.data?.totalCorrect ?? 0,
+  });
   const focus = useMemo(() => {
     const entries = Object.entries(disciplinePerformance).filter(([, metric]) => metric.total >= 2);
     if (!entries.length) return { label: "Inicie um diagnóstico", detail: "Responda questões para liberar uma recomendação baseada no seu desempenho." };
@@ -337,14 +345,14 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
         {sessionReplacementNotice && <div role="alert" className="fixed inset-x-3 top-3 z-50 mx-auto flex max-w-xl items-start justify-between gap-3 border border-[#b88336]/45 bg-[#fff8e8] px-4 py-3 text-sm font-medium text-[#5e3a0b] shadow-lg sm:left-auto sm:right-6 sm:top-6 sm:mx-0"><span><strong>Acesso atualizado.</strong> Havia outra sessão ativa nesta conta; ela foi encerrada para proteger seus dados.</span><button type="button" aria-label="Fechar aviso" onClick={() => setSessionReplacementNotice(false)} className="shrink-0 text-lg leading-none" >×</button></div>}
         <header style={{ backgroundColor: brand.backgroundColor }} className="sticky top-0 z-20 flex min-w-0 items-center justify-between gap-1 border-b border-[#dcd6ca] px-3 backdrop-blur-md sm:gap-2 sm:px-7 lg:px-10">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3"><button aria-label="Abrir navegação" aria-controls="study-navigation" aria-expanded={menuOpen} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#d5cdbd] bg-[#fffdf8] text-[#173d4a] shadow-sm lg:hidden" onClick={() => setMenuOpen(true)}><Menu className="h-5 w-5" /></button><div className="min-w-0"><p className="eyebrow truncate">CONCURSO · {activeContest.name.toUpperCase()}</p><h1 className="font-display truncate text-base font-bold text-[#183542]">{view}</h1></div></div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button><button onClick={() => void logout()} className="shrink-0 border border-[#d6cfc2] bg-[#fffdf8] px-1.5 py-2 text-[9px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3] sm:px-2.5 sm:text-[10px]">SAIR</button><button onClick={() => setAccountOpen(true)} className="hidden h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white sm:flex">{level.index}</button></div>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3"><div className="hidden items-center gap-2 rounded-xl border border-[#d6cfc2] bg-[#fffdf8] px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><CompetitionPersonalSeal identity={personalCompetitionIdentity} loading={personalCompetitionScoreQuery.isLoading} /><button onClick={() => setAccountOpen(true)} className="hidden text-right sm:block"><p className="text-xs font-bold text-[#183542]">{user.name}</p><p className="text-[9px] font-bold tracking-wider text-[#5d777d]">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button><button onClick={() => void logout()} className="shrink-0 border border-[#d6cfc2] bg-[#fffdf8] px-1.5 py-2 text-[9px] font-bold tracking-wide text-[#0e5a70] hover:bg-[#eef6f3] sm:px-2.5 sm:text-[10px]">SAIR</button><button onClick={() => setAccountOpen(true)} className="hidden h-10 w-10 items-center justify-center rounded-xl bg-[#0e5a70] text-sm font-bold text-white sm:flex">{level.index}</button></div>
         </header>
         <div className="mx-auto max-w-[1540px] p-4 sm:p-7 lg:p-10"><ContestSelector contestId={effectiveContestId} allowedContestIds={permittedContestIds} course={activeCourse} onChange={setContestId} />{simulation ? <SimulationScreen simulation={simulation} onAnswer={submitSimulationAnswer} onExit={() => setSimulation(null)} /> : simulationResult ? <SimulationResult result={simulationResult} onAgain={() => startSimulation(simulationResult.total)} onClose={() => { setSimulationResult(null); setView("Histórico"); }} /> : <>
           {view === "Painel" && <Dashboard state={state} modules={availableModules} contestName={activeContest.name} coverImageUrl={activeCourse?.coverImageUrl} level={level} totalAnswers={totalAnswers} overallScore={overallScore} streak={streak} studiedPercent={studiedPercent} focus={focus} historyChart={historyChart} onStudy={() => setView("Conteúdo")} onSimulate={() => setView("Simulados")} continueItem={(contentProgressQuery.data?.continueItem ?? null) as StudyProgressItem | null} onOpenScheduledContent={openScheduledContent} onOpenPlanner={() => setView("Roteiro")} />}
           {view === "Roteiro" && <WeeklyStudyPlanner progressItems={(contentProgressQuery.data?.contents ?? []) as StudyProgressItem[]} roadmapItems={(roadmapQuery.data ?? []) as RoadmapItem[]} onOpenScheduledContent={openScheduledContent} onSaveRoadmap={(input) => saveRoadmapMutation.mutate({ courseId: effectiveContestId, ...input })} onRemoveRoadmap={(id) => removeRoadmapMutation.mutate({ id })} saving={saveRoadmapMutation.isPending || removeRoadmapMutation.isPending} />}
           {view === "Conteúdo" && <StudyArea state={state} modules={availableModules} contestName={activeContest.name} onOpen={openModuleWithProgress} />}
           {view === "Simulados" && <Simulations onStart={startSimulation} state={state} notice={simulationNotice} strictReviewMode={centralQuestionsQuery.data?.requiresReviewMode === true} centralCount={persistentSimulationQuestions.length} />}
-          {view === "Competição" && <><CompetitionArea defaultCourseId={effectiveContestId} /><CompetitionProgressPanel defaultCourseId={effectiveContestId} /></>}
+          {view === "Competição" && <><CompetitionMedal identity={personalCompetitionIdentity} totalPoints={personalCompetitionScoreQuery.data?.totalPoints ?? 0} position={personalCompetitionScoreQuery.data?.position ?? null} loading={personalCompetitionScoreQuery.isLoading} /><CompetitionArea defaultCourseId={effectiveContestId} /><CompetitionProgressPanel defaultCourseId={effectiveContestId} /></>}
           {view === "Revisar" && <ReviewArea state={state} modules={availableModules} personalReviews={(personalReviewsQuery.data ?? []) as PersonalReviewItem[]} personalReviewsLoading={personalReviewsQuery.isLoading} onStartQuestion={(question) => { setManualQuickQuestion(question); setQuickAnswer(null); setView("Painel"); }} onCompletePersonalReview={completePersonalReview} onRemovePersonalReview={removePersonalReview} reviewPending={completePersonalReviewMutation.isPending || removePersonalReviewMutation.isPending} />}
           {view === "Histórico" && <HistoryArea state={state} />}
         </>}</div>
@@ -356,6 +364,22 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
       {rootManagementOpen && user.role === "admin" && <RootManagementPanel activeSection={rootManagementSection} onSectionChange={setRootManagementSection} onClose={() => setRootManagementOpen(false)} />}
     </div>
   );
+}
+
+const competitionToneClasses = {
+  gold: "border-[#e8c16a] bg-[#fff7df] text-[#8d5810]",
+  silver: "border-[#c5d0d5] bg-[#f4f8fa] text-[#47606b]",
+  bronze: "border-[#d8a27a] bg-[#fff2e8] text-[#8a4725]",
+  teal: "border-[#9bcfc2] bg-[#edf8f4] text-[#17644e]",
+  slate: "border-[#c8d5d8] bg-[#f4f7f6] text-[#4e676c]",
+} as const;
+
+function CompetitionPersonalSeal({ identity, loading }: { identity: CompetitionIdentity; loading: boolean }) {
+  return <div aria-label={loading ? "Carregando selo competitivo" : `Selo pessoal: ${identity.label}`} title={loading ? "Carregando seu selo competitivo" : `${identity.label}: ${identity.description}`} className={`flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-2 sm:px-2.5 ${competitionToneClasses[identity.tone]}`}><Award className="h-4 w-4 shrink-0" /><div className="hidden min-w-0 sm:block"><p className="text-[8px] font-bold tracking-[.12em]">SELO PESSOAL</p><p className="max-w-24 truncate text-[10px] font-extrabold">{loading ? "CARREGANDO" : identity.shortLabel}</p></div><span className="text-[9px] font-extrabold sm:hidden">{loading ? "…" : identity.shortLabel}</span></div>;
+}
+
+function CompetitionMedal({ identity, totalPoints, position, loading }: { identity: CompetitionIdentity; totalPoints: number; position: number | null; loading: boolean }) {
+  return <section aria-label="Sua medalha de competição" className={`relative overflow-hidden rounded-2xl border p-4 sm:p-5 ${competitionToneClasses[identity.tone]}`}><div className="absolute -right-4 -top-5 h-24 w-24 rounded-full border border-current/20" /><div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-current/30 bg-white/45"><Award className="h-6 w-6" /></div><div className="min-w-0"><p className="text-[10px] font-bold tracking-[.16em]">SUA MEDALHA</p><h2 className="font-display mt-0.5 text-xl font-extrabold">{loading ? "Calculando desempenho" : identity.label}</h2><p className="mt-1 text-sm leading-5 opacity-85">{loading ? "Atualizando sua posição e seus pontos..." : identity.description}</p></div></div><div className="flex shrink-0 gap-2"><div className="rounded-xl border border-current/25 bg-white/45 px-3 py-2 text-center"><p className="text-[8px] font-bold tracking-[.12em]">PONTOS</p><p className="font-display text-lg font-extrabold">{loading ? "—" : totalPoints}</p></div><div className="rounded-xl border border-current/25 bg-white/45 px-3 py-2 text-center"><p className="text-[8px] font-bold tracking-[.12em]">POSIÇÃO</p><p className="font-display text-lg font-extrabold">{loading || position === null ? "—" : `${position}º`}</p></div></div></div></section>;
 }
 
 function ContestSelector({ contestId, allowedContestIds, course, onChange }: { contestId: ContestId; allowedContestIds: ContestId[]; course: { id: string; title: string; coverImageUrl: string | null } | null; onChange: (contestId: ContestId) => void }) {

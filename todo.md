@@ -258,3 +258,6 @@
 - [x] Criar histórico pessoal de rodadas, respostas, pontuação e desempenho competitivo por aluno.
 - [x] Criar metas mensais e premiação configuráveis pelo ROOT, calculadas sem tarefa periódica e sem afetar simulados.
 - [x] Cobrir a ampliação da competição com testes, validação visual, documentação e publicação.
+- [x] Criar uma medalha de destaque no topo da página de Competição do aluno, baseada no desempenho competitivo já persistido.
+- [x] Criar um selo pessoal de desempenho no cabeçalho da área do aluno, visível em todas as abas sem expor dados de simulados.
+- [x] Cobrir os critérios visuais de medalha e selo com testes, validação responsiva e publicação.
