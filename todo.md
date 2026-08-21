@@ -266,3 +266,6 @@
 - [x] Cobrir a apuração dos selos de simulados, validar a interface móvel e publicar a atualização.
 - [x] Substituir a nomenclatura numérica dos dez selos pessoais por títulos motivacionais, preservando os intervalos de acertos em simulados.
 - [x] Validar os títulos, limites de progressão e apresentação responsiva dos novos selos antes da publicação.
+- [x] Auditar a distribuição de respostas corretas nas questões elegíveis de competição e simulados, com atenção às questões de Certo ou Errado.
+- [x] Selecionar questões de forma balanceada nas rodadas de competição e simulados, sem modificar os gabaritos verdadeiros nem o histórico existente.
+- [x] Cobrir o equilíbrio de alternativas com testes, validar a experiência e publicar a atualização.

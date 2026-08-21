@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCompetitionRanking, defaultCompetitionMonthlyGoal, defaultCompetitionSettings, evaluateCompetitionAnswer, getCompetitionMonthWindow, prioritizeUnseenCompetitionQuestions } from "./db";
+import { buildCompetitionRanking, defaultCompetitionMonthlyGoal, defaultCompetitionSettings, evaluateCompetitionAnswer, getCompetitionMonthWindow, prioritizeUnseenCompetitionQuestions, selectBalancedCompetitionQuestions } from "./db";
 
 describe("regras isoladas da competição", () => {
   it("mantém os valores iniciais seguros para uma rodada competitiva", () => {
@@ -41,6 +41,16 @@ describe("regras isoladas da competição", () => {
     expect(selected).toHaveLength(3);
     expect(selected.slice(0, 2).map(question => question.id).sort()).toEqual([3, 4]);
     expect([1, 2]).toContain(selected[2]?.id);
+  });
+
+  it("equilibra Certo e Errado nas rodadas sem substituir o gabarito das questões", () => {
+    const selected = selectBalancedCompetitionQuestions([
+      { id: 1, answerJson: "true" }, { id: 2, answerJson: "true" }, { id: 3, answerJson: "true" },
+      { id: 4, answerJson: "false" }, { id: 5, answerJson: "false" }, { id: 6, answerJson: "false" },
+    ], new Set(), 6);
+    expect(selected).toHaveLength(6);
+    expect(selected.filter(question => question.answerJson === "true")).toHaveLength(3);
+    expect(selected.filter(question => question.answerJson === "false")).toHaveLength(3);
   });
 
   it("calcula o período da meta pelo calendário de Brasília sem tarefa agendada", () => {

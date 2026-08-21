@@ -17,7 +17,7 @@ import { specialLegislationModules, specialApostilaByModule } from "@/data/pfSpe
 import { activeContestId, contestCatalog, getContestById, getDisciplineById, getDisciplineIdForModule, getDisciplinesForContest } from "@/data/pfCurriculumCatalog";
 import type { ContestId } from "@/data/pfCurriculumCatalog";
 import { ApostilaModulePanel } from "@/components/ApostilaModulePanel";
-import { AnswerRecord, currentStreak, emptyState, levelFromXp, selectSimulationQuestions, selectUniqueQuestions, SimulationRecord, StudyState } from "@/lib/studyEngine";
+import { AnswerRecord, currentStreak, emptyState, levelFromXp, selectBalancedBooleanQuestions, selectSimulationQuestions, SimulationRecord, StudyState } from "@/lib/studyEngine";
 import { useAuth } from "@/_core/hooks/useAuth";
 import AccessGate from "@/pages/AccessGate";
 import { trpc } from "@/lib/trpc";
@@ -282,7 +282,7 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
     setSimulationNotice(null);
     const strictReviewMode = centralQuestionsQuery.data?.requiresReviewMode === true;
     const bank = strictReviewMode ? persistentSimulationQuestions : [...persistentSimulationQuestions, ...questionBank];
-    const questions = strictReviewMode || persistentSimulationQuestions.length ? selectUniqueQuestions(bank, total, state.usedQuestionIds) : selectSimulationQuestions(questionBank, total, state.usedQuestionIds);
+    const questions = strictReviewMode || persistentSimulationQuestions.length ? selectBalancedBooleanQuestions(bank, total, state.usedQuestionIds) : selectSimulationQuestions(questionBank, total, state.usedQuestionIds);
     if (questions.length < total) {
       setSimulationNotice(strictReviewMode ? `Há somente ${questions.length} questão(ões) central(is) aprovada(s)/publicada(s) para revisão obrigatória. Publique ao menos ${total} para iniciar este simulado.` : `Há somente ${questions.length} questões disponíveis para este simulado.`);
       return;

@@ -606,6 +606,48 @@ export function prioritizeUnseenCompetitionQuestions<T extends { id: number }>(c
   return [...shuffleCompetitionQuestions(unseen), ...shuffleCompetitionQuestions(repeated)].slice(0, questionsPerRound);
 }
 
+function competitionAnswerKey(answerJson: string) {
+  try {
+    const answer = JSON.parse(answerJson) as unknown;
+    if (typeof answer === "boolean") return answer ? "certo" : "errado";
+    if (typeof answer === "string" && answer.trim()) return answer.trim().toLocaleLowerCase("pt-BR");
+  } catch {
+    // Questões inválidas continuam disponíveis para o fluxo editorial tratar, sem impedir a rodada.
+  }
+  return "outro";
+}
+
+/** Alterna os gabaritos disponíveis e prefere itens inéditos em cada alternativa. */
+export function selectBalancedCompetitionQuestions<T extends { id: number; answerJson: string }>(candidates: T[], answeredQuestionIds: Set<number>, questionsPerRound: number) {
+  const unique = Array.from(new Map(candidates.map(question => [question.id, question])).values());
+  const keys = shuffleCompetitionQuestions(Array.from(new Set(unique.map(question => competitionAnswerKey(question.answerJson)))));
+  const buckets = new Map(keys.map(key => [key, { fresh: [] as T[], repeated: [] as T[] }]));
+  unique.forEach(question => {
+    const bucket = buckets.get(competitionAnswerKey(question.answerJson))!;
+    if (answeredQuestionIds.has(question.id)) bucket.repeated.push(question);
+    else bucket.fresh.push(question);
+  });
+  buckets.forEach(bucket => {
+    bucket.fresh = shuffleCompetitionQuestions(bucket.fresh);
+    bucket.repeated = shuffleCompetitionQuestions(bucket.repeated);
+  });
+
+  const selected: T[] = [];
+  while (selected.length < questionsPerRound) {
+    let found = false;
+    keys.forEach(key => {
+      if (selected.length >= questionsPerRound) return;
+      const bucket = buckets.get(key)!;
+      const next = bucket.fresh.pop() ?? bucket.repeated.pop();
+      if (!next) return;
+      selected.push(next);
+      found = true;
+    });
+    if (!found) break;
+  }
+  return selected;
+}
+
 export async function createCompetitionRound(userId: number, courseId: string | undefined, allowedCourseIds: string[], isAdmin: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -614,7 +656,7 @@ export async function createCompetitionRound(userId: number, courseId: string | 
   if (courseId && !isAdmin && !allowedCourseIds.includes(courseId)) throw new Error("Você não possui acesso ativo a este concurso.");
   const candidates = await getCompetitionQuestionsForCourse(courseId);
   const previousAnswers = await db.select({ questionId: competitionAnswers.questionId }).from(competitionAnswers).where(eq(competitionAnswers.userId, userId));
-  const selected = prioritizeUnseenCompetitionQuestions(candidates, new Set(previousAnswers.map(answer => answer.questionId)), settings.questionsPerRound);
+  const selected = selectBalancedCompetitionQuestions(candidates, new Set(previousAnswers.map(answer => answer.questionId)), settings.questionsPerRound);
   if (!selected.length) throw new Error("Ainda não há questões publicadas para iniciar esta competição.");
   const roundId = crypto.randomUUID();
   await db.insert(competitionRounds).values({ id: roundId, userId, courseId: courseId ?? null, questionIdsJson: JSON.stringify(selected.map(question => question.id)) });
