@@ -208,6 +208,7 @@ const contentSchema = z.object({
   videoLabel: z.string().trim().max(160).optional(),
   materialUrl: z.string().trim().url("Informe uma URL de material válida.").max(2048).optional().or(z.literal("")),
   materialLabel: z.string().trim().max(160).optional(),
+  noticeKind: z.enum(["new", "updated"]).nullable().optional(),
   requiresReview: z.boolean().default(false),
   status: knowledgeStatusSchema.optional(),
   disciplineIds: z.array(entityIdSchema).max(100).default([]),

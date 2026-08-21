@@ -312,3 +312,7 @@
 - [x] Permitir que o ROOT configure, por curso, os textos do cartão principal do Painel do aluno.
 - [x] Exibir automaticamente no Painel a apresentação configurada para o curso selecionado pelo aluno.
 - [x] Validar a edição ROOT, os cursos existentes, a responsividade e a publicação da apresentação por curso.
+- [x] Permitir que o ROOT marque cada conteúdo como “Conteúdo novo” ou “Conteúdo atualizado” ao criar ou editar.
+- [x] Registrar o momento da marcação e exibir o aviso somente a alunos com matrícula ativa anterior a esse momento no curso vinculado.
+- [x] Ocultar individualmente o aviso quando o aluno elegível abrir o conteúdo, sem afetar os demais alunos.
+- [x] Validar criação, edição, renovação de matrícula, múltiplos cursos, responsividade e publicação dos avisos.

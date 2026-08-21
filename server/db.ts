@@ -54,6 +54,7 @@ import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
 import { storagePut } from "./storage";
 import { serializeAdminBackup, type AdminBackupData } from "./adminBackup";
 import { isPlatformAlertVisibleForUser, type PlatformAlertAudience, type PlatformAlertLevel } from "./platformAlerts";
+import { resolveStudentContentNotice, type ContentNoticeKind } from "./content-notices";
 
 type UserUpsertInput = {
   openId: string;
@@ -1091,6 +1092,8 @@ type StudyCourseContent = {
   videoLabel: string | null;
   materialUrl: string | null;
   materialLabel: string | null;
+  noticeKind: ContentNoticeKind | null;
+  noticeActivatedAt: Date | null;
 };
 
 async function assertStudyCourseAccess(userId: number, courseId: string, isAdmin = false) {
@@ -1117,6 +1120,8 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
     videoLabel: contents.videoLabel,
     materialUrl: contents.materialUrl,
     materialLabel: contents.materialLabel,
+    noticeKind: contents.noticeKind,
+    noticeActivatedAt: contents.noticeActivatedAt,
   }).from(courseDisciplines)
     .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
     .innerJoin(contents, eq(disciplineContents.contentId, contents.id))
@@ -1127,7 +1132,7 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
   return Array.from(unique.values()).sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
 }
 
-function serializeContentProgress(content: StudyCourseContent, progress?: typeof studyContentProgress.$inferSelect) {
+function serializeContentProgress(content: StudyCourseContent, progress: typeof studyContentProgress.$inferSelect | undefined, latestOpenedAt: Date | null, enrollmentStartedAt: Date | null, isAdmin: boolean) {
   return {
     ...content,
     progress: progress ? {
@@ -1136,6 +1141,13 @@ function serializeContentProgress(content: StudyCourseContent, progress?: typeof
       lastOpenedAt: progress.lastOpenedAt.toISOString(),
       completedAt: progress.completedAt?.toISOString() ?? null,
     } : null,
+    notice: resolveStudentContentNotice({
+      kind: content.noticeKind,
+      activatedAt: content.noticeActivatedAt,
+      enrollmentStartedAt,
+      lastOpenedAt: latestOpenedAt,
+      isAdmin,
+    }),
   };
 }
 
@@ -1153,8 +1165,24 @@ export async function getStudyCourseProgress(userId: number, courseId: string, i
       inArray(studyContentProgress.contentId, contentIds),
     ))
     : [];
+  const allContentProgressRows = contentIds.length
+    ? await db.select({ contentId: studyContentProgress.contentId, lastOpenedAt: studyContentProgress.lastOpenedAt }).from(studyContentProgress).where(and(
+      eq(studyContentProgress.userId, userId),
+      inArray(studyContentProgress.contentId, contentIds),
+    ))
+    : [];
+  const enrollment = isAdmin ? null : (await db.select({ startAt: courseEnrollments.startAt }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, userId),
+    eq(courseEnrollments.courseId, courseId),
+    eq(courseEnrollments.status, "active"),
+  )).limit(1))[0] ?? null;
   const progressByContentId = new Map(rows.map(row => [row.contentId, row]));
-  const items = courseContents.map(content => serializeContentProgress(content, progressByContentId.get(content.id)));
+  const latestOpenedByContentId = new Map<number, Date>();
+  allContentProgressRows.forEach(row => {
+    const current = latestOpenedByContentId.get(row.contentId);
+    if (!current || row.lastOpenedAt > current) latestOpenedByContentId.set(row.contentId, row.lastOpenedAt);
+  });
+  const items = courseContents.map(content => serializeContentProgress(content, progressByContentId.get(content.id), latestOpenedByContentId.get(content.id) ?? null, enrollment?.startAt ?? null, isAdmin));
   const lastStarted = [...items]
     .filter(item => item.progress?.status === "started")
     .sort((left, right) => new Date(right.progress!.lastOpenedAt).getTime() - new Date(left.progress!.lastOpenedAt).getTime())[0];
@@ -2056,6 +2084,7 @@ type ContentInput = {
   videoLabel?: string | null;
   materialUrl?: string | null;
   materialLabel?: string | null;
+  noticeKind?: ContentNoticeKind | null;
   requiresReview: boolean;
   status?: KnowledgeStatus;
   disciplineIds?: number[];
@@ -2226,6 +2255,7 @@ export async function createManagedContent(actorUserId: number, input: ContentIn
   if (!db) throw new Error("Banco de dados indisponível");
   const result = await db.insert(contents).values({
     title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), coverImageUrl: normalizeOptional(input.coverImageUrl), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
+    noticeKind: input.noticeKind ?? null, noticeActivatedAt: input.noticeKind ? new Date() : null,
     requiresReview: input.requiresReview, status: input.status === "review" ? "draft" : (input.status ?? "draft"), createdByUserId: actorUserId, updatedByUserId: actorUserId,
   });
   const contentId = Number(result[0].insertId);
@@ -2241,11 +2271,16 @@ export async function updateManagedContent(actorUserId: number, contentId: numbe
   if (!db) throw new Error("Banco de dados indisponível");
   const existing = await getManagedContentById(contentId);
   if (!existing) throw new Error("Conteúdo não encontrado.");
+  const requestedDisciplineIds = uniqueNumbers(input.disciplineIds ?? []);
+  const currentDisciplineLinks = await db.select({ disciplineId: disciplineContents.disciplineId }).from(disciplineContents).where(eq(disciplineContents.contentId, contentId));
+  const disciplineLinksChanged = currentDisciplineLinks.length !== requestedDisciplineIds.length || currentDisciplineLinks.some(link => !requestedDisciplineIds.includes(link.disciplineId));
   const next = {
     title: input.title.trim(), objective: normalizeOptional(input.objective), description: normalizeOptional(input.description), cardText: normalizeOptional(input.cardText), body: normalizeOptional(input.body), coverImageUrl: normalizeOptional(input.coverImageUrl), videoUrl: normalizeOptional(input.videoUrl), videoLabel: normalizeOptional(input.videoLabel), materialUrl: normalizeOptional(input.materialUrl), materialLabel: normalizeOptional(input.materialLabel),
-    requiresReview: input.requiresReview, status: input.status ?? existing.status,
+    requiresReview: input.requiresReview, status: input.status ?? existing.status, noticeKind: input.noticeKind ?? null,
   };
-  await db.update(contents).set({ ...next, updatedByUserId: actorUserId }).where(eq(contents.id, contentId));
+  const contentChanged = disciplineLinksChanged || Object.entries(next).some(([field, value]) => valueChanged(existing[field as keyof typeof existing], value));
+  const shouldActivateNotice = Boolean(next.noticeKind) && (!existing.noticeActivatedAt || existing.noticeKind !== next.noticeKind || contentChanged);
+  await db.update(contents).set({ ...next, noticeActivatedAt: next.noticeKind ? (shouldActivateNotice ? new Date() : existing.noticeActivatedAt) : null, updatedByUserId: actorUserId }).where(eq(contents.id, contentId));
   for (const field of Object.keys(next) as (keyof typeof next)[]) {
     if (valueChanged(existing[field], next[field])) await writeContentChange(contentId, actorUserId, field, existing[field], next[field]);
   }

@@ -352,6 +352,8 @@ export const contents = mysqlTable("contents", {
   videoLabel: varchar("videoLabel", { length: 160 }),
   materialUrl: varchar("materialUrl", { length: 2048 }),
   materialLabel: varchar("materialLabel", { length: 160 }),
+  noticeKind: mysqlEnum("noticeKind", ["new", "updated"]),
+  noticeActivatedAt: timestamp("noticeActivatedAt"),
   status: mysqlEnum("status", ["draft", "review", "approved", "published", "inactive"]).notNull().default("draft"),
   requiresReview: boolean("requiresReview").notNull().default(false),
   createdByUserId: int("createdByUserId").notNull(),
