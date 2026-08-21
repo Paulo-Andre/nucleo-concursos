@@ -294,3 +294,6 @@
 - [x] Manter o catálogo de compra dentro da conta do aluno, com menu lateral e navegação disponíveis.
 - [x] Validar na vitrine desktop e móvel a presença dos filtros antes dos pacotes, inclusive o estado sem resultados.
 - [x] Validar na conta autenticada que “Cursos para comprar” abre o catálogo sem remover o menu lateral.
+- [x] Corrigir a sobreposição de informações e a hierarquia visual do menu no painel ROOT de Catálogo de cursos.
+- [x] Tornar claros e persistentes, no cadastro e edição do curso, os campos comerciais que relacionam o curso aos filtros de pesquisa.
+- [x] Validar visualmente, na prévia autenticada, o Catálogo ROOT com menu estável e os seletores de Área de atuação e Estado ou abrangência.
