@@ -289,3 +289,4 @@
 - [x] Adicionar filtros de cursos por nome, estado, área/tipo e classificação Tutorial.
 - [x] Permitir que o ROOT classifique os cursos por área comercial e estado para alimentar os filtros.
 - [x] Validar a página de descoberta, a compra e a experiência móvel antes da publicação.
+- [x] Exibir filtros de cursos de forma clara na seção inicial de pacotes e na janela Planos Núcleo Concursos.

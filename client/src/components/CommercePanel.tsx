@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, Clock3, CreditCard, Loader2, ReceiptText, ShieldCheck, ShoppingBag, TicketPercent, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { PlanCoverCarousel } from "@/components/PlanCoverCarousel";
+import { CourseFilterToolbar } from "@/components/CourseFilterToolbar";
+import { filterMarketplacePlans, type CourseMarketplaceFilters } from "@/lib/courseMarketplace";
+import type { PublicStorefrontPlan } from "@/lib/publicStorefront";
 
 function formatCurrency(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
@@ -20,9 +23,12 @@ export function CommercePanel({ onClose, initialPlanId }: { onClose: () => void;
   const [couponCode, setCouponCode] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<CourseMarketplaceFilters>({ search: "", state: "", area: "", kind: "all" });
   const utils = trpc.useUtils();
   const plans = trpc.commerce.plans.useQuery(undefined, { refetchOnWindowFocus: false });
   const orders = trpc.commerce.myOrders.useQuery(undefined, { refetchOnWindowFocus: false });
+  const catalog = (plans.data ?? []) as PublicStorefrontPlan[];
+  const filteredCatalog = useMemo(() => filterMarketplacePlans(catalog, filters), [catalog, filters]);
   const createOrder = trpc.commerce.createOrder.useMutation({
     onSuccess: async (order) => {
       await Promise.all([utils.commerce.myOrders.invalidate(), utils.study.access.invalidate()]);
@@ -62,7 +68,8 @@ export function CommercePanel({ onClose, initialPlanId }: { onClose: () => void;
         </section>
         {notice && <p role="status" className="rounded-xl border border-[#b9d6cb] bg-[#edf8f4] px-4 py-3 text-sm font-semibold text-[#17644e]">{notice}</p>}
         <section><div className="mb-4 flex items-center gap-2"><ShoppingBag className="h-5 w-5 text-[#0e5a70]" /><h3 className="font-display text-lg font-bold text-[#173d4a]">Catálogo disponível</h3></div>
-          {plans.isLoading ? <div className="grid min-h-40 place-items-center text-sm text-[#52716f]"><Loader2 className="h-5 w-5 animate-spin" /></div> : !plans.data?.length ? <div className="rounded-2xl border border-dashed border-[#b8cfc8] bg-[#fafcfb] p-6 text-sm leading-6 text-[#52716f]">Ainda não há planos publicados. Retorne em breve ou fale com a equipe responsável.</div> : <div className="grid gap-4 lg:grid-cols-2">{plans.data.map(plan => <article key={plan.id} className={`relative flex min-w-0 flex-col rounded-2xl border p-5 ${plan.isHighlighted || plan.id === initialPlanId ? "border-[#0e5a70] bg-[#f0f8f6] shadow-sm" : "border-[#ddd4c6] bg-white"}`}>
+          {!plans.isLoading && catalog.length > 0 && <div className="mb-4"><CourseFilterToolbar plans={catalog} filters={filters} onChange={setFilters} compact /></div>}
+          {plans.isLoading ? <div className="grid min-h-40 place-items-center text-sm text-[#52716f]"><Loader2 className="h-5 w-5 animate-spin" /></div> : !catalog.length ? <div className="rounded-2xl border border-dashed border-[#b8cfc8] bg-[#fafcfb] p-6 text-sm leading-6 text-[#52716f]">Ainda não há planos publicados. Retorne em breve ou fale com a equipe responsável.</div> : !filteredCatalog.length ? <div className="rounded-2xl border border-dashed border-[#b8cfc8] bg-[#fafcfb] p-6 text-sm leading-6 text-[#52716f]">Nenhum curso corresponde aos filtros. Toque em Limpar para ver todos os cursos.</div> : <div className="grid gap-4 lg:grid-cols-2">{filteredCatalog.map(plan => <article key={plan.id} className={`relative flex min-w-0 flex-col rounded-2xl border p-5 ${plan.isHighlighted || plan.id === initialPlanId ? "border-[#0e5a70] bg-[#f0f8f6] shadow-sm" : "border-[#ddd4c6] bg-white"}`}>
             {(plan.isHighlighted || plan.id === initialPlanId) && <span className="absolute -top-3 left-5 rounded-full bg-[#0e5a70] px-3 py-1 text-[10px] font-bold tracking-wider text-white">{plan.id === initialPlanId ? "PACOTE ESCOLHIDO" : "RECOMENDADO"}</span>}
             <PlanCoverCarousel images={plan.coverImageUrls} planTitle={plan.title} />
             <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-bold tracking-[0.16em] text-[#4b7776]">{plan.planType === "subscription" ? "ASSINATURA" : "CURSO AVULSO"}</p><h4 className="font-display mt-1 break-words text-xl font-bold text-[#173d4a]">{plan.title}</h4></div><span className="shrink-0 text-right font-display text-xl font-extrabold text-[#0e5a70]">{formatCurrency(plan.priceCents)}</span></div>
