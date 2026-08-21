@@ -35,9 +35,12 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   app.disable("x-powered-by");
-  app.use((_req, res, next) => {
+  app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
+    // A prévia ROOT é carregada pela mesma origem; as demais páginas seguem sem poder ser incorporadas.
+    const isSameOriginStorefrontPreview = req.path === "/" && req.query.preview === "storefront";
+    res.setHeader("X-Frame-Options", isSameOriginStorefrontPreview ? "SAMEORIGIN" : "DENY");
+    res.setHeader("Content-Security-Policy", isSameOriginStorefrontPreview ? "frame-ancestors 'self'" : "frame-ancestors 'none'");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), geolocation=(), microphone=()");
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");

@@ -280,3 +280,5 @@
 - [x] Cobrir ciclos semanais e configurações ampliadas com testes, validação visual, agendamento e publicação.
 - [x] Exibir uma prévia completa, responsiva e em tempo real da página inicial nas Configurações gerais ROOT antes do salvamento.
 - [x] Tornar claramente visível e editável o campo Tipo do curso, com as opções Concurso e Tutorial, na criação e edição ROOT.
+- [x] Corrigir o envio, a confirmação e a exibição da imagem de capa na criação e edição de cursos ROOT.
+- [x] Corrigir a prévia da página inicial nas Configurações ROOT para que carregue de forma estável antes do salvamento.
