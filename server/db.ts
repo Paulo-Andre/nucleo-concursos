@@ -1525,6 +1525,8 @@ export type ManagedCourseInput = {
   title: string;
   track: string;
   courseType?: "concurso" | "tutorial";
+  courseArea?: string;
+  stateCode?: string;
   description?: string | null;
   coverImageUrl?: string | null;
 };
@@ -1552,6 +1554,8 @@ export async function createManagedCourse(actorUserId: number, input: ManagedCou
     title: input.title,
     track: input.track,
     courseType: input.courseType ?? "concurso",
+    courseArea: input.courseArea?.trim() || "Policial/Militar",
+    stateCode: input.stateCode?.trim() || "Nacional",
     description: input.description?.trim() || null,
     coverImageUrl: input.coverImageUrl?.trim() || null,
     isActive: true,
@@ -1572,6 +1576,8 @@ export async function updateManagedCourse(actorUserId: number, courseId: string,
     title: input.title,
     track: input.track,
     courseType: input.courseType ?? "concurso",
+    courseArea: input.courseArea?.trim() || "Policial/Militar",
+    stateCode: input.stateCode?.trim() || "Nacional",
     description: input.description?.trim() || null,
     coverImageUrl: input.coverImageUrl?.trim() || null,
   }).where(eq(courses.id, courseId));

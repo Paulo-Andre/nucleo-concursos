@@ -93,7 +93,7 @@ async function serializePlan(plan: typeof commercePlans.$inferSelect) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const storedCourses = courseIds.length
-    ? await db.select({ id: courses.id, title: courses.title, track: courses.track, coverImageUrl: courses.coverImageUrl }).from(courses).where(inArray(courses.id, courseIds))
+    ? await db.select({ id: courses.id, title: courses.title, track: courses.track, courseType: courses.courseType, courseArea: courses.courseArea, stateCode: courses.stateCode, description: courses.description, coverImageUrl: courses.coverImageUrl }).from(courses).where(inArray(courses.id, courseIds))
     : [];
   const coursesById = new Map(storedCourses.map(course => [course.id, course]));
   return { ...plan, coverImageUrls: parsePlanCoverImageUrls(plan.coverImageUrlsJson), courseIds, courses: courseIds.map(courseId => coursesById.get(courseId)).filter((course): course is NonNullable<typeof course> => Boolean(course)) };

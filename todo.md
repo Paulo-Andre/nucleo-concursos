@@ -285,3 +285,7 @@
 - [x] Aceitar com segurança a URL interna retornada pelo envio de capa ao criar ou editar cursos ROOT.
 - [x] Separar Catálogo de cursos e Usuários registrados em páginas distintas, com navegação ROOT clara e responsiva.
 - [x] Mostrar no seletor do aluno somente cursos com matrícula ativa e incluir corretamente os cursos Tutorial liberados.
+- [x] Criar uma página comercial de cursos acessível pela vitrine e pela área do aluno para encontrar e comprar novos acessos.
+- [x] Adicionar filtros de cursos por nome, estado, área/tipo e classificação Tutorial.
+- [x] Permitir que o ROOT classifique os cursos por área comercial e estado para alimentar os filtros.
+- [x] Validar a página de descoberta, a compra e a experiência móvel antes da publicação.

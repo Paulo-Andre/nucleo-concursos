@@ -136,6 +136,8 @@ const courseSchema = z.object({
   title: z.string().trim().min(4, "Informe o título do curso.").max(180),
   track: z.string().trim().min(2, "Informe a trilha do curso.").max(32),
   courseType: z.enum(["concurso", "tutorial"]).default("concurso"),
+  courseArea: z.string().trim().min(2, "Informe a área do curso.").max(80).default("Policial/Militar"),
+  stateCode: z.string().trim().min(2, "Informe o estado ou a abrangência.").max(32).default("Nacional"),
   description: z.string().trim().max(1200).optional(),
   coverImageUrl: z.string().trim().max(1024).refine(isAllowedCourseCoverUrl, "Informe uma URL HTTPS ou uma capa enviada pela plataforma.").optional().or(z.literal("")),
 });

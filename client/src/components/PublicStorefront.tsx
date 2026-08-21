@@ -10,7 +10,7 @@ type PublicStorefrontProps = { onLogin: () => void; onChoosePlan: (planId: strin
 type StorefrontPreviewSettings = Record<string, string | null | undefined>;
 type PaletteStyle = CSSProperties & Record<"--button-hover", string>;
 const alpha = (color: string, opacity: number) => `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`;
-function scrollToPackages() { document.getElementById("pacotes")?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+function scrollToPackages() { window.location.assign("/cursos"); }
 
 export function PublicStorefront({ onLogin, onChoosePlan, previewMode = false }: PublicStorefrontProps) {
   const plans = trpc.commerce.plans.useQuery(undefined, { refetchOnWindowFocus: false });

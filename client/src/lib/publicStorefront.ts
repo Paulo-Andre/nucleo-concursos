@@ -7,7 +7,7 @@ export type PublicStorefrontPlan = {
   accessDurationDays: number;
   planType: "single_course" | "subscription" | string;
   courseIds: string[];
-  courses?: { id: string; title: string; track: string; coverImageUrl: string | null }[];
+  courses?: { id: string; title: string; track: string; courseType?: "concurso" | "tutorial" | string; courseArea?: string; stateCode?: string; description?: string | null; coverImageUrl: string | null }[];
   isHighlighted?: boolean;
 };
 

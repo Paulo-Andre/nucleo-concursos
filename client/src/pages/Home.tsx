@@ -23,6 +23,7 @@ import { trpc } from "@/lib/trpc";
 import { AccountPanel } from "@/components/AccountPanel";
 import { CommercePanel } from "@/components/CommercePanel";
 import { PublicStorefront } from "@/components/PublicStorefront";
+import { CourseMarketplace } from "@/components/CourseMarketplace";
 import { RootManagementPanel, RootManagementSection } from "@/components/RootManagementPanel";
 import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 import { CourseAccessRequired } from "@/components/CourseAccessRequired";
@@ -80,8 +81,9 @@ export default function Home() {
   // The useAuth hook reads the local session created by the cadastro/login screen.
   const { user, loading, isAuthenticated, logout } = useAuth();
   const storefrontPreview = isStorefrontPreviewMode(window.location.search);
+  const courseMarketplacePath = window.location.pathname === "/cursos";
   const [accessMode, setAccessMode] = useState<"login" | "register" | "reset" | null>(() => new URLSearchParams(window.location.search).get("reset") ? "reset" : null);
-  const [pendingPlanId, setPendingPlanId] = useState<string | null>(() => window.sessionStorage.getItem("nucleo-purchase-plan"));
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(() => window.sessionStorage.getItem("nucleo-purchase-plan") ?? new URLSearchParams(window.location.search).get("purchase"));
 
   const startPlanAcquisition = (planId: string) => {
     window.sessionStorage.setItem("nucleo-purchase-plan", planId);
@@ -91,6 +93,10 @@ export default function Home() {
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Carregando credencial...</div>;
   if (storefrontPreview) return <PublicStorefront previewMode onLogin={() => undefined} onChoosePlan={() => undefined} />;
+  if (courseMarketplacePath) {
+    const openPlan = (planId: string) => { window.sessionStorage.setItem("nucleo-purchase-plan", planId); if (isAuthenticated) window.location.assign(`/?purchase=${encodeURIComponent(planId)}`); else { setPendingPlanId(planId); setAccessMode("register"); } };
+    return <CourseMarketplace onChoosePlan={openPlan} onBack={() => { window.location.assign(isAuthenticated ? "/" : "/"); }} />;
+  }
   if (!isAuthenticated) {
     if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onBackToStorefront={() => { window.history.replaceState({}, "", window.location.pathname); setAccessMode(null); }} onAuthenticated={(hadActiveSession) => { if (hadActiveSession) window.sessionStorage.setItem("nucleo-session-replaced-notice", "1"); window.location.reload(); }} />;
     return <PublicStorefront onLogin={() => setAccessMode("login")} onChoosePlan={startPlanAcquisition} />;
@@ -358,7 +364,7 @@ function StudyWorkspace({ user, logout, initialCommercePlanId, onCommercePlanCon
         </div>
           <div className="mb-5 border-y border-white/10 px-3 py-3"><p className="text-[9px] font-bold tracking-[0.2em] text-[#8faeb5]">REGISTRO DE PREPARO</p><p className="font-display mt-1 text-sm font-bold text-white">{activeCourseRole}</p></div>
         <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7e99a1]">Áreas do arquivo</p>
-        <nav className="space-y-1">{visibleNavigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}<button onClick={() => { setCommerceOpen(true); setMenuOpen(false); }} className="nav-item"><CreditCard className="h-4 w-4" />Planos e acessos</button>{user.role === "admin" && <button onClick={() => { setRootManagementSection("business"); setRootManagementOpen(true); setMenuOpen(false); }} className="nav-item"><ShieldCheck className="h-4 w-4" />Gestão ROOT</button>}</nav>
+        <nav className="space-y-1">{visibleNavigation.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setView(label); setMenuOpen(false); }} className={`nav-item ${view === label ? "nav-item-active" : ""}`}><Icon className="h-4 w-4" />{label}</button>)}<a href="/cursos" className="nav-item"><BookOpen className="h-4 w-4" />Cursos para comprar</a><button onClick={() => { setCommerceOpen(true); setMenuOpen(false); }} className="nav-item"><CreditCard className="h-4 w-4" />Planos e acessos</button>{user.role === "admin" && <button onClick={() => { setRootManagementSection("business"); setRootManagementOpen(true); setMenuOpen(false); }} className="nav-item"><ShieldCheck className="h-4 w-4" />Gestão ROOT</button>}</nav>
         <div className="mt-auto border-t border-white/10 pt-5">
           <div className="flex gap-4 px-2"><div className="relative h-32 w-3 border border-white/15 bg-black/20"><span className="absolute inset-x-0 top-1/4 h-px bg-white/35" /><span className="absolute inset-x-0 top-1/2 h-px bg-white/35" /><span className="absolute inset-x-0 top-3/4 h-px bg-white/35" /><div className="absolute bottom-0 w-full transition-all duration-300" style={{ height: `${level.progress}%`, backgroundColor: brand.accentColor }} /></div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><span style={{ color: brand.heroMutedTextColor }} className="text-[10px] font-bold uppercase tracking-[0.17em]">Credencial</span><span style={{ borderColor: brand.accentColor, color: brand.accentColor }} className="border px-1.5 py-0.5 text-[9px] font-bold tracking-wider">REG-01</span></div><p style={{ color: brand.heroTextColor }} className="font-display mt-2 text-sm font-bold">Nível {level.index}</p><p style={{ color: brand.heroMutedTextColor }} className="text-xs">{level.label}</p><p style={{ color: brand.heroMutedTextColor }} className="mt-2 text-[10px]">{level.current} / {level.next} XP</p><p style={{ color: brand.heroMutedTextColor }} className="mt-1 text-[9px] font-bold tracking-[0.14em]">MARCO DE TREINAMENTO</p></div><div style={{ borderColor: brand.accentColor }} className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 text-center"><span style={{ color: brand.heroTextColor }} className="font-display text-sm font-extrabold">{state.xp}</span><span style={{ color: brand.accentColor }} className="-mt-1 text-[7px] font-bold tracking-wider">XP</span></div></div>
           <GlobalContactLinks variant="sidebar" />
