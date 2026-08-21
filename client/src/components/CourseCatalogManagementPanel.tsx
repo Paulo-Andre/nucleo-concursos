@@ -14,6 +14,11 @@ type ManagedCourse = {
   stateCode: string;
   description: string | null;
   coverImageUrl: string | null;
+  panelLabel: string | null;
+  panelBadge: string | null;
+  panelTitle: string | null;
+  panelDescription: string | null;
+  panelCtaText: string | null;
   isActive: boolean;
 };
 
@@ -26,6 +31,11 @@ type CourseForm = {
   stateCode: string;
   description: string;
   coverImageUrl: string;
+  panelLabel: string;
+  panelBadge: string;
+  panelTitle: string;
+  panelDescription: string;
+  panelCtaText: string;
 };
 
 const blankCourse: CourseForm = {
@@ -37,6 +47,11 @@ const blankCourse: CourseForm = {
   stateCode: "Nacional",
   description: "",
   coverImageUrl: "",
+  panelLabel: "",
+  panelBadge: "",
+  panelTitle: "",
+  panelDescription: "",
+  panelCtaText: "",
 };
 
 export function CourseCatalogManagementPanel() {
@@ -78,6 +93,11 @@ export function CourseCatalogManagementPanel() {
       stateCode: course.stateCode || "Nacional",
       description: course.description ?? "",
       coverImageUrl: course.coverImageUrl ?? "",
+      panelLabel: course.panelLabel ?? "",
+      panelBadge: course.panelBadge ?? "",
+      panelTitle: course.panelTitle ?? "",
+      panelDescription: course.panelDescription ?? "",
+      panelCtaText: course.panelCtaText ?? "",
     });
   };
 
@@ -98,6 +118,11 @@ export function CourseCatalogManagementPanel() {
         stateCode: form.stateCode,
         description: form.description.trim(),
         coverImageUrl: form.coverImageUrl,
+        panelLabel: form.panelLabel.trim(),
+        panelBadge: form.panelBadge.trim(),
+        panelTitle: form.panelTitle.trim(),
+        panelDescription: form.panelDescription.trim(),
+        panelCtaText: form.panelCtaText.trim(),
       };
       if (editingCourseId) {
         await updateCourse.mutateAsync({ courseId: editingCourseId, data: payload });
@@ -195,6 +220,7 @@ export function CourseCatalogManagementPanel() {
         <section aria-labelledby="classification-title" className="mt-4 rounded-xl border border-[#c3d9d2] bg-[#f9fdfb] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><h4 id="classification-title" className="text-xs font-bold text-[#173d4a]">Classificação para os filtros de busca</h4><p className="mt-1 text-[11px] leading-4 text-[#567471]">Área de atuação e Estado/abrangência aparecem como opções nos filtros da vitrine.</p></div><span className="rounded-full border border-[#a6cec4] bg-white px-2 py-1 text-[9px] font-bold tracking-wider text-[#176a5a]">VITRINE</span></div><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="block text-[11px] font-bold text-[#315a5d]">Área de atuação<select value={form.courseArea} onChange={event => setForm(value => ({ ...value, courseArea: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-[#cfc7ba] bg-white px-3 text-xs font-medium text-[#173d4a] outline-none focus:ring-2 focus:ring-[#82cfbf]">{classifications.areas.map(area => <option key={area} value={area}>{area}</option>)}</select></label><label className="block text-[11px] font-bold text-[#315a5d]">Estado ou abrangência<select value={form.stateCode} onChange={event => setForm(value => ({ ...value, stateCode: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-[#cfc7ba] bg-white px-3 text-xs font-medium text-[#173d4a] outline-none focus:ring-2 focus:ring-[#82cfbf]">{classifications.states.map(state => <option key={state} value={state}>{state}</option>)}</select></label></div></section>
 
         <label className="mt-4 block text-[11px] font-bold text-[#315a5d]">Descrição pedagógica<Input value={form.description} onChange={event => setForm(value => ({ ...value, description: event.target.value }))} placeholder="Descrição que aparecerá para orientar o aluno" className="mt-1 h-10 bg-white text-xs" /></label>
+        <section aria-labelledby="panel-presentation-title" className="mt-4 rounded-xl border border-[#c3d9d2] bg-[#f9fdfb] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><h4 id="panel-presentation-title" className="text-xs font-bold text-[#173d4a]">Apresentação no Painel do aluno</h4><p className="mt-1 max-w-2xl text-[11px] leading-4 text-[#567471]">Personalize o cartão principal quando este curso estiver selecionado. Campos vazios mantêm o texto padrão da plataforma.</p></div><span className="rounded-full border border-[#a6cec4] bg-white px-2 py-1 text-[9px] font-bold tracking-wider text-[#176a5a]">PAINEL</span></div><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="block text-[11px] font-bold text-[#315a5d]">Texto superior<Input value={form.panelLabel} onChange={event => setForm(value => ({ ...value, panelLabel: event.target.value }))} maxLength={80} placeholder="Ex.: OPERAÇÃO DE HOJE" className="mt-1 h-10 bg-white text-xs" /></label><label className="block text-[11px] font-bold text-[#315a5d]">Subtítulo / selo<Input value={form.panelBadge} onChange={event => setForm(value => ({ ...value, panelBadge: event.target.value }))} maxLength={80} placeholder="Ex.: DOSSIÊ / ABERTO" className="mt-1 h-10 bg-white text-xs" /></label><label className="block text-[11px] font-bold text-[#315a5d] sm:col-span-2">Título principal<Input value={form.panelTitle} onChange={event => setForm(value => ({ ...value, panelTitle: event.target.value }))} maxLength={240} placeholder="Ex.: Preparação é evidência acumulada." className="mt-1 h-10 bg-white text-xs" /></label><label className="block text-[11px] font-bold text-[#315a5d] sm:col-span-2">Descrição do cartão<textarea value={form.panelDescription} onChange={event => setForm(value => ({ ...value, panelDescription: event.target.value }))} maxLength={1200} placeholder="Explique como o aluno deve avançar neste curso." className="mt-1 min-h-24 w-full rounded-lg border border-[#cfc7ba] bg-white p-3 text-xs font-medium text-[#173d4a] outline-none focus:ring-2 focus:ring-[#82cfbf]" /></label><label className="block text-[11px] font-bold text-[#315a5d]">Texto do botão<Input value={form.panelCtaText} onChange={event => setForm(value => ({ ...value, panelCtaText: event.target.value }))} maxLength={80} placeholder="Ex.: Abrir conteúdo" className="mt-1 h-10 bg-white text-xs" /></label></div></section>
         <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]"><label className="flex min-w-0 items-center gap-2 rounded-lg border border-dashed border-[#9bc8bc] bg-white px-3 py-2 text-xs font-semibold text-[#315a5d]"><ImagePlus className="h-4 w-4 shrink-0" /><input type="file" accept="image/jpeg,image/png,image/webp" className="min-w-0 text-xs" onChange={event => void sendCover(event.target.files?.[0])} /><span className="shrink-0">{uploading ? "Enviando..." : "Capa JPG, PNG ou WEBP"}</span></label>{form.coverImageUrl && <button type="button" onClick={() => setForm(value => ({ ...value, coverImageUrl: "" }))} className="rounded-lg border border-[#c8dcd6] bg-white px-3 py-2 text-xs font-bold text-[#315a5d]">Remover capa</button>}</div>
         <p className="mt-2 text-[10px] leading-4 text-[#567471]">Se a sessão administrativa tiver expirado, toque em <strong>Sair</strong>, entre novamente com o usuário <strong>paulo</strong> e escolha a imagem outra vez.</p>
         {form.coverImageUrl && <img src={form.coverImageUrl} alt="Prévia da capa do curso" className="mt-3 h-32 w-full rounded-xl border border-[#c6ddd6] object-cover" />}

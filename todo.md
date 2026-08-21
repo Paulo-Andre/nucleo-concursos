@@ -307,3 +307,8 @@
 - [x] Permitir que o ROOT edite livremente o título e a mensagem de cada alerta.
 - [x] Exibir os alertas como janela flutuante fechável, sem deslocar a estrutura do Painel do aluno.
 - [x] Validar o envio para todos os alunos ou somente para matrículas ativas de um curso, incluindo título e janela flutuante.
+- [x] Permitir que o ROOT personalize o rótulo de categoria exibido acima do título do alerta, como “Melhoria”.
+- [x] Validar a persistência, a compatibilidade dos alertas existentes e a publicação do rótulo personalizado.
+- [x] Permitir que o ROOT configure, por curso, os textos do cartão principal do Painel do aluno.
+- [x] Exibir automaticamente no Painel a apresentação configurada para o curso selecionado pelo aluno.
+- [x] Validar a edição ROOT, os cursos existentes, a responsividade e a publicação da apresentação por curso.

@@ -1534,6 +1534,11 @@ export type ManagedCourseInput = {
   stateCode?: string;
   description?: string | null;
   coverImageUrl?: string | null;
+  panelLabel?: string | null;
+  panelBadge?: string | null;
+  panelTitle?: string | null;
+  panelDescription?: string | null;
+  panelCtaText?: string | null;
 };
 
 export async function listManagedCourses() {
@@ -1563,6 +1568,11 @@ export async function createManagedCourse(actorUserId: number, input: ManagedCou
     stateCode: input.stateCode?.trim() || "Nacional",
     description: input.description?.trim() || null,
     coverImageUrl: input.coverImageUrl?.trim() || null,
+    panelLabel: input.panelLabel?.trim() || null,
+    panelBadge: input.panelBadge?.trim() || null,
+    panelTitle: input.panelTitle?.trim() || null,
+    panelDescription: input.panelDescription?.trim() || null,
+    panelCtaText: input.panelCtaText?.trim() || null,
     isActive: true,
     createdByUserId: actorUserId,
   });
@@ -1585,6 +1595,11 @@ export async function updateManagedCourse(actorUserId: number, courseId: string,
     stateCode: input.stateCode?.trim() || "Nacional",
     description: input.description?.trim() || null,
     coverImageUrl: input.coverImageUrl?.trim() || null,
+    panelLabel: input.panelLabel?.trim() || null,
+    panelBadge: input.panelBadge?.trim() || null,
+    panelTitle: input.panelTitle?.trim() || null,
+    panelDescription: input.panelDescription?.trim() || null,
+    panelCtaText: input.panelCtaText?.trim() || null,
   }).where(eq(courses.id, courseId));
   const updated = await getManagedCourseById(courseId);
   if (!updated) throw new Error("Curso não foi atualizado.");
@@ -1884,10 +1899,11 @@ export async function dismissPlatformAlertForUser(userId: number, alertId: numbe
   return { alertId };
 }
 
-export async function createPlatformAlert(actorUserId: number, input: { level: PlatformAlertLevel; title: string; message: string; audience: PlatformAlertAudience; courseId?: string | null }) {
+export async function createPlatformAlert(actorUserId: number, input: { level: PlatformAlertLevel; title: string; categoryLabel?: string; message: string; audience: PlatformAlertAudience; courseId?: string | null }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const courseId = input.audience === "course" ? input.courseId?.trim() || null : null;
+  const categoryLabel = input.categoryLabel?.trim() || null;
   if (input.audience === "course" && !courseId) throw new Error("Selecione o curso que receberá este alerta.");
   let courseTitle: string | null = null;
   if (courseId) {
@@ -1898,6 +1914,7 @@ export async function createPlatformAlert(actorUserId: number, input: { level: P
   const result = await db.insert(platformAlerts).values({
     level: input.level,
     title: input.title.trim(),
+    categoryLabel,
     message: input.message.trim(),
     audience: input.audience,
     courseId,
@@ -1951,6 +1968,11 @@ export async function listStudyCourseCatalog(userId: number, includeInactive = f
     courseType: courses.courseType,
     description: courses.description,
     coverImageUrl: courses.coverImageUrl,
+    panelLabel: courses.panelLabel,
+    panelBadge: courses.panelBadge,
+    panelTitle: courses.panelTitle,
+    panelDescription: courses.panelDescription,
+    panelCtaText: courses.panelCtaText,
     isActive: courses.isActive,
   };
   if (includeInactive) return db.select(fields).from(courses);

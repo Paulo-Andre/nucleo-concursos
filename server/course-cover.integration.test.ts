@@ -28,22 +28,34 @@ describe("capas de curso administradas pelo ROOT", () => {
         track: "qa",
         description: "Valida persistência de imagem de capa.",
         coverImageUrl: "https://cdn.example.invalid/cover-inicial.webp",
+        panelLabel: "Operação de teste",
+        panelBadge: "Dossiê QA",
+        panelTitle: "Preparação personalizada de QA",
+        panelDescription: "Descrição inicial para validar o cartão principal.",
+        panelCtaText: "Abrir trilha QA",
       });
       expect(created.coverImageUrl).toBe("https://cdn.example.invalid/cover-inicial.webp");
+      expect(created.panelTitle).toBe("Preparação personalizada de QA");
 
       const updated = await updateManagedCourse(actor.id, courseId, {
         title: "Curso com capa atualizada de QA",
         track: "qa",
         description: "Valida alteração de imagem de capa.",
         coverImageUrl: "https://cdn.example.invalid/cover-atualizada.webp",
+        panelLabel: "Operação atualizada",
+        panelBadge: "Dossiê atualizado",
+        panelTitle: "Cartão atualizado de QA",
+        panelDescription: "Descrição atualizada para o Painel do aluno.",
+        panelCtaText: "Continuar QA",
       });
       expect(updated.id).toBe(courseId);
       expect(updated.coverImageUrl).toBe("https://cdn.example.invalid/cover-atualizada.webp");
+      expect(updated.panelCtaText).toBe("Continuar QA");
 
       await grantCourseEnrollment(actor.id, learner.id, courseId, new Date(Date.now() - 60_000), new Date(Date.now() + 60_000));
       const availableToLearner = await listStudyCourseCatalog(learner.id);
       expect(availableToLearner).toEqual(expect.arrayContaining([
-        expect.objectContaining({ id: courseId, title: "Curso com capa atualizada de QA", coverImageUrl: "https://cdn.example.invalid/cover-atualizada.webp" }),
+        expect.objectContaining({ id: courseId, title: "Curso com capa atualizada de QA", coverImageUrl: "https://cdn.example.invalid/cover-atualizada.webp", panelLabel: "Operação atualizada", panelBadge: "Dossiê atualizado", panelTitle: "Cartão atualizado de QA", panelDescription: "Descrição atualizada para o Painel do aluno.", panelCtaText: "Continuar QA" }),
       ]));
     } finally {
       await deleteManagedCourse(actor.id, courseId, courseId).catch(() => undefined);

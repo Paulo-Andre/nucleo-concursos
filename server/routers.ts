@@ -145,6 +145,11 @@ const courseSchema = z.object({
   stateCode: z.string().trim().min(2, "Informe o estado ou a abrangência.").max(32).default("Nacional"),
   description: z.string().trim().max(1200).optional(),
   coverImageUrl: z.string().trim().max(1024).refine(isAllowedCourseCoverUrl, "Informe uma URL HTTPS ou uma capa enviada pela plataforma.").optional().or(z.literal("")),
+  panelLabel: z.string().trim().max(80, "Use no máximo 80 caracteres.").optional().or(z.literal("")),
+  panelBadge: z.string().trim().max(80, "Use no máximo 80 caracteres.").optional().or(z.literal("")),
+  panelTitle: z.string().trim().max(240, "Use no máximo 240 caracteres.").optional().or(z.literal("")),
+  panelDescription: z.string().trim().max(1200, "Use no máximo 1.200 caracteres.").optional().or(z.literal("")),
+  panelCtaText: z.string().trim().max(80, "Use no máximo 80 caracteres.").optional().or(z.literal("")),
 });
 const courseUpdateSchema = courseSchema.omit({ id: true });
 const accountDeletionConfirmationSchema = z.string().trim().min(3, "Digite o nome ou usuário atual para confirmar.").max(160);
@@ -183,6 +188,7 @@ const platformAlertAudienceSchema = z.enum(["all", "course"]);
 const platformAlertSchema = z.object({
   level: platformAlertLevelSchema,
   title: z.string().trim().min(2, "Informe um título com ao menos 2 caracteres.").max(180, "Use no máximo 180 caracteres."),
+  categoryLabel: z.string().trim().max(80, "Use no máximo 80 caracteres.").optional().or(z.literal("")),
   message: z.string().trim().min(4, "Escreva uma mensagem com ao menos 4 caracteres.").max(1600, "Use no máximo 1.600 caracteres."),
   audience: platformAlertAudienceSchema,
   courseId: courseIdSchema.nullable().optional(),
