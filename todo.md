@@ -329,3 +329,5 @@
 - [x] Permitir inserir palavras ou frases destacadas no corpo de conteúdos pelo editor ROOT.
 - [x] Permitir inserir fórmulas matemáticas em bloco destacado no corpo de conteúdos pelo editor ROOT.
 - [x] Validar a leitura de destaques e fórmulas em computador e celular, com testes automatizados.
+- [ ] Registrar todas as alterações atuais em um commit Git seguro, sem credenciais nem artefatos locais.
+- [ ] Enviar o commit completo para o repositório remoto e confirmar a branch publicada.
