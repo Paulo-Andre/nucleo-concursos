@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck, UserPlus } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -67,6 +68,7 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
         <h1 className="font-display mt-4 break-words text-[clamp(2rem,9vw,2.5rem)] font-extrabold leading-[1.08] sm:text-5xl">Seu preparo fica sob sua própria guarda.</h1>
         <p className="mt-6 max-w-sm text-sm leading-7 text-[#c7d8d8]">Entre para registrar seu progresso, suas respostas, simulados, notas e evolução. Seus dados de estudo não são compartilhados com outros candidatos.</p>
         <div className="mt-9 border-t border-white/15 pt-5 text-xs leading-5 text-[#a8c1c3] sm:mt-12"><LockKeyhole className="mr-2 inline h-4 w-4 text-[#82cfbf]" />Sessão segura e dados vinculados à sua conta.</div>
+        <GlobalContactLinks variant="login" />
       </div>
       <div className="min-w-0 p-5 sm:p-12">
         {onBackToStorefront && <button type="button" onClick={onBackToStorefront} className="mb-6 inline-flex items-center gap-1 text-xs font-bold text-[#0e5a70] hover:underline">← Ver pacotes</button>}

@@ -1,8 +1,9 @@
+import React from "react";
 import { Mail, Send } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 type GlobalContactLinksProps = {
-  variant?: "footer" | "sidebar";
+  variant?: "footer" | "sidebar" | "login";
 };
 
 export function GlobalContactLinks({ variant = "footer" }: GlobalContactLinksProps) {
@@ -26,6 +27,19 @@ export function GlobalContactLinks({ variant = "footer" }: GlobalContactLinksPro
         <div className="mt-2 space-y-1">
           {hasEmail && <a href={`mailto:${contacts?.email}`} className="flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-[#c6d7dc] transition hover:bg-white/10 hover:text-white"><Mail style={{ color: accentColor }} className="h-3.5 w-3.5" /><span className="truncate">{contacts?.email}</span></a>}
           {hasTelegram && <a href={contacts?.telegramUrl ?? "#"} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-[#c6d7dc] transition hover:bg-white/10 hover:text-white"><Send style={{ color: accentColor }} className="h-3.5 w-3.5" /><span>Telegram de {brandName}</span></a>}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "login") {
+    return (
+      <div className="mt-7 border-t border-white/15 pt-5 text-xs">
+        <p style={{ color: accentColor }} className="text-[9px] font-bold tracking-[0.16em]">PRECISA DE AJUDA?</p>
+        <p className="mt-1.5 leading-5 text-[#a8c1c3]">Fale com o suporte da plataforma caso precise de orientação para entrar ou recuperar sua conta.</p>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+          {hasEmail && <a href={`mailto:${contacts?.email}`} className="inline-flex max-w-full items-center gap-1.5 font-semibold text-[#e5f7f1] hover:text-white hover:underline"><Mail style={{ color: accentColor }} className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{contacts?.email}</span></a>}
+          {hasTelegram && <a href={contacts?.telegramUrl ?? "#"} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-[#e5f7f1] hover:text-white hover:underline"><Send style={{ color: accentColor }} className="h-3.5 w-3.5" />Telegram</a>}
         </div>
       </div>
     );

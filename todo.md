@@ -325,3 +325,4 @@
 - [x] Criar uma página “Meus acessos” que mostre somente matrículas, cursos comprados, validade e situação do acesso.
 - [x] Manter catálogo, cupom e compra apenas em “Cursos para comprar” e atualizar o menu do aluno.
 - [ ] Validar os dois caminhos em celular, incluindo estados de acesso pendente, ativo e expirado.
+- [x] Exibir os contatos globais configurados pelo ROOT na tela de login, com apresentação responsiva para celular.
