@@ -41,9 +41,9 @@ describe("ciclo comercial de planos e matrículas", () => {
       expect(plan.coverImageUrls).toEqual(["https://cdn.example.invalid/plano-a.webp", "https://cdn.example.invalid/plano-b.webp", "https://cdn.example.invalid/plano-c.webp"]);
       const updatedPlan = await updateCommercePlan(actor.id, plan.id, {
         code: `${token}-plan`, title: "Plano temporário de QA", description: "Cobertura de integração comercial.", planType: "course_access",
-        coverImageUrls: ["https://cdn.example.invalid/plano-atualizado.webp"], accessDurationDays: 30, priceCents: 19_900, isActive: true, isHighlighted: false, courseIds: [course.id],
+        coverImageUrls: [`/manus-storage/${token}-capa-enviada.webp`, "https://cdn.example.invalid/plano-atualizado.webp"], accessDurationDays: 30, priceCents: 19_900, isActive: true, isHighlighted: false, courseIds: [course.id],
       });
-      expect(updatedPlan.coverImageUrls).toEqual(["https://cdn.example.invalid/plano-atualizado.webp"]);
+      expect(updatedPlan.coverImageUrls).toEqual([`/manus-storage/${token}-capa-enviada.webp`, "https://cdn.example.invalid/plano-atualizado.webp"]);
       const coupon = await createCommerceCoupon(actor.id, {
         code: `${token}-free`, description: "Cupom integral de QA", discountType: "percentage", discountValue: 100, maxRedemptions: 1, isActive: true,
       });

@@ -1,3 +1,4 @@
+import React from "react";
 import { BookOpen, CalendarDays, CircleAlert, Clock3, Loader2, ShieldCheck, ShoppingBag } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 

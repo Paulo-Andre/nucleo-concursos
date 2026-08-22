@@ -317,12 +317,12 @@
 - [x] Ocultar individualmente o aviso quando o aluno elegível abrir o conteúdo, sem afetar os demais alunos.
 - [x] Validar criação, edição, renovação de matrícula, múltiplos cursos, responsividade e publicação dos avisos.
 - [x] Corrigir a validação das capas de planos para aceitar imagens internas enviadas pelo formulário ROOT, além de URLs HTTPS externas.
-- [ ] Cobrir a validação de capa de plano e confirmar o salvamento pelo formulário mobile.
+- [x] Cobrir a validação de capa de plano e confirmar o salvamento pelo formulário mobile.
 - [x] Corrigir o formulário de planos para preservar e enviar os cursos liberados selecionados, inclusive em celular.
 - [x] Converter a validação de curso obrigatório em orientação compreensível para o ROOT e validar a criação do plano.
-- [ ] Diagnosticar e corrigir a exibição do selo “Conteúdo novo” ou “Conteúdo atualizado” para alunos com matrícula elegível.
+- [x] Diagnosticar e corrigir a exibição do selo “Conteúdo novo” ou “Conteúdo atualizado” para alunos com matrícula elegível.
 - [x] Eliminar a tela transitória de matrícula e a montagem duplicada da área do aluno ao iniciar uma sessão autenticada.
 - [x] Criar uma página “Meus acessos” que mostre somente matrículas, cursos comprados, validade e situação do acesso.
 - [x] Manter catálogo, cupom e compra apenas em “Cursos para comprar” e atualizar o menu do aluno.
-- [ ] Validar os dois caminhos em celular, incluindo estados de acesso pendente, ativo e expirado.
+- [x] Validar os dois caminhos em celular, incluindo estados de acesso pendente, ativo e expirado.
 - [x] Exibir os contatos globais configurados pelo ROOT na tela de login, com apresentação responsiva para celular.
