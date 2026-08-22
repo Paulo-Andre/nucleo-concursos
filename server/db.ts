@@ -1087,6 +1087,7 @@ type StudyCourseContent = {
   description: string | null;
   objective: string | null;
   cardText: string | null;
+  body: string | null;
   coverImageUrl: string | null;
   videoUrl: string | null;
   videoLabel: string | null;
@@ -1115,6 +1116,7 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
     description: contents.description,
     objective: contents.objective,
     cardText: contents.cardText,
+    body: contents.body,
     coverImageUrl: contents.coverImageUrl,
     videoUrl: contents.videoUrl,
     videoLabel: contents.videoLabel,

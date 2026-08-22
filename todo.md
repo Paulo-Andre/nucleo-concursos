@@ -326,3 +326,6 @@
 - [x] Manter catálogo, cupom e compra apenas em “Cursos para comprar” e atualizar o menu do aluno.
 - [x] Validar os dois caminhos em celular, incluindo estados de acesso pendente, ativo e expirado.
 - [x] Exibir os contatos globais configurados pelo ROOT na tela de login, com apresentação responsiva para celular.
+- [x] Permitir inserir palavras ou frases destacadas no corpo de conteúdos pelo editor ROOT.
+- [x] Permitir inserir fórmulas matemáticas em bloco destacado no corpo de conteúdos pelo editor ROOT.
+- [x] Validar a leitura de destaques e fórmulas em computador e celular, com testes automatizados.
