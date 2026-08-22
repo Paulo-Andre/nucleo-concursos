@@ -10,7 +10,7 @@ import {
   courseEnrollments,
   courses,
 } from "../drizzle/schema";
-import { approveCommerceOrder, createCommerceCoupon, createCommerceOrder, createCommercePlan, deleteCommerceCoupon, updateCommercePlan } from "./commerce";
+import { approveCommerceOrder, createCommerceCoupon, createCommerceOrder, createCommercePlan, deleteCommerceCoupon, listUserCommerceAccesses, updateCommercePlan } from "./commerce";
 import { createLocalUser, deleteManagedUser, getDb } from "./db";
 import { createMercadoPagoCheckout } from "./mercadoPago";
 
@@ -60,6 +60,16 @@ describe("ciclo comercial de planos e matrículas", () => {
       expect(firstEnrollment?.sourceOrderId).toBe(freeOrder.id);
       expect(firstEnrollment?.expiresAt.getTime()).toBeGreaterThan(Date.now());
       const firstExpiration = firstEnrollment?.expiresAt.getTime() ?? 0;
+
+      const accesses = await listUserCommerceAccesses(learner.id);
+      expect(accesses).toHaveLength(1);
+      expect(accesses[0]).toMatchObject({
+        courseId: course.id,
+        courseTitle: course.title,
+        courseType: course.courseType,
+        computedStatus: "active",
+        sourceOrderId: freeOrder.id,
+      });
 
       const paidOrder = await createCommerceOrder(learner.id, plan.id);
       orderIds.push(paidOrder.id);

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, Clock3, CreditCard, Loader2, ReceiptText, ShieldCheck, ShoppingBag, TicketPercent, X } from "lucide-react";
+import { Check, Clock3, CreditCard, Loader2, ShieldCheck, ShoppingBag, TicketPercent, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { PlanCoverCarousel } from "@/components/PlanCoverCarousel";
 import { CourseFilterToolbar } from "@/components/CourseFilterToolbar";
@@ -10,15 +10,6 @@ function formatCurrency(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
-function formatDate(value: Date | string | null | undefined) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-}
-
-function statusLabel(status: string) {
-  return ({ pending_payment: "Aguardando pagamento", paid: "Acesso liberado", cancelled: "Cancelado", expired: "Pedido expirado", refunded: "Estornado" } as Record<string, string>)[status] ?? status;
-}
-
 export function CommercePanel({ onClose, initialPlanId }: { onClose: () => void; initialPlanId?: string | null }) {
   const [couponCode, setCouponCode] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -26,12 +17,11 @@ export function CommercePanel({ onClose, initialPlanId }: { onClose: () => void;
   const [filters, setFilters] = useState<CourseMarketplaceFilters>({ search: "", state: "", area: "", kind: "all" });
   const utils = trpc.useUtils();
   const plans = trpc.commerce.plans.useQuery(undefined, { refetchOnWindowFocus: false });
-  const orders = trpc.commerce.myOrders.useQuery(undefined, { refetchOnWindowFocus: false });
   const catalog = (plans.data ?? []) as PublicStorefrontPlan[];
   const filteredCatalog = useMemo(() => filterMarketplacePlans(catalog, filters), [catalog, filters]);
   const createOrder = trpc.commerce.createOrder.useMutation({
     onSuccess: async (order) => {
-      await Promise.all([utils.commerce.myOrders.invalidate(), utils.study.access.invalidate()]);
+      await Promise.all([utils.commerce.myAccesses.invalidate(), utils.study.access.invalidate()]);
       setSelectedPlanId(null);
       if (order.status === "paid") {
         setNotice("Seu acesso foi liberado pelo cupom. Atualize a página caso sua trilha ainda não apareça.");
@@ -58,7 +48,7 @@ export function CommercePanel({ onClose, initialPlanId }: { onClose: () => void;
   return <div className="fixed inset-0 z-[70] grid place-items-center bg-[#152d38]/60 p-3 backdrop-blur-sm">
     <section role="dialog" aria-modal="true" aria-labelledby="commerce-title" className="max-h-[94vh] w-full max-w-6xl overflow-y-auto rounded-[1.4rem] border border-[#c5dad5] bg-[#fffdf8] shadow-2xl">
       <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[#e6ded1] bg-[#fffdf8]/95 p-5 backdrop-blur sm:p-7">
-        <div className="min-w-0"><p className="eyebrow">ACESSOS E RENOVAÇÕES</p><h2 id="commerce-title" className="font-display mt-1 text-xl font-bold text-[#173d4a] sm:text-2xl">Planos Núcleo Concursos</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-[#52716f]">Escolha um curso avulso ou uma assinatura. As matrículas são liberadas somente após confirmação registrada do pagamento.</p></div>
+        <div className="min-w-0"><p className="eyebrow">COMPRAR CURSOS</p><h2 id="commerce-title" className="font-display mt-1 text-xl font-bold text-[#173d4a] sm:text-2xl">Planos Núcleo Concursos</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-[#52716f]">Escolha um curso avulso ou uma assinatura. As matrículas são liberadas somente após confirmação registrada do pagamento.</p></div>
         <button onClick={onClose} aria-label="Fechar planos" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#d8d0c1] text-[#315a5d]"><X className="h-5 w-5" /></button>
       </header>
       <div className="space-y-8 p-5 sm:p-7">
@@ -77,9 +67,6 @@ export function CommercePanel({ onClose, initialPlanId }: { onClose: () => void;
             <div className="mt-4 rounded-xl border border-[#dce9e5] bg-[#f9fcfb] p-3"><p className="text-[10px] font-bold tracking-wider text-[#48716f]">INCLUI</p><ul className="mt-2 space-y-2 text-sm text-[#315a5d]">{plan.courseIds.map(courseId => { const course = plan.courses?.find(item => item.id === courseId); return <li key={courseId} className="flex min-w-0 items-center gap-2">{course?.coverImageUrl ? <img src={course.coverImageUrl} alt="" className="h-8 w-11 shrink-0 rounded-md border border-[#cfe0db] object-cover" /> : <Check className="h-4 w-4 shrink-0 text-[#17644e]" />}<span className="break-words">{course?.title ?? courseId}</span></li>; })}</ul></div>
             <div className="mt-4 flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-xs font-semibold text-[#52716f]"><Clock3 className="h-4 w-4" />{plan.accessDurationDays} dia{plan.accessDurationDays === 1 ? "" : "s"} de acesso</span><button onClick={() => requestPlan(plan.id)} disabled={createOrder.isPending || checkout.isPending} className="action-button shrink-0 disabled:opacity-60">{selectedPlanId === plan.id && (createOrder.isPending || checkout.isPending) ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}{plan.priceCents === 0 ? "Liberar" : "Pagar com Mercado Pago"}</button></div>
           </article>)}</div>}
-        </section>
-        <section className="border-t border-[#e6ded1] pt-7"><div className="mb-4 flex items-center gap-2"><ReceiptText className="h-5 w-5 text-[#0e5a70]" /><h3 className="font-display text-lg font-bold text-[#173d4a]">Meus pedidos e acessos</h3></div>
-          {orders.isLoading ? <p className="text-sm text-[#52716f]">Carregando histórico...</p> : !orders.data?.length ? <p className="rounded-xl border border-dashed border-[#d8d0c1] p-4 text-sm text-[#52716f]">Nenhum pedido registrado nesta conta.</p> : <div className="space-y-3">{orders.data.map(order => <article key={order.id} className="rounded-xl border border-[#ddd4c6] bg-white p-4"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><p className="font-bold text-[#173d4a]">{order.item?.titleSnapshot || "Plano comercial"}</p><p className="mt-1 break-words text-xs leading-5 text-[#52716f]">Pedido {order.id} · criado em {formatDate(order.createdAt)}</p></div><span className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide ${order.status === "paid" ? "bg-[#e5f4ed] text-[#17644e]" : order.status === "pending_payment" ? "bg-[#fff3d9] text-[#936422]" : "bg-[#f3eded] text-[#755050]"}`}>{statusLabel(order.status)}</span></div><div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-[#f0eadf] pt-3 text-xs font-semibold text-[#52716f]"><span>Total: {formatCurrency(order.totalCents)}</span><span>{order.status === "paid" ? `Liberado em ${formatDate(order.accessGrantedAt)}` : `Prazo do pedido: ${formatDate(order.expiresAt)}`}</span>{order.item && <span>{order.item.accessDurationDaysSnapshot} dias de vigência</span>}</div></article>)}</div>}
         </section>
         <section className="flex gap-3 rounded-2xl border border-[#d4dfdb] bg-[#f7fbfa] p-4"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#0e5a70]" /><p className="text-xs leading-6 text-[#52716f]">O pagamento é concluído no ambiente seguro do Mercado Pago. Nenhum dado de cartão ou Pix é armazenado pelo Núcleo Concursos; o acesso é liberado somente após a confirmação registrada pelo provedor.</p></section>
       </div>

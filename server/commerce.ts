@@ -12,6 +12,7 @@ import {
 } from "../drizzle/schema";
 import { getDb, writeAdminAudit } from "./db";
 import { sendPurchaseConfirmation } from "./email";
+import { getEnrollmentLifecycleStatus } from "./enrollmentStatus";
 
 export type CommercePlanInput = {
   code: string;
@@ -260,6 +261,36 @@ export async function listUserCommerceOrders(userId: number) {
   if (!db) throw new Error("Banco de dados indisponível");
   const orders = await db.select().from(commerceOrders).where(eq(commerceOrders.userId, userId)).orderBy(desc(commerceOrders.createdAt));
   return Promise.all(orders.map(serializeOrder));
+}
+
+/** Matrículas da conta com dados do curso para a página Meus acessos. */
+export async function listUserCommerceAccesses(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const enrollments = await db
+    .select({
+      id: courseEnrollments.id,
+      courseId: courseEnrollments.courseId,
+      startAt: courseEnrollments.startAt,
+      expiresAt: courseEnrollments.expiresAt,
+      status: courseEnrollments.status,
+      sourceOrderId: courseEnrollments.sourceOrderId,
+      sourcePlanId: courseEnrollments.sourcePlanId,
+      revokedAt: courseEnrollments.revokedAt,
+      createdAt: courseEnrollments.createdAt,
+      courseTitle: courses.title,
+      courseTrack: courses.track,
+      courseType: courses.courseType,
+      courseCoverImageUrl: courses.coverImageUrl,
+    })
+    .from(courseEnrollments)
+    .leftJoin(courses, eq(courseEnrollments.courseId, courses.id))
+    .where(eq(courseEnrollments.userId, userId))
+    .orderBy(desc(courseEnrollments.createdAt));
+  return enrollments.map(enrollment => ({
+    ...enrollment,
+    computedStatus: getEnrollmentLifecycleStatus(enrollment),
+  }));
 }
 
 export async function listManagedCommerceOrders(status?: typeof commerceOrders.$inferSelect["status"]) {

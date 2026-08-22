@@ -104,6 +104,7 @@ import {
   listManagedCommerceOrders,
   listManagedCommercePlans,
   listPublicCommercePlans,
+  listUserCommerceAccesses,
   listUserCommerceOrders,
   updateCommerceCoupon,
   updateCommercePlan,
@@ -434,6 +435,7 @@ export const appRouter = router({
   commerce: router({
     plans: publicProcedure.query(() => listPublicCommercePlans()),
     myOrders: protectedProcedure.query(({ ctx }) => listUserCommerceOrders(ctx.user.id)),
+    myAccesses: protectedProcedure.query(({ ctx }) => listUserCommerceAccesses(ctx.user.id)),
     createOrder: protectedProcedure.input(z.object({ planId: z.string().uuid(), couponCode: commerceCodeSchema.optional() })).mutation(({ input, ctx }) => createCommerceOrder(ctx.user.id, input.planId, input.couponCode)),
     checkout: protectedProcedure.input(z.object({ orderId: z.string().uuid() })).mutation(({ input, ctx }) => {
       const origin = requestOrigin(ctx.req);
