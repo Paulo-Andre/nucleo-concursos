@@ -1,5 +1,5 @@
 import { and, desc, eq, gt, inArray, isNull, like, or, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { databaseOptions } from "./databaseConfig";
 import {
@@ -125,7 +125,7 @@ export type CommerceCouponInput = {
 };
 
 const emptyProfile = { xp: 0, lastStudyDate: null as string | null, studyDatesJson: "[]", usedQuestionIdsJson: "[]", dailyQuickCheckDate: null as string | null, dailyQuickCheckCourseId: null as string | null, dailyQuickCheckQuestionId: null as string | null, dailyQuickCheckDismissed: false };
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: MySql2Database | null = null;
 
 function parseStringArray(raw: string) {
   try {
