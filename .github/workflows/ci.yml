@@ -49,6 +49,8 @@ jobs:
         run: pnpm db:migrate
       - name: Verify migrations can run again
         run: pnpm db:migrate
+      - name: Verify transactional backup restoration
+        run: pnpm exec tsx server/test/restoreBackupSmoke.ts
       - name: Create the initial account and seed content
         run: >-
           pnpm exec tsx -e 'import { ensureRootAccount } from "./server/auth/rootBootstrap";

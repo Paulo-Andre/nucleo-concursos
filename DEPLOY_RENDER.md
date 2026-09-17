@@ -133,3 +133,22 @@ Referências:
 - https://render.com/docs/free
 - https://render.com/docs/node-version
 - https://aiven.io/docs/platform/concepts/service-pricing#free-tier
+
+## Restauração lógica controlada
+
+Antes da primeira inicialização, é possível restaurar o backup JSON v1 exportado
+pela plataforma. Comprima o arquivo com gzip, codifique em base64 e divida em
+partes de até 30000 caracteres. Configure `RESTORE_BACKUP_PARTS`, as partes
+`RESTORE_BACKUP_1` até `RESTORE_BACKUP_N`, e `RESTORE_BACKUP_SHA256` com o SHA-256
+do JSON original. Esses valores são privados: nunca os inclua no repositório.
+
+O comando de início executa migrações, restauração e aplicativo nessa ordem.
+A restauração exige todas as tabelas da aplicação vazias, mantém IDs e datas,
+usa transação e confere contagens. Um registro de conclusão impede repetição
+do mesmo backup ou importação de outro arquivo sobre a base existente.
+Após sucesso, remova todas as variáveis `RESTORE_BACKUP_*`. A senha de `paulo`
+será inicializada a partir de `ROOT_INITIAL_PASSWORD` preservando o ID restaurado;
+as senhas dos demais usuários não fazem parte do backup.
+
+Na Render, use `corepack pnpm` no build em vez de `corepack enable`: o diretório
+de executáveis do sistema é somente leitura. O início usa `node` diretamente.
