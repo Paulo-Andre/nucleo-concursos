@@ -6,13 +6,15 @@ services:
     name: nucleo-concursos
     runtime: node
     plan: free
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm run check && pnpm run test && pnpm run build
-    startCommand: pnpm start
-    healthCheckPath: /
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm run check && pnpm run test:unit && pnpm run build
+    startCommand: pnpm start:render
+    healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_SSL
+        value: "true"
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET

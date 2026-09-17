@@ -1,7 +1,10 @@
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
-import net from "net";
+import { sql } from "drizzle-orm";
+import { getDb } from "../db";
+import { validateRuntimeEnvironment } from "../runtimeConfig";
+import { createHealthHandler } from "../health";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
@@ -11,26 +14,8 @@ import { ensureRootAccount } from "../auth/rootBootstrap";
 import { processMercadoPagoWebhook, resolveMercadoPagoNotificationDataId } from "../mercadoPago";
 import { weeklyResetHandler } from "../weeklyReset";
 
-function isPortAvailable(port: number): Promise<boolean> {
-  return new Promise(resolve => {
-    const server = net.createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
-    });
-    server.on("error", () => resolve(false));
-  });
-}
-
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
-  for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
-  }
-  throw new Error(`No available port found starting from ${startPort}`);
-}
-
 async function startServer() {
+  validateRuntimeEnvironment();
   await ensureRootAccount();
   const app = express();
   const server = createServer(app);
@@ -49,6 +34,11 @@ async function startServer() {
   // O limite cobre os uploads de imagem permitidos (até 4 MB) sem aceitar cargas desnecessariamente grandes.
   app.use(express.json({ limit: "8mb" }));
   app.use(express.urlencoded({ limit: "8mb", extended: true }));
+  app.get("/api/health", createHealthHandler(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+    await db.execute(sql`SELECT 1`);
+  }));
   registerStorageProxy(app);
   app.post("/api/payments/mercado-pago/webhook", async (req, res) => {
     try {
@@ -86,16 +76,18 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+  const port = Number(process.env.PORT || 3000);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT inválida");
+  server.on("error", () => {
+    console.error("[Startup] Não foi possível abrir a porta HTTP.");
+    process.exit(1);
+  });
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`Server listening on port ${port}`);
   });
 }
 
-startServer().catch(console.error);
+startServer().catch(() => {
+  console.error("[Startup] Falha na inicialização. Confira as variáveis, as migrações e a conexão com o banco.");
+  process.exit(1);
+});

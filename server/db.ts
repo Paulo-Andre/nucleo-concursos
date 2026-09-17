@@ -1,5 +1,7 @@
 import { and, desc, eq, gt, inArray, isNull, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
+import { databaseOptions } from "./databaseConfig";
 import {
   adminAuditLogs,
   authSessions,
@@ -160,7 +162,7 @@ function currentStudyDay() {
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _db = drizzle(mysql.createPool(databaseOptions()));
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
