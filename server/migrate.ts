@@ -32,6 +32,7 @@ async function main() {
 }
 
 main().catch(error => {
+  if (process.env.NODE_ENV === "test" && process.env.CI === "true") console.error(error);
   if (error instanceof Error && error.message === "MIGRATION_BASELINE_REQUIRED") {
     console.error("[Migrations] Banco existente sem histórico. Restaure também __drizzle_migrations ou reconcilie o esquema antes de continuar. Consulte DEPLOY_RENDER.md.");
   } else {
