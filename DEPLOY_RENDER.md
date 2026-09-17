@@ -39,8 +39,9 @@ DDL parcialmente aplicado. Restaure a cópia limpa ou reconcilie o ponto de
 falha antes de repetir.
 
 Foi incluído o separador ausente entre DELETE e ALTER na migração 0015.
-Foi removida uma criação duplicada de `weeklyCycleKey` na migração 0022.
-Bancos com essa migração já registrada não devem reaplicá-la. Se uma execução
+Foram removidas criações duplicadas de `weeklyCycleKey` na migração 0022
+e `loginButtonText` na 0023.
+Bancos com essas migrações já registradas não devem reaplicá-las. Se uma execução
 anterior parou no meio de uma delas, é necessário conferir as colunas e o índice
 antes de continuar. Use o journal do Drizzle; não execute todos os `.sql`
 por ordem alfabética, pois há um arquivo legado `0002_persistent_courses.sql`
