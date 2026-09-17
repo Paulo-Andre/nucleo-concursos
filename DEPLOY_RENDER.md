@@ -38,9 +38,10 @@ As migrações MySQL não têm rollback integral automático: um erro pode deixa
 DDL parcialmente aplicado. Restaure a cópia limpa ou reconcilie o ponto de
 falha antes de repetir.
 
+Foi incluído o separador ausente entre DELETE e ALTER na migração 0015.
 Foi removida uma criação duplicada de `weeklyCycleKey` na migração 0022.
 Bancos com essa migração já registrada não devem reaplicá-la. Se uma execução
-anterior parou no meio dela, é necessário conferir as colunas e o índice
+anterior parou no meio de uma delas, é necessário conferir as colunas e o índice
 antes de continuar. Use o journal do Drizzle; não execute todos os `.sql`
 por ordem alfabética, pois há um arquivo legado `0002_persistent_courses.sql`
 fora do journal.
