@@ -432,16 +432,6 @@ export const appRouter = router({
       submittedAnswer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]),
     })).mutation(({ input, ctx }) => submitCompetitionAnswer(ctx.user.id, input)),
   }),
-  catalog: router({
-    courses: publicProcedure.query(async () => {
-      const plans = await listPublicCommercePlans();
-      const uniqueCourses = new Map<string, (typeof plans)[number]["courses"][number]>();
-      for (const plan of plans) {
-        for (const course of plan.courses) uniqueCourses.set(course.id, course);
-      }
-      return Array.from(uniqueCourses.values()).sort((a, b) => a.title.localeCompare(b.title, "pt-BR"));
-    }),
-  }),
   commerce: router({
     plans: publicProcedure.query(() => listPublicCommercePlans()),
     myOrders: protectedProcedure.query(({ ctx }) => listUserCommerceOrders(ctx.user.id)),
