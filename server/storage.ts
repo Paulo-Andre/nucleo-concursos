@@ -27,6 +27,14 @@ function normalizeKey(relKey: string): string {
   return relKey.replace(/^\/+/, "");
 }
 
+export function resolveLocalStoragePath(relKey: string): string {
+  const key = normalizeKey(relKey);
+  const root = path.resolve(ENV.localStorageDir);
+  const filePath = path.resolve(root, key);
+  if (filePath !== root && !filePath.startsWith(root + path.sep)) throw new Error("Invalid storage path");
+  return filePath;
+}
+
 function appendHashSuffix(relKey: string): string {
   const hash = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
   const lastDot = relKey.lastIndexOf(".");
@@ -42,7 +50,7 @@ export async function storagePut(
   const key = appendHashSuffix(normalizeKey(relKey));
 
   if (!hasForgeConfig()) {
-    const filePath = path.join(ENV.localStorageDir, key);
+    const filePath = resolveLocalStoragePath(key);
     await mkdir(path.dirname(filePath), { recursive: true });
     await writeFile(filePath, typeof data === "string" ? Buffer.from(data) : Buffer.from(data));
     return { key, url: `/manus-storage/${key}` };
