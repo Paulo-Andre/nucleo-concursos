@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ArrowRight, BookOpenCheck, Check, ChevronRight, Clock3, CreditCard, GraduationCap, Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Check, ChevronLeft, ChevronRight, Clock3, CreditCard, GraduationCap, Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { formatStorefrontCurrency, storefrontCourseLabel, storefrontPlanCta, storefrontPlanType, type PublicStorefrontPlan } from "@/lib/publicStorefront";
 import { PlanCoverCarousel } from "@/components/PlanCoverCarousel";
@@ -16,7 +16,6 @@ function scrollToPackages() { document.getElementById("pacotes")?.scrollIntoView
 
 export function PublicStorefront({ onLogin, onChoosePlan, previewMode = false }: PublicStorefrontProps) {
   const plans = trpc.commerce.plans.useQuery(undefined, { refetchOnWindowFocus: false });
-  const courses = trpc.catalog.courses.useQuery(undefined, { refetchOnWindowFocus: false });
   const settingsQuery = trpc.platform.settings.useQuery(undefined, { refetchOnWindowFocus: false });
   const [previewSettings, setPreviewSettings] = useState<StorefrontPreviewSettings | null>(null);
   useEffect(() => {
@@ -40,6 +39,19 @@ export function PublicStorefront({ onLogin, onChoosePlan, previewMode = false }:
   const catalog = (plans.data ?? []) as PublicStorefrontPlan[];
   const [filters, setFilters] = useState<CourseMarketplaceFilters>({ search: "", state: "", area: "", kind: "all" });
   const visibleCatalog = useMemo(() => filterMarketplacePlans(catalog, filters), [catalog, filters]);
+  const featuredCourses = useMemo(() => catalog.filter(plan => plan.isHighlighted).flatMap(plan => {
+    if (plan.courses?.length) return plan.courses.map(course => ({ plan, course }));
+    return [{ plan, course: { id: plan.id, title: plan.title, track: storefrontPlanType(plan.planType), description: plan.description ?? null, coverImageUrl: plan.coverImageUrls?.[0] ?? null } }];
+  }), [catalog]);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  useEffect(() => {
+    if (featuredCourses.length <= 1) return;
+    const timer = window.setInterval(() => setFeaturedIndex(index => (index + 1) % featuredCourses.length), 6000);
+    return () => window.clearInterval(timer);
+  }, [featuredCourses.length]);
+  useEffect(() => {
+    if (featuredIndex >= featuredCourses.length) setFeaturedIndex(0);
+  }, [featuredCourses.length, featuredIndex]);
   const routine = [["01", settings.routineStepOneTitle, settings.routineStepOneDescription], ["02", settings.routineStepTwoTitle, settings.routineStepTwoDescription], ["03", settings.routineStepThreeTitle, settings.routineStepThreeDescription]] as const;
   const benefits = [[BookOpenCheck, settings.benefitOneTitle, settings.benefitOneDescription], [GraduationCap, settings.benefitTwoTitle, settings.benefitTwoDescription], [CreditCard, settings.benefitThreeTitle, settings.benefitThreeDescription]] as const;
   return <main className="min-h-screen overflow-x-hidden" style={{ backgroundColor: settings.backgroundColor, color: settings.textColor }}>
@@ -47,23 +59,48 @@ export function PublicStorefront({ onLogin, onChoosePlan, previewMode = false }:
     <section className="border-y" style={{ borderColor: settings.borderColor, backgroundColor: settings.surfaceColor }}><div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:grid-cols-3 sm:px-7 lg:px-10">{benefits.map(([Icon, title, text], index) => <div key={title} className="flex gap-3 sm:border-r sm:pr-5 sm:last:border-0" style={{ borderColor: settings.borderColor }}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: settings.iconBackgroundColor, color: settings.iconColor }}><Icon className="h-4 w-4" /></span><div><h2 className="text-sm font-extrabold">{title}</h2><p className="mt-1 text-xs leading-5" style={{ color: settings.mutedTextColor }}>{text}</p></div></div>)}</div></section>
     <section className="px-4 py-14 sm:px-7 sm:py-20 lg:px-10" style={{ backgroundColor: settings.surfaceColor }}>
       <div className="mx-auto max-w-7xl">
-        <div className="max-w-2xl">
-          <p className="eyebrow" style={{ color: settings.iconColor }}>CURSOS DISPONÍVEIS</p>
-          <h2 className="font-display mt-3 text-[clamp(2rem,6vw,3.5rem)] font-extrabold leading-[1.02] tracking-[-.035em]">Escolha o concurso que você quer preparar.</h2>
-          <p className="mt-4 text-sm leading-6 sm:text-base" style={{ color: settings.mutedTextColor }}>Os cursos ativos cadastrados pela administração aparecem aqui automaticamente.</p>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl">
+            <p className="eyebrow" style={{ color: settings.iconColor }}>CURSOS EM DESTAQUE</p>
+            <h2 className="font-display mt-3 text-[clamp(2rem,6vw,3.5rem)] font-extrabold leading-[1.02] tracking-[-.035em]">Destaques para sua próxima aprovação.</h2>
+            <p className="mt-4 text-sm leading-6 sm:text-base" style={{ color: settings.mutedTextColor }}>Conheça os cursos em destaque. Clique na imagem para ver a oferta e iniciar a compra.</p>
+          </div>
+          {featuredCourses.length > 1 && <div className="flex gap-2">
+            <button type="button" onClick={() => setFeaturedIndex(index => (index - 1 + featuredCourses.length) % featuredCourses.length)} className="grid h-11 w-11 place-items-center rounded-full border transition hover:-translate-y-0.5" style={{ borderColor: settings.borderColor, backgroundColor: settings.cardColor, color: settings.iconColor }} aria-label="Curso anterior"><ChevronLeft className="h-5 w-5" /></button>
+            <button type="button" onClick={() => setFeaturedIndex(index => (index + 1) % featuredCourses.length)} className="grid h-11 w-11 place-items-center rounded-full border transition hover:-translate-y-0.5" style={{ borderColor: settings.borderColor, backgroundColor: settings.cardColor, color: settings.iconColor }} aria-label="Próximo curso"><ChevronRight className="h-5 w-5" /></button>
+          </div>}
         </div>
-        {courses.isLoading ? <div className="mt-8 text-sm font-semibold" style={{ color: settings.mutedTextColor }}>Carregando cursos...</div> : !(courses.data?.length) ? <div className="mt-8 rounded-2xl border border-dashed p-8 text-sm" style={{ borderColor: settings.borderColor, color: settings.mutedTextColor }}>Ainda não há cursos ativos publicados.</div> : <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {courses.data.map(course => <article key={course.id} className="overflow-hidden rounded-2xl border shadow-[0_12px_28px_rgba(22,61,74,.06)]" style={{ borderColor: settings.borderColor, backgroundColor: settings.cardColor }}>
-            <div className="aspect-[16/9] overflow-hidden" style={{ backgroundColor: settings.surfaceAccentColor }}>
-              {course.coverImageUrl ? <img src={course.coverImageUrl} alt={`Capa de ${course.title}`} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-xs font-bold tracking-[.12em]" style={{ color: settings.mutedTextColor }}>SEM CAPA</div>}
-            </div>
-            <div className="p-5">
-              <p className="text-[10px] font-bold tracking-[.15em]" style={{ color: settings.mutedTextColor }}>{[course.track, course.courseType].filter(Boolean).join(" · ").toUpperCase()}</p>
-              <h3 className="font-display mt-2 text-xl font-extrabold leading-tight">{course.title}</h3>
-              <p className="mt-2 text-xs font-semibold" style={{ color: settings.mutedTextColor }}>{[course.courseArea, course.stateCode].filter(Boolean).join(" · ")}</p>
-              {course.description && <p className="mt-4 text-sm leading-6" style={{ color: settings.mutedTextColor }}>{course.description}</p>}
-            </div>
-          </article>)}
+        {plans.isLoading ? <div className="mt-8 text-sm font-semibold" style={{ color: settings.mutedTextColor }}>Carregando destaques...</div> : !featuredCourses.length ? <div className="mt-8 rounded-2xl border border-dashed p-8 text-sm" style={{ borderColor: settings.borderColor, color: settings.mutedTextColor }}>Nenhum curso foi marcado como destaque no catálogo.</div> : <div className="mt-8 overflow-hidden rounded-3xl border shadow-[0_18px_45px_rgba(22,61,74,.08)]" style={{ borderColor: settings.borderColor, backgroundColor: settings.cardColor }}>
+          <div className="flex transition-transform duration-500 ease-out" style={{ transform: `translateX(-${featuredIndex * 100}%)` }}>
+            {featuredCourses.map(({ plan, course }) => {
+              const imageUrl = course.coverImageUrl || plan.coverImageUrls?.[0] || null;
+              return <article key={`${plan.id}-${course.id}`} className="w-full shrink-0">
+                <div className="grid lg:grid-cols-[1.15fr_.85fr]">
+                  <button type="button" onClick={() => onChoosePlan(plan.id)} className="group relative block min-h-64 overflow-hidden text-left sm:min-h-80 lg:min-h-[420px]" style={{ backgroundColor: settings.surfaceAccentColor }} aria-label={`Comprar ${course.title}`}>
+                    {imageUrl ? <img src={imageUrl} alt={`Capa de ${course.title}`} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" /> : <div className="absolute inset-0 grid place-items-center text-sm font-bold tracking-[.14em]" style={{ color: settings.mutedTextColor }}>SEM CAPA</div>}
+                    <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-4 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-5 pb-5 pt-16 text-white sm:px-7 sm:pb-7">
+                      <span className="text-xs font-extrabold tracking-[.12em]">CLIQUE PARA COMPRAR</span>
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/95 text-slate-900"><ArrowRight className="h-4 w-4" /></span>
+                    </span>
+                  </button>
+                  <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
+                    <span className="w-fit rounded-full px-3 py-1 text-[10px] font-extrabold tracking-[.13em]" style={{ backgroundColor: settings.iconBackgroundColor, color: settings.iconColor }}>DESTAQUE</span>
+                    <p className="mt-5 text-[10px] font-bold tracking-[.15em]" style={{ color: settings.mutedTextColor }}>{[course.track, course.courseType].filter(Boolean).join(" · ").toUpperCase()}</p>
+                    <h3 className="font-display mt-2 text-3xl font-extrabold leading-tight sm:text-4xl">{course.title}</h3>
+                    {course.description && <p className="mt-4 text-sm leading-6 sm:text-base" style={{ color: settings.mutedTextColor }}>{course.description}</p>}
+                    <div className="mt-6 flex flex-wrap items-center gap-4">
+                      <span className="font-display text-2xl font-extrabold" style={{ color: settings.iconColor }}>{formatStorefrontCurrency(plan.priceCents)}</span>
+                      <span className="flex items-center gap-2 text-xs font-bold" style={{ color: settings.mutedTextColor }}><Clock3 className="h-4 w-4" />{plan.accessDurationDays} dias de acesso</span>
+                    </div>
+                    <button type="button" onClick={() => onChoosePlan(plan.id)} className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-extrabold text-white transition hover:bg-[var(--button-hover)] sm:w-fit" style={buttonStyle()}>{storefrontPlanCta(plan.priceCents)} <ArrowRight className="h-4 w-4" /></button>
+                  </div>
+                </div>
+              </article>;
+            })}
+          </div>
+          {featuredCourses.length > 1 && <div className="flex justify-center gap-2 border-t px-4 py-4" style={{ borderColor: settings.borderColor }}>
+            {featuredCourses.map(({ plan, course }, index) => <button key={`dot-${plan.id}-${course.id}`} type="button" onClick={() => setFeaturedIndex(index)} className="h-2.5 rounded-full transition-all" style={{ width: featuredIndex === index ? 30 : 10, backgroundColor: featuredIndex === index ? settings.buttonColor : settings.borderColor }} aria-label={`Ir para ${course.title}`} />)}
+          </div>}
         </div>}
       </div>
     </section>
