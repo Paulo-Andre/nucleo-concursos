@@ -41,7 +41,7 @@ export function PublicStorefront({ onLogin, onChoosePlan, previewMode = false }:
   const visibleCatalog = useMemo(() => filterMarketplacePlans(catalog, filters), [catalog, filters]);
   const featuredCourses = useMemo(() => catalog.filter(plan => plan.isHighlighted).flatMap(plan => {
     if (plan.courses?.length) return plan.courses.map(course => ({ plan, course }));
-    return [{ plan, course: { id: plan.id, title: plan.title, track: storefrontPlanType(plan.planType), description: plan.description ?? null, coverImageUrl: plan.coverImageUrls?.[0] ?? null } }];
+    return [{ plan, course: { id: plan.id, title: plan.title, track: storefrontPlanType(plan.planType), courseType: undefined, courseArea: undefined, stateCode: undefined, description: plan.description ?? null, coverImageUrl: plan.coverImageUrls?.[0] ?? null } }];
   }), [catalog]);
   const [featuredIndex, setFeaturedIndex] = useState(0);
   useEffect(() => {
