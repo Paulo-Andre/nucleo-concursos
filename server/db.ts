@@ -1571,26 +1571,6 @@ export type ManagedCourseInput = {
   panelCtaText?: string | null;
 };
 
-export async function listPublicCourses() {
-  const db = await getDb();
-  if (!db) throw new Error("Banco de dados indisponível");
-  return db
-    .select({
-      id: courses.id,
-      title: courses.title,
-      track: courses.track,
-      courseType: courses.courseType,
-      courseArea: courses.courseArea,
-      stateCode: courses.stateCode,
-      description: courses.description,
-      coverImageUrl: courses.coverImageUrl,
-      isActive: courses.isActive,
-    })
-    .from(courses)
-    .where(eq(courses.isActive, true))
-    .orderBy(courses.title);
-}
-
 export async function listManagedCourses() {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
