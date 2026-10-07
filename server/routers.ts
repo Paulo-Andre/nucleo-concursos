@@ -43,6 +43,7 @@ import {
   listAdminAuditLogs,
   listContentChangelog,
   listManagedCourses,
+  listPublicCourses,
   listManagedContents,
   listManagedDisciplines,
   listManagedQuestions,
@@ -431,6 +432,9 @@ export const appRouter = router({
       questionId: entityIdSchema,
       submittedAnswer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]),
     })).mutation(({ input, ctx }) => submitCompetitionAnswer(ctx.user.id, input)),
+  }),
+  catalog: router({
+    courses: publicProcedure.query(() => listPublicCourses()),
   }),
   commerce: router({
     plans: publicProcedure.query(() => listPublicCommercePlans()),
