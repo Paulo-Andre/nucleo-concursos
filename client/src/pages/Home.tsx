@@ -95,6 +95,23 @@ export default function Home() {
     setAccessMode("register");
   };
 
+  const leavePurchaseFlow = () => {
+    window.sessionStorage.removeItem("nucleo-purchase-plan");
+    setPendingPlanId(null);
+    setAccessMode(null);
+    window.history.replaceState({}, "", "/");
+  };
+
+  const goToStorefrontHome = () => {
+    leavePurchaseFlow();
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  };
+
+  const goToStorefrontPackages = () => {
+    leavePurchaseFlow();
+    window.setTimeout(() => document.getElementById("pacotes")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  };
+
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#152d38] text-sm font-bold text-[#e8e4d9]">Carregando credencial...</div>;
   if (storefrontPreview) return <PublicStorefront previewMode onLogin={() => undefined} onChoosePlan={() => undefined} />;
   if (courseMarketplacePath && !isAuthenticated) {
@@ -102,7 +119,7 @@ export default function Home() {
     return <CourseMarketplace onChoosePlan={openPlan} onBack={() => { window.location.assign(isAuthenticated ? "/" : "/"); }} />;
   }
   if (!isAuthenticated) {
-    if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onBackToStorefront={() => { window.history.replaceState({}, "", window.location.pathname); setAccessMode(null); }} onAuthenticated={(hadActiveSession) => { if (hadActiveSession) window.sessionStorage.setItem("nucleo-session-replaced-notice", "1"); window.location.reload(); }} />;
+    if (accessMode) return <AccessGate initialMode={accessMode} selectedPlanPending={Boolean(pendingPlanId)} onGoHome={goToStorefrontHome} onViewPackages={goToStorefrontPackages} onBackToStorefront={goToStorefrontHome} onAuthenticated={(hadActiveSession) => { if (hadActiveSession) window.sessionStorage.setItem("nucleo-session-replaced-notice", "1"); window.location.reload(); }} />;
     return <PublicStorefront onLogin={() => setAccessMode("login")} onChoosePlan={startPlanAcquisition} />;
   }
 
