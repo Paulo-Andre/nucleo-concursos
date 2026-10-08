@@ -3,7 +3,7 @@
  * Estilo Arquivo Operacional: dossiê institucional contemporâneo, com papel mineral,
  * filetes, códigos e progresso apresentado como registro de treinamento — não como dashboard SaaS.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Award, BarChart3, BookOpen, Brain, CalendarClock, Check, ChevronRight, CircleHelp, Clock3, CreditCard, Flame, Gauge,
   GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, RotateCcw, ShieldCheck, Trash2,
@@ -131,9 +131,10 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
   const [state, setState] = useState<StudyState>(emptyState);
   const [view, setView] = useState<View>(initialView);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!menuOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { setMenuOpen(false); menuTriggerRef.current?.focus(); } };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [menuOpen]);
@@ -392,9 +393,9 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
   return (
     <div className="min-h-screen bg-[#f5f1e8] text-[#152d38] lg:flex" style={{ backgroundColor: brand.backgroundColor, color: brand.textColor }}>
       <a href="#area-de-estudos" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-[#0e5a70]">Pular para o conteúdo principal</a>
-      <aside id="study-navigation" aria-label="Navegação principal" style={{ backgroundColor: brand.primaryColor }} className={`fixed inset-y-0 left-0 z-40 flex w-[min(20rem,86vw)] flex-col overflow-y-auto overscroll-contain border-r border-white/10 px-4 py-5 shadow-[18px_0_42px_rgba(5,20,28,0.42)] transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:w-[272px] lg:translate-x-0 lg:px-4 lg:py-6 lg:shadow-none ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside id="study-navigation" aria-label="Navegação principal" style={{ backgroundColor: brand.primaryColor }} className={`fixed inset-y-0 left-0 z-40 flex w-[min(20rem,86vw)] flex-col overflow-y-auto overscroll-contain border-r border-white/10 px-4 py-5 shadow-[18px_0_42px_rgba(5,20,28,0.42)] transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:w-[272px] lg:translate-x-0 lg:px-4 lg:py-6 lg:shadow-none ${menuOpen ? "visible translate-x-0" : "invisible -translate-x-full lg:visible"}`}>
         <div className="mb-10 flex items-center gap-3 px-2">
-          <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/20 text-white lg:hidden" onClick={() => setMenuOpen(false)} aria-label="Fechar menu de navegação"><X className="h-5 w-5" aria-hidden="true" /></button>
+          <button type="button" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/20 text-white lg:hidden" onClick={() => { setMenuOpen(false); menuTriggerRef.current?.focus(); }} aria-label="Fechar menu de navegação"><X className="h-5 w-5" aria-hidden="true" /></button>
           <div style={{ backgroundColor: brand.cardColor, color: brand.iconColor }} className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl" role="img" aria-label={`Logo ${brand.brandName}`}>{brand.logoUrl ? <img src={brand.logoUrl} alt="" className="h-full w-full object-contain" /> : <ShieldCheck className="h-6 w-6" />}</div>
           <div className="min-w-0"><p style={{ color: brand.heroTextColor }} className="font-display truncate text-lg font-extrabold tracking-tight">{brand.brandName}</p><p style={{ color: brand.heroMutedTextColor }} className="truncate text-[9px] font-bold tracking-[0.16em] sm:tracking-[0.22em]">{brand.brandTagline}</p></div>
         </div>
@@ -406,11 +407,11 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
           <GlobalContactLinks variant="sidebar" />
         </div>
       </aside>
-      {menuOpen && <button aria-label="Fechar navegação" className="fixed inset-0 z-30 bg-[#07151b]/72 backdrop-blur-[2px] lg:hidden" onClick={() => setMenuOpen(false)} />}
+      {menuOpen && <button aria-label="Fechar navegação" className="fixed inset-0 z-30 bg-[#07151b]/72 backdrop-blur-[2px] lg:hidden" onClick={() => { setMenuOpen(false); menuTriggerRef.current?.focus(); }} />}
       <main id="area-de-estudos" tabIndex={-1} className="min-h-screen min-w-0 flex-1">
         {sessionReplacementNotice && <div role="alert" className="fixed inset-x-3 top-3 z-50 mx-auto flex max-w-xl items-start justify-between gap-3 border border-[#b88336]/45 bg-[#fff8e8] px-4 py-3 text-sm font-medium text-[#5e3a0b] shadow-lg sm:left-auto sm:right-6 sm:top-6 sm:mx-0"><span><strong>Acesso atualizado.</strong> Havia outra sessão ativa nesta conta; ela foi encerrada para proteger seus dados.</span><button type="button" aria-label="Fechar aviso" onClick={() => setSessionReplacementNotice(false)} className="shrink-0 text-lg leading-none" >×</button></div>}
         <header style={{ backgroundColor: brand.backgroundColor, borderColor: brand.borderColor }} className="sticky top-0 z-20 flex min-w-0 items-center justify-between gap-1 border-b px-3 backdrop-blur-md sm:gap-2 sm:px-7 lg:px-10">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3"><button style={{ borderColor: brand.borderColor, backgroundColor: brand.cardColor, color: brand.textColor }} aria-label="Abrir navegação" aria-controls="study-navigation" aria-expanded={menuOpen} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border shadow-sm lg:hidden" onClick={() => setMenuOpen(true)}><Menu className="h-5 w-5" /></button><div className="min-w-0"><p style={{ color: brand.mutedTextColor }} className="eyebrow truncate">{activeCourse?.courseType === "tutorial" ? "TUTORIAL" : "CONCURSO"} · {activeCourseTitle.toUpperCase()}</p><h1 style={{ color: brand.textColor }} className="font-display truncate text-base font-bold">{view}</h1></div></div>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3"><button style={{ borderColor: brand.borderColor, backgroundColor: brand.cardColor, color: brand.textColor }} ref={menuTriggerRef} aria-label="Abrir navegação" aria-controls="study-navigation" aria-expanded={menuOpen} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border shadow-sm lg:hidden" onClick={() => setMenuOpen(true)}><Menu className="h-5 w-5" /></button><div className="min-w-0"><p style={{ color: brand.mutedTextColor }} className="eyebrow truncate">{activeCourse?.courseType === "tutorial" ? "TUTORIAL" : "CONCURSO"} · {activeCourseTitle.toUpperCase()}</p><h1 style={{ color: brand.textColor }} className="font-display truncate text-base font-bold">{view}</h1></div></div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-3"><div style={{ borderColor: brand.borderColor, backgroundColor: brand.cardColor }} className="hidden items-center gap-2 rounded-xl border px-3 py-2 sm:flex"><Flame className="h-4 w-4 text-[#d2823b]" /><span className="text-xs font-bold">{streak} dia{streak === 1 ? "" : "s"}</span></div><PersonalSimulationSeal identity={personalSimulationSeal} loading={privateState.isLoading} /><button onClick={() => setAccountOpen(true)} aria-label="Abrir configurações da conta" className="hidden min-h-11 text-right sm:block"><p style={{ color: brand.textColor }} className="text-xs font-bold">{user.name}</p><p style={{ color: brand.mutedTextColor }} className="text-[9px] font-bold tracking-wider">{user.role === "admin" ? "ROOT / ADMIN" : "CONTA PRIVADA"}</p></button><button style={{ borderColor: brand.borderColor, backgroundColor: brand.cardColor, color: brand.iconColor }} onClick={() => void logout()} className="min-h-11 shrink-0 rounded-lg border px-2.5 py-2 text-xs font-bold tracking-wide">SAIR</button><button style={{ backgroundColor: brand.buttonColor, color: brand.heroTextColor }} onClick={() => setAccountOpen(true)} className="hidden h-10 w-10 items-center justify-center rounded-xl text-sm font-bold sm:flex">{level.index}</button></div>
         </header>
         <div className="mx-auto max-w-[1540px] p-4 sm:p-7 lg:p-10"><ContestSelector contestId={effectiveContestId} courses={permittedCourses} onChange={setContestId} />{view === "Painel" && user.role !== "admin" && <StudentAlerts />}{simulation ? <SimulationScreen simulation={simulation} onAnswer={submitSimulationAnswer} onExit={() => setSimulation(null)} /> : simulationResult ? <SimulationResult result={simulationResult} onAgain={() => startSimulation(simulationResult.total)} onClose={() => { setSimulationResult(null); setView("Histórico"); }} /> : <>
