@@ -20,10 +20,10 @@ export function CourseFilterToolbar({ plans, filters, onChange, compact = false 
   return (
     <section aria-label="Filtros dos cursos" className={`min-w-0 rounded-2xl border border-[#c8dcd6] bg-[#edf7f5] ${compact ? "p-3 sm:p-4" : "p-4 sm:p-5"}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-[#173d4a]">
+        <h2 className="flex items-center gap-2 text-sm font-bold text-[#173d4a]">
           <Filter className="h-4 w-4 text-[#0e5a70]" aria-hidden="true" />
           Encontre seu curso
-        </h3>
+        </h2>
         <button type="button" onClick={clear} disabled={!hasFilters} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-[#0e5a70] hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-50">
           <X className="h-4 w-4" aria-hidden="true" /> Limpar filtros
         </button>
