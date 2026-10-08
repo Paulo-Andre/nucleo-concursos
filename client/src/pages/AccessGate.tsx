@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { ArrowLeft, KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, Home, KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck, UserPlus } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type AccessMode = "login" | "register" | "forgot" | "reset";
-type AccessGateProps = { onAuthenticated: (hadActiveSession: boolean) => void; initialMode?: AccessMode; onBackToStorefront?: () => void; selectedPlanPending?: boolean };
+type AccessGateProps = { onAuthenticated: (hadActiveSession: boolean) => void; initialMode?: AccessMode; onBackToStorefront?: () => void; onGoHome?: () => void; onViewPackages?: () => void; selectedPlanPending?: boolean };
 
 function formatCpfInput(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -24,7 +24,7 @@ function hasValidCpfDigits(value: string) {
   return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
 }
 
-export default function AccessGate({ onAuthenticated, initialMode = "login", onBackToStorefront, selectedPlanPending = false }: AccessGateProps) {
+export default function AccessGate({ onAuthenticated, initialMode = "login", onBackToStorefront, onGoHome, onViewPackages, selectedPlanPending = false }: AccessGateProps) {
   const [mode, setMode] = useState<AccessMode>(initialMode);
   const [message, setMessage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", username: "", email: "", cpf: "", identifier: "", password: "", confirmation: "", resetPassword: "", resetConfirmation: "" });
@@ -71,7 +71,10 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
         <GlobalContactLinks variant="login" />
       </div>
       <div className="min-w-0 p-5 sm:p-12">
-        {onBackToStorefront && <button type="button" onClick={onBackToStorefront} className="mb-6 inline-flex items-center gap-1 text-xs font-bold text-[#0e5a70] hover:underline">← Ver pacotes</button>}
+        {(onGoHome || onViewPackages || onBackToStorefront) && <div className="mb-6 flex flex-wrap gap-2">
+          <button type="button" onClick={onGoHome ?? onBackToStorefront} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#cfc8b8] bg-white px-3 text-xs font-bold text-[#0e5a70] transition hover:border-[#0e5a70] hover:bg-[#f5faf8]"><Home className="h-3.5 w-3.5" />Página inicial</button>
+          <button type="button" onClick={onViewPackages ?? onBackToStorefront} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#cfc8b8] bg-white px-3 text-xs font-bold text-[#0e5a70] transition hover:border-[#0e5a70] hover:bg-[#f5faf8]"><ArrowLeft className="h-3.5 w-3.5" />Ver pacotes</button>
+        </div>}
         {selectedPlanPending && <p className="mb-5 rounded-xl border border-[#a9d0c5] bg-[#edf7f5] px-3 py-2 text-xs font-semibold leading-5 text-[#17644e]">Seu pacote está reservado para a próxima etapa. Crie sua conta ou entre para continuar a compra dentro da plataforma.</p>}
         {(mode === "login" || mode === "register") ? <div className="flex flex-wrap gap-x-7 border-b border-[#d8d0c1] text-sm font-bold"><button type="button" className={`-mb-px border-b-2 px-1 pb-3 ${mode === "login" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("login"); setMessage(null); }}>Entrar</button><button type="button" className={`-mb-px border-b-2 px-1 pb-3 ${mode === "register" ? "border-[#0e5a70] text-[#0e5a70]" : "border-transparent text-[#7b8582]"}`} onClick={() => { setMode("register"); setMessage(null); }}><UserPlus className="mr-1.5 inline h-4 w-4" />Criar conta</button></div> : <button type="button" className="inline-flex items-center gap-1 border-b border-[#d8d0c1] pb-3 text-xs font-bold text-[#0e5a70] hover:underline" onClick={() => { window.history.replaceState({}, "", window.location.pathname); setMode("login"); setMessage(null); }}><ArrowLeft className="h-4 w-4" />Voltar para entrar</button>}
         <div className="mt-7"><p className="text-[10px] font-bold tracking-[0.14em] text-[#5d777d] sm:tracking-[0.18em]">{mode === "login" ? "IDENTIFIQUE-SE" : mode === "register" ? "NOVA CREDENCIAL" : mode === "forgot" ? "RECUPERAÇÃO SEGURA" : "NOVA SENHA"}</p><h2 className="font-display mt-2 break-words text-2xl font-extrabold sm:text-3xl">{mode === "login" ? "Acesse seu dossiê." : mode === "register" ? "Comece seu registro." : mode === "forgot" ? "Recupere seu acesso." : "Defina uma nova senha."}</h2></div>

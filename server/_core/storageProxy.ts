@@ -1,5 +1,7 @@
 import type { Express } from "express";
+import { access } from "node:fs/promises";
 import { ENV } from "./env";
+import { resolveLocalStoragePath } from "../storage";
 
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
@@ -9,12 +11,14 @@ export function registerStorageProxy(app: Express) {
       return;
     }
 
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
-    }
-
     try {
+      if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
+        const filePath = resolveLocalStoragePath(key);
+        await access(filePath);
+        res.set("Cache-Control", "public, max-age=31536000, immutable");
+        res.sendFile(filePath);
+        return;
+      }
       const forgeUrl = new URL(
         "v1/storage/presign/get",
         ENV.forgeApiUrl.replace(/\/+$/, "") + "/",
