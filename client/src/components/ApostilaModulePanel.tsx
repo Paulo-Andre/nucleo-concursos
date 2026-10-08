@@ -45,7 +45,7 @@ export function ApostilaModulePanel({ module, chapter, completed, onComplete, on
 
   useEffect(() => {
     if (!noteEdited && noteQuery.data?.content !== undefined) setNote(noteQuery.data.content);
-  }, [noteEdited, noteQuery.data?.content]);
+  }, [noteQuery.data?.content]);
 
   useEffect(() => {
     setChallengeAnswer(null);
@@ -157,8 +157,8 @@ export function ApostilaModulePanel({ module, chapter, completed, onComplete, on
 
           <section className="rounded-2xl border border-[#c9dbd6] bg-[#f6fbfa] p-5">
             <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="eyebrow text-[#19705d]">ANOTAÇÃO PRIVADA</p><h3 className="font-display mt-1 text-lg font-bold text-[#173d4a]">Registre o que precisa recuperar.</h3></div><span className="text-[10px] font-bold tracking-wide text-[#5a7778]">SOMENTE SUA CONTA</span></div>
-            <label htmlFor="lesson-private-note" className="mt-4 block text-sm font-semibold text-[#315a5d]">Sua anotação sobre esta aula</label><textarea id="lesson-private-note" value={note} onChange={event => { setNote(event.target.value); setNoteEdited(true); setNoteStatus("idle"); setNoteError(null); }} maxLength={12000} placeholder="Ex.: revisar exceção, criar exemplo próprio, retomar lei seca..." className="mt-1.5 min-h-32 w-full rounded-xl border border-[#ccd8d4] bg-white p-3 text-base leading-7 text-[#314f58] focus-visible:border-[#0e5a70]" />
-            <div className="mt-3 flex items-center justify-between gap-3"><p role="status" aria-live="polite" className="text-sm leading-5 text-[#61767b]">{noteStatus === "saved" ? "Anotação salva na sua conta." : noteEdited ? "Alterações ainda não salvas." : "Esta anotação pertence à sua conta."}</p><button type="button" onClick={() => saveNote.mutate({ moduleId: module.id, content: note })} disabled={saveNote.isPending} className="ghost-button border-[#97c5bb] text-[#0e5a70] disabled:opacity-60">{saveNote.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}{saveNote.isPending ? "Salvando..." : "Salvar anotação"}</button></div>
+            <label htmlFor="lesson-private-note" className="mt-4 block text-sm font-semibold text-[#315a5d]">Sua anotação sobre esta aula</label><textarea id="lesson-private-note" value={note} disabled={noteQuery.isLoading || noteQuery.isError} onChange={event => { setNote(event.target.value); setNoteEdited(true); setNoteStatus("idle"); setNoteError(null); }} maxLength={12000} placeholder="Ex.: revisar exceção, criar exemplo próprio, retomar lei seca..." className="mt-1.5 min-h-32 w-full rounded-xl border border-[#ccd8d4] bg-white p-3 text-base leading-7 text-[#314f58] focus-visible:border-[#0e5a70]" />
+            <div className="mt-3 flex items-center justify-between gap-3"><p role="status" aria-live="polite" className="text-sm leading-5 text-[#61767b]">{noteStatus === "saved" ? "Anotação salva na sua conta." : noteEdited ? "Alterações ainda não salvas." : "Esta anotação pertence à sua conta."}</p><button type="button" onClick={() => saveNote.mutate({ moduleId: module.id, content: note })} disabled={saveNote.isPending || noteQuery.isLoading || noteQuery.isError} className="ghost-button border-[#97c5bb] text-[#0e5a70] disabled:opacity-60">{saveNote.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}{saveNote.isPending ? "Salvando..." : "Salvar anotação"}</button></div>
             {noteQuery.isLoading && <p role="status" className="mt-2 text-sm text-[#61767b]">Carregando sua anotação...</p>}
             {noteQuery.isError && <p role="alert" className="mt-2 text-sm text-[#953e38]">Não foi possível carregar a anotação existente. Tente recarregar esta aula antes de salvar.</p>}
             {noteError && <p role="alert" className="mt-2 rounded-lg border border-[#d7a8a0] bg-[#fff5f2] px-3 py-2 text-sm text-[#953e38]">{noteError}</p>}
