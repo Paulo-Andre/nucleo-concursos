@@ -2,7 +2,7 @@
  * Estilo Arquivo Operacional: leitura calma, hierarquia documental e contraste azul-petróleo.
  * A teoria é apresentada como uma apostila de estudo autônomo, sem substituir os desafios ativos.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Award, BookOpen, Brain, Check, ExternalLink, Loader2, Sparkles, X } from "lucide-react";
 import type { DetailedStudyModule } from "@/data/pfCompleteStudyData";
 import type { ApostilaChapter } from "@/data/pfApostilaData";
@@ -37,6 +37,15 @@ export function ApostilaModulePanel({ module, chapter, completed, onComplete, on
     if (noteEdited && !window.confirm("Sua anotação ainda não foi salva. Deseja sair mesmo assim?")) return;
     onClose();
   };
+  const handleLessonKeys = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") { event.stopPropagation(); closeLesson(); return; }
+    if (event.key !== "Tab" || !dialogRef.current) return;
+    const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), iframe, [tabindex]:not([tabindex="-1"])'))
+      .filter(element => element.getClientRects().length > 0);
+    if (!focusable.length) { event.preventDefault(); dialogRef.current.focus(); return; }
+    if (event.shiftKey && (document.activeElement === focusable[0] || document.activeElement === dialogRef.current)) { event.preventDefault(); focusable[focusable.length - 1].focus(); }
+    else if (!event.shiftKey && (document.activeElement === focusable[focusable.length - 1] || document.activeElement === dialogRef.current)) { event.preventDefault(); focusable[0].focus(); }
+  };
   const finishLesson = () => {
     if (noteEdited && !window.confirm("Sua anotação ainda não foi salva. Deseja concluir a aula sem salvá-la?")) return;
     onComplete();
@@ -55,7 +64,7 @@ export function ApostilaModulePanel({ module, chapter, completed, onComplete, on
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[#152d38]/55 p-3 backdrop-blur-sm">
-      <article ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="study-lesson-title" onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); closeLesson(); } }} className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[1.35rem] bg-[#fffdf8] shadow-2xl outline-none">
+      <article ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="study-lesson-title" onKeyDown={handleLessonKeys} className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[1.35rem] bg-[#fffdf8] shadow-2xl outline-none">
         <header className="sticky top-0 z-10 flex items-start justify-between border-b border-[#e6ded1] bg-[#fffdf8]/95 p-5 backdrop-blur">
           <div>
             <p className="eyebrow">APOSTILA DIGITAL · {module.code} · BLOCO {module.block}</p>
