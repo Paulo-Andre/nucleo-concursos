@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Award, BarChart3, BookOpen, Brain, CalendarClock, Check, ChevronRight, CircleHelp, Clock3, CreditCard, Flame, Gauge,
   GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, RotateCcw, ShieldCheck, Trash2,
-  Sparkles, Target, Trophy, X, Zap,
+  Search, Sparkles, Target, Trophy, X, Zap,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { blocks, questionBank, StudyQuestion } from "@/data/pfStudyData";
@@ -38,6 +38,7 @@ import { canOpenTutorialView, isTutorialCourseExperience } from "@/lib/tutorialC
 import { isStorefrontPreviewMode } from "@/lib/storefrontPreview";
 import { resolveVisibleStudyCourseId, visibleStudyCourses } from "@/lib/studyCourseAccess";
 import { resolveStudyWorkspaceAccessState } from "@/lib/studyWorkspaceAccess";
+import { filterStudyLibrary, type StudyLibraryFilter } from "@/lib/studyLibraryFilters";
 
 type View = "Painel" | "Conteúdo" | "Roteiro" | "Simulados" | "Competição" | "Revisar" | "Histórico" | "Cursos" | "Acessos";
 type SimulationQuestion = StudyQuestion & { persistentQuestionId?: number };
@@ -576,31 +577,97 @@ function Dashboard({ state, modules, contestName, coverImageUrl, panelLabel, pan
 function Metric({ icon: Icon, label, value, detail, color }: { icon: typeof Zap; label: string; value: string; detail: string; color: "teal" | "blue" | "amber" | "orange" }) { const styles = { teal: "border-[#9bcabc] text-[#0e5a70]", blue: "border-[#9dbdc8] text-[#245c70]", amber: "border-[#dfc08c] text-[#a36b23]", orange: "border-[#dfb090] text-[#b45e2d]" }; return <div className="relative border border-[#d5cdbd] bg-[#fffdf8] p-5 shadow-[0_8px_18px_-20px_rgba(21,45,56,.7)]"><span className={`absolute right-4 top-4 border px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${styles[color]}`}>REG</span><div><p className="text-[10px] font-bold tracking-[0.16em] text-[#6f7d83]">{label}</p><p className="font-display mt-2 text-3xl font-extrabold tracking-tight text-[#17343e]">{value}</p></div><div className="mt-4 flex items-center gap-2 border-t border-[#ebe4d8] pt-3"><Icon className={`h-3.5 w-3.5 ${styles[color].split(" ")[1]}`} /><p className="text-xs text-[#6f7d83]">{detail}</p></div></div>; }
 
 function StudyArea({ state, modules, contestName, contentByModuleId, onOpen }: { state: StudyState; modules: StudyModule[]; contestName: string; contentByModuleId: Map<string, StudyProgressItem>; onOpen: (module: StudyModule) => void }) {
-  const byDiscipline = modules.reduce<Record<string, StudyModule[]>>((groups, module) => {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StudyLibraryFilter>("all");
+  const completedIds = new Set(state.completedModules);
+  const isCompleted = (module: StudyModule) => completedIds.has(module.id);
+  const isStarted = (module: StudyModule) => contentByModuleId.get(module.id)?.progress?.status === "started";
+  const disciplineOf = (module: StudyModule) => {
     const disciplineId = getDisciplineIdForModule(module);
-    const discipline = disciplineId ? getDisciplineById(disciplineId)?.name ?? module.discipline : module.discipline;
-    (groups[discipline] ??= []).push(module);
+    return disciplineId ? getDisciplineById(disciplineId)?.name ?? module.discipline : module.discipline;
+  };
+  const filtered = filterStudyLibrary(modules, search, statusFilter, isCompleted, isStarted, disciplineOf);
+  const byDiscipline = filtered.reduce<Record<string, StudyModule[]>>((groups, module) => {
+    (groups[disciplineOf(module)] ??= []).push(module);
     return groups;
   }, {});
-  return <div className="space-y-7">
+  const hasFilters = Boolean(search.trim() || statusFilter !== "all");
+  const completedCount = modules.filter(isCompleted).length;
+  const clearFilters = () => { setSearch(""); setStatusFilter("all"); };
+
+  return <div className="space-y-6">
     <section className="flex flex-col justify-between gap-4 border-b border-[#d7cfc1] pb-6 sm:flex-row sm:items-end">
-      <div><p className="eyebrow">BIBLIOTECA DE CONTEÚDO · {contestName.toUpperCase()}</p><h2 className="font-display mt-2 text-3xl font-extrabold">Estude o conteúdo sem atalhos.</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-[#62727a]">Cada aula combina explicação autoral, conceitos-chave, exemplo resolvido, atenção de prova e prática ativa. O mapa do edital aparece como referência; a prioridade aqui é entender e recuperar o conteúdo.</p></div>
-      <div className="rounded-xl border border-[#d5cdbd] bg-[#fffdf8] px-4 py-3 text-sm"><span className="font-bold text-[#0e5a70]">{state.completedModules.filter((moduleId) => modules.some((module) => module.id === moduleId)).length}</span> de {modules.length} aulas concluídas</div>
+      <div className="min-w-0">
+        <p className="eyebrow">Biblioteca de estudos · {contestName}</p>
+        <h2 className="font-display mt-2 text-2xl font-extrabold sm:text-3xl">Suas aulas, no seu ritmo.</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#62727a]">Encontre uma aula pelo nome, assunto ou disciplina. Abra o conteúdo para estudar ou revisar o que já concluiu.</p>
+      </div>
+      <div role="status" className="shrink-0 rounded-xl border border-[#d5cdbd] bg-[#fffdf8] px-4 py-3 text-sm font-semibold text-[#0e5a70]">
+        {completedCount} de {modules.length} aulas concluídas
+      </div>
     </section>
-    {Object.entries(byDiscipline).map(([discipline, modules]) => {
-      const contentCount = modules.reduce((total, module) => total + (allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length), 0);
-      return <section key={discipline}>
-        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1"><span className="font-display text-sm font-bold text-[#0e5a70]">{discipline}</span><span className="h-px min-w-8 flex-1 bg-[#d7cfc1]" /><span className="text-[10px] font-bold tracking-wider text-[#8a7561]">BLOCO {modules[0].block} · {modules.length} AULAS · {contentCount} NÚCLEOS DE CONTEÚDO</span></div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{modules.map((module) => {
-          const done = state.completedModules.includes(module.id);
-          const notice = contentByModuleId.get(module.id)?.notice;
-          return <button key={module.id} onClick={() => onOpen(module)} className="group text-left shell-card relative overflow-hidden p-5 transition hover:-translate-y-0.5 hover:shadow-[0_20px_35px_-28px_rgba(14,90,112,.8)]">
-            <div className="mb-4 flex items-start justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><span className="rounded-lg bg-[#e8f0ee] px-2 py-1 text-[10px] font-bold tracking-wider text-[#0e5a70]">{module.code}</span>{notice && <span className={`rounded-full border px-2 py-1 text-[9px] font-bold tracking-wider ${notice.kind === "new" ? "border-[#8bc9b7] bg-[#ecfaf4] text-[#176a5a]" : "border-[#efc47d] bg-[#fff5e5] text-[#8d611a]"}`}>{notice.label}</span>}</div>{done ? <span className="flex shrink-0 items-center gap-1 text-[10px] font-bold text-[#16806b]"><Check className="h-3.5 w-3.5" />REGISTRADO</span> : <span className="shrink-0 text-[10px] font-bold text-[#ad8a58]">+20 XP</span>}</div>
-            <h3 className="font-display text-base font-bold">{module.title}</h3><p className="mt-2 line-clamp-2 text-sm leading-5 text-[#67767d]">{module.summary}</p>
-            <div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1 text-[10px] font-bold tracking-wide text-[#76848a]"><Clock3 className="h-3.5 w-3.5" />{module.estimatedMinutes} MIN</span><span className="text-[10px] font-bold text-[#0e5a70]">{allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length} NÚCLEOS DE CONTEÚDO</span></div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-[#0e5a70]">Ler aula completa <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" /></div>
-          </button>;
-        })}</div>
+    <section aria-label="Buscar aulas" className="rounded-2xl border border-[#c8dcd6] bg-[#edf7f5] p-4 sm:p-5">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-end">
+        <label className="min-w-0 text-sm font-semibold text-[#254751]">
+          Pesquisar aulas
+          <span className="relative mt-1.5 block">
+            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#63807d]" />
+            <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Ex.: português ou interpretação" className="h-11 w-full min-w-0 rounded-xl border border-[#cfc7ba] bg-white pl-10 pr-3 text-base text-[#173d4a] sm:text-sm" />
+          </span>
+        </label>
+        <label className="min-w-0 text-sm font-semibold text-[#254751]">
+          Situação
+          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value as StudyLibraryFilter)} className="mt-1.5 h-11 w-full rounded-xl border border-[#cfc7ba] bg-white px-3 text-base text-[#173d4a] sm:text-sm">
+            <option value="all">Todas as aulas</option>
+            <option value="in-progress">Em andamento</option>
+            <option value="completed">Concluídas</option>
+          </select>
+        </label>
+        <button type="button" onClick={clearFilters} disabled={!hasFilters} className="ghost-button w-full disabled:cursor-not-allowed disabled:opacity-50 md:w-auto">Limpar filtros</button>
+      </div>
+      <p role="status" aria-live="polite" className="mt-3 text-sm font-medium text-[#315c62]">
+        {filtered.length} aula{filtered.length === 1 ? "" : "s"} encontrada{filtered.length === 1 ? "" : "s"}
+      </p>
+    </section>
+
+    {!filtered.length ? <section className="rounded-2xl border border-dashed border-[#c9c0b3] bg-[#fffdf8] p-8 text-center">
+      <h3 className="font-display text-xl font-bold">Nenhuma aula encontrada</h3>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#62727a]">{hasFilters ? "Experimente outro nome, disciplina ou situação." : "Não há aulas disponíveis nesta trilha no momento."}</p>
+      {hasFilters && <button type="button" onClick={clearFilters} className="ghost-button mt-4">Mostrar todas as aulas</button>}
+    </section> : Object.entries(byDiscipline).map(([discipline, disciplineModules]) => {
+      const contentCount = disciplineModules.reduce((total, module) => total + (allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length), 0);
+      return <section key={discipline} aria-label={discipline}>
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h3 className="font-display text-base font-bold text-[#0e5a70]">{discipline}</h3>
+          <span aria-hidden="true" className="h-px min-w-8 flex-1 bg-[#d7cfc1]" />
+          <span className="text-xs font-semibold text-[#665c4f]">{disciplineModules.length} aulas · {contentCount} seções e tópicos</span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {disciplineModules.map(module => {
+            const done = isCompleted(module);
+            const started = !done && isStarted(module);
+            const notice = contentByModuleId.get(module.id)?.notice;
+            const status = done ? "Concluída" : started ? "Em andamento" : "Não iniciada";
+            return <button type="button" key={module.id} onClick={() => onOpen(module)} aria-label={`Abrir aula ${module.title}. Situação: ${status}`} className="group shell-card relative flex min-h-48 flex-col overflow-hidden p-5 text-left transition-shadow hover:shadow-[0_16px_35px_-25px_rgba(14,90,112,.65)]">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-lg bg-[#e8f0ee] px-2 py-1 text-xs font-semibold text-[#0e5a70]">{module.code}</span>
+                  {notice && <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${notice.kind === "new" ? "border-[#8bc9b7] bg-[#ecfaf4] text-[#176a5a]" : "border-[#efc47d] bg-[#fff5e5] text-[#8d611a]"}`}>{notice.label}</span>}
+                </div>
+                <span className={`rounded-lg px-2 py-1 text-xs font-bold ${done ? "bg-[#e4f3ed] text-[#17644e]" : started ? "bg-[#fff1d7] text-[#795213]" : "bg-[#edf0f0] text-[#4b6268]"}`}>
+                  {done && <Check aria-hidden="true" className="mr-1 inline h-3.5 w-3.5" />}{status}
+                </span>
+              </div>
+              <h4 className="font-display break-words text-base font-bold text-[#17343e]">{module.title}</h4>
+              <p className="mt-2 text-sm leading-6 text-[#62727a]">{module.summary}</p>
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4 text-xs font-semibold text-[#52717d]">
+                <span className="flex items-center gap-1"><Clock3 className="h-4 w-4" aria-hidden="true" />{module.estimatedMinutes} min</span>
+                <span>{allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length} tópicos</span>
+              </div>
+              <span className="mt-3 flex min-h-10 items-center gap-1 text-sm font-bold text-[#0e5a70]">{done ? "Revisar aula" : started ? "Continuar aula" : "Começar aula"} <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+            </button>;
+          })}
+        </div>
       </section>;
     })}
   </div>;
