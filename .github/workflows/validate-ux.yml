@@ -24,7 +24,9 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verificar TypeScript
         run: pnpm check
-      - name: Executar testes
-        run: pnpm test
+      # Os testes de integração do servidor exigem MySQL e segredos de teste isolados.
+      # Esta validação de interface não deve usar credenciais de produção.
+      - name: Executar testes do frontend
+        run: pnpm exec vitest run client/src
       - name: Compilar aplicação
         run: pnpm build
