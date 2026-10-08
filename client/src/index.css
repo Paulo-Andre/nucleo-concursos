@@ -54,6 +54,8 @@
   --chart-4: oklch(0.5 0.07 65);
   --chart-5: oklch(0.36 0.05 242);
   --radius: 0.85rem;
+  --focus-outline: 3px solid var(--ring);
+  --touch-target: 44px;
   --background: oklch(0.97 0.012 85);
   --foreground: oklch(0.22 0.018 240);
   --card: oklch(0.995 0.006 85);
@@ -133,4 +135,33 @@
   }
   @media (min-width: 640px) { .container { padding-left: 1.5rem; padding-right: 1.5rem; } }
   @media (min-width: 1024px) { .container { padding-left: 2rem; padding-right: 2rem; max-width: 1280px; } }
+}
+
+/* UX foundations: consistent keyboard focus, readable form controls and motion preferences. */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 3px;
+  }
+  :where(input, select, textarea) {
+    font-size: max(1rem, 16px);
+  }
+  :where(button, input, select, textarea):disabled,
+  :where([aria-disabled="true"]) {
+    cursor: not-allowed;
+  }
+  :where(p, li, dd) { overflow-wrap: break-word; }
+}
+@media (pointer: coarse) {
+  :where(button, [role="button"], input[type="submit"], input[type="button"]) {
+    min-height: var(--touch-target);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
