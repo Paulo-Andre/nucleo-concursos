@@ -48,15 +48,6 @@ export function ApostilaModulePanel({ module, chapter, completed, onComplete, on
   }, [noteQuery.data?.content]);
 
   useEffect(() => {
-    setChallengeAnswer(null);
-    setRevealRecall(false);
-    setNote("");
-    setNoteStatus("idle");
-    setNoteError(null);
-    setNoteEdited(false);
-  }, [module.id]);
-
-  useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialogRef.current?.focus();
     return () => previousFocus?.focus();
