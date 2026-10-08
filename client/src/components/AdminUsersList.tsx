@@ -10,20 +10,20 @@ export type ManagedUserRow = {
   lastSignedIn: Date | string | null;
 };
 
-type Props = {
-  users: ManagedUserRow[];
+type Props<T extends ManagedUserRow> = {
+  users: T[];
   isLoading: boolean;
   isError: boolean;
   search: string;
   selectedUserId?: number;
-  onChoose: (user: ManagedUserRow) => void;
+  onChoose: (user: T) => void;
   onClearSearch: () => void;
   onRetry: () => void;
 };
 
 const displayDate = (value: Date | string | null) => value ? new Date(value).toLocaleString("pt-BR") : "—";
 
-export function AdminUsersList({ users, isLoading, isError, search, selectedUserId, onChoose, onClearSearch, onRetry }: Props) {
+export function AdminUsersList<T extends ManagedUserRow>({ users, isLoading, isError, search, selectedUserId, onChoose, onClearSearch, onRetry }: Props<T>) {
   if (isLoading) return <div role="status" className="mt-4 flex min-h-28 items-center justify-center gap-2 rounded-xl border border-[#d8d0c4] bg-white p-5 text-sm font-semibold text-[#52716f]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />Carregando usuários...</div>;
   if (isError) return <div role="alert" className="mt-4 rounded-xl border border-[#d7a8a0] bg-[#fff5f2] p-5 text-sm text-[#953e38]">Não foi possível carregar os usuários. <button type="button" onClick={onRetry} className="ml-2 min-h-11 font-bold underline">Tentar novamente</button></div>;
   if (!users.length) return <div className="mt-4 rounded-xl border border-dashed border-[#b9b0a2] bg-white p-6 text-center"><p className="text-sm font-semibold text-[#315a5d]">Nenhum usuário encontrado.</p><p className="mt-2 text-sm text-[#647579]">Experimente outro nome ou e-mail.</p>{search && <button type="button" onClick={onClearSearch} className="ghost-button mt-3">Limpar pesquisa</button>}</div>;
