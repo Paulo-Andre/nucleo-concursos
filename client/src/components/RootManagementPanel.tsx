@@ -68,7 +68,7 @@ export function RootManagementPanel({ activeSection, onSectionChange, onClose }:
         aria-describedby="root-management-description"
         className="mx-auto flex h-full w-full max-w-[1540px] flex-col overflow-hidden bg-[#fffdf8] shadow-2xl outline-none sm:h-[calc(100vh-1.5rem)] sm:rounded-[1.4rem] sm:border sm:border-[#274a54] lg:flex-row"
       >
-        <aside className="shrink-0 border-b border-[#274a54] bg-[#183542] text-white lg:flex lg:w-64 lg:flex-col lg:border-b-0 lg:border-r">
+        <aside className="shrink-0 border-b border-[#355762] bg-[#152d38] text-white lg:flex lg:w-64 lg:flex-col lg:border-b-0 lg:border-r">
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 px-4 py-3 lg:p-5">
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[#9be0d2]"><ShieldCheck className="h-4 w-4" aria-hidden="true" /><p className="text-xs font-bold tracking-wide">ADMINISTRAÇÃO</p></div>
@@ -91,9 +91,9 @@ export function RootManagementPanel({ activeSection, onSectionChange, onClose }:
                   {group.sections.map(section => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
-                    return <button key={section.id} type="button" onClick={() => onSectionChange(section.id)} aria-current={isActive ? "page" : undefined} className={`min-h-11 w-full rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9be0d2] ${isActive ? "border-[#8ad2c3] bg-[#0e5a70] text-white" : "border-transparent text-[#cadbdc] hover:border-white/15 hover:bg-white/10 hover:text-white"}`}>
+                    return <button key={section.id} type="button" onClick={() => onSectionChange(section.id)} aria-current={isActive ? "page" : undefined} className={`min-h-11 w-full rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[#8ad2c3] ${isActive ? "border-[#8ad2c3] bg-[#0e5a70] text-white shadow-[inset_3px_0_0_#8ad2c3]" : "border-transparent text-[#d5e5e4] hover:border-white/20 hover:bg-white/10 hover:text-white"}`}>
                       <span className="flex items-center gap-2 text-sm font-bold"><Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{section.label}</span>
-                      <span className={`mt-1 block text-xs leading-5 ${isActive ? "text-[#e2f4f0]" : "text-[#b0c9ca]"}`}>{section.description}</span>
+                      <span className={`mt-1 block text-xs leading-5 ${isActive ? "text-[#e2f4f0]" : "text-[#bed6d5]"}`}>{section.description}</span>
                     </button>;
                   })}
                 </div>
