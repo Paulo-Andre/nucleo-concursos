@@ -602,6 +602,8 @@ function Metric({ icon: Icon, label, value, detail, color }: { icon: typeof Zap;
 function StudyArea({ state, modules, contestName, contentByModuleId, onOpen }: { state: StudyState; modules: StudyModule[]; contestName: string; contentByModuleId: Map<string, StudyProgressItem>; onOpen: (module: StudyModule) => void }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StudyLibraryFilter>("all");
+  const [disciplineFilter, setDisciplineFilter] = useState("all");
+  const [contentFilter, setContentFilter] = useState("all");
   const completedIds = new Set(state.completedModules);
   const isCompleted = (module: StudyModule) => completedIds.has(module.id);
   const isStarted = (module: StudyModule) => contentByModuleId.get(module.id)?.progress?.status === "started";
@@ -609,53 +611,75 @@ function StudyArea({ state, modules, contestName, contentByModuleId, onOpen }: {
     const disciplineId = getDisciplineIdForModule(module);
     return disciplineId ? getDisciplineById(disciplineId)?.name ?? module.discipline : module.discipline;
   };
-  const filtered = filterStudyLibrary(modules, search, statusFilter, isCompleted, isStarted, disciplineOf);
+  const disciplines = Array.from(new Set(modules.map(disciplineOf))).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  // Ignora seleções antigas ao mudar de curso, sem ocultar conteúdos do novo curso.
+  const selectedDiscipline = disciplines.includes(disciplineFilter) ? disciplineFilter : "all";
+  const contentOptions = modules.filter(module => selectedDiscipline === "all" || disciplineOf(module) === selectedDiscipline);
+  const selectedContent = contentOptions.some(module => module.id === contentFilter) ? contentFilter : "all";
+  const filtered = filterStudyLibrary(modules, search, statusFilter, isCompleted, isStarted, disciplineOf, {
+    discipline: selectedDiscipline === "all" ? undefined : selectedDiscipline,
+    contentId: selectedContent === "all" ? undefined : selectedContent,
+  });
   const byDiscipline = filtered.reduce<Record<string, StudyModule[]>>((groups, module) => {
     (groups[disciplineOf(module)] ??= []).push(module);
     return groups;
   }, {});
-  const hasFilters = Boolean(search.trim() || statusFilter !== "all");
+  const hasFilters = Boolean(search.trim() || statusFilter !== "all" || selectedDiscipline !== "all" || selectedContent !== "all");
   const completedCount = modules.filter(isCompleted).length;
-  const clearFilters = () => { setSearch(""); setStatusFilter("all"); };
+  const clearFilters = () => { setSearch(""); setStatusFilter("all"); setDisciplineFilter("all"); setContentFilter("all"); };
 
   return <div className="space-y-6">
     <section className="flex flex-col justify-between gap-4 border-b border-[#d7cfc1] pb-6 sm:flex-row sm:items-end">
       <div className="min-w-0">
         <p className="eyebrow">Biblioteca de estudos · {contestName}</p>
         <h2 className="font-display mt-2 text-2xl font-extrabold sm:text-3xl">Suas aulas, no seu ritmo.</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#62727a]">Encontre uma aula pelo nome, assunto ou disciplina. Abra o conteúdo para estudar ou revisar o que já concluiu.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#52666f]">Filtre por disciplina, escolha um conteúdo específico ou pesquise uma aula. Continue de onde parou ou revise o que já concluiu.</p>
       </div>
       <div role="status" className="shrink-0 rounded-xl border border-[#d5cdbd] bg-[#fffdf8] px-4 py-3 text-sm font-semibold text-[#0e5a70]">
         {completedCount} de {modules.length} aulas concluídas
       </div>
     </section>
-    <section aria-label="Buscar aulas" className="rounded-2xl border border-[#c8dcd6] bg-[#edf7f5] p-4 sm:p-5">
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-end">
+    <section aria-label="Filtrar conteúdos" className="filter-panel rounded-2xl p-4 sm:p-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,.9fr)_auto] xl:items-end">
         <label className="min-w-0 text-sm font-semibold text-[#254751]">
-          Pesquisar aulas
+          Pesquisar conteúdo
           <span className="relative mt-1.5 block">
             <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#63807d]" />
-            <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Ex.: português ou interpretação" className="h-11 w-full min-w-0 rounded-xl border border-[#cfc7ba] bg-white pl-10 pr-3 text-base text-[#173d4a] sm:text-sm" />
+            <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Nome, assunto ou código" className="filter-control pl-10" />
           </span>
         </label>
         <label className="min-w-0 text-sm font-semibold text-[#254751]">
+          Disciplina
+          <select value={selectedDiscipline} onChange={event => { setDisciplineFilter(event.target.value); setContentFilter("all"); }} className="filter-control mt-1.5">
+            <option value="all">Todas as disciplinas</option>
+            {disciplines.map(discipline => <option key={discipline} value={discipline}>{discipline}</option>)}
+          </select>
+        </label>
+        <label className="min-w-0 text-sm font-semibold text-[#254751]">
+          Conteúdo / aula
+          <select value={selectedContent} onChange={event => setContentFilter(event.target.value)} className="filter-control mt-1.5">
+            <option value="all">Todos os conteúdos</option>
+            {contentOptions.map(module => <option key={module.id} value={module.id}>{module.code} — {module.title}</option>)}
+          </select>
+        </label>
+        <label className="min-w-0 text-sm font-semibold text-[#254751]">
           Situação
-          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value as StudyLibraryFilter)} className="mt-1.5 h-11 w-full rounded-xl border border-[#cfc7ba] bg-white px-3 text-base text-[#173d4a] sm:text-sm">
+          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value as StudyLibraryFilter)} className="filter-control mt-1.5">
             <option value="all">Todas as aulas</option>
             <option value="in-progress">Em andamento</option>
             <option value="completed">Concluídas</option>
           </select>
         </label>
-        <button type="button" onClick={clearFilters} disabled={!hasFilters} className="ghost-button w-full disabled:cursor-not-allowed disabled:opacity-50 md:w-auto">Limpar filtros</button>
+        <button type="button" onClick={clearFilters} disabled={!hasFilters} className="ghost-button w-full disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2 xl:col-span-1">Limpar filtros</button>
       </div>
       <p role="status" aria-live="polite" className="mt-3 text-sm font-medium text-[#315c62]">
-        {filtered.length} aula{filtered.length === 1 ? "" : "s"} encontrada{filtered.length === 1 ? "" : "s"}
+        {filtered.length} conteúdo{filtered.length === 1 ? "" : "s"} encontrado{filtered.length === 1 ? "" : "s"}
       </p>
     </section>
 
     {!filtered.length ? <section className="rounded-2xl border border-dashed border-[#c9c0b3] bg-[#fffdf8] p-8 text-center">
       <h3 className="font-display text-xl font-bold">Nenhuma aula encontrada</h3>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#62727a]">{hasFilters ? "Experimente outro nome, disciplina ou situação." : "Não há aulas disponíveis nesta trilha no momento."}</p>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#62727a]">{hasFilters ? "Altere a disciplina, o conteúdo selecionado ou a situação para ampliar os resultados." : "Não há aulas disponíveis nesta trilha no momento."}</p>
       {hasFilters && <button type="button" onClick={clearFilters} className="ghost-button mt-4">Mostrar todas as aulas</button>}
     </section> : Object.entries(byDiscipline).map(([discipline, disciplineModules]) => {
       const contentCount = disciplineModules.reduce((total, module) => total + (allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length), 0);
@@ -671,7 +695,7 @@ function StudyArea({ state, modules, contestName, contentByModuleId, onOpen }: {
             const started = !done && isStarted(module);
             const notice = contentByModuleId.get(module.id)?.notice;
             const status = done ? "Concluída" : started ? "Em andamento" : "Não iniciada";
-            return <button type="button" key={module.id} onClick={() => onOpen(module)} aria-label={`Abrir aula ${module.title}. Situação: ${status}`} className="group shell-card relative flex min-h-48 flex-col overflow-hidden p-5 text-left transition-shadow hover:shadow-[0_16px_35px_-25px_rgba(14,90,112,.65)]">
+            return <button type="button" key={module.id} onClick={() => onOpen(module)} aria-label={`Abrir aula ${module.title}. Situação: ${status}`} className="group shell-card study-content-card relative flex min-h-48 flex-col overflow-hidden p-5 text-left">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-lg bg-[#e8f0ee] px-2 py-1 text-xs font-semibold text-[#0e5a70]">{module.code}</span>
@@ -682,12 +706,12 @@ function StudyArea({ state, modules, contestName, contentByModuleId, onOpen }: {
                 </span>
               </div>
               <h4 className="font-display break-words text-base font-bold text-[#17343e]">{module.title}</h4>
-              <p className="mt-2 text-sm leading-6 text-[#62727a]">{module.summary}</p>
-              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4 text-xs font-semibold text-[#52717d]">
+              <p className="mt-2 text-sm leading-6 text-[#52666f]">{module.summary}</p>
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4 text-xs font-semibold text-[#52666f]">
                 <span className="flex items-center gap-1"><Clock3 className="h-4 w-4" aria-hidden="true" />{module.estimatedMinutes} min</span>
                 <span>{allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length} tópicos</span>
               </div>
-              <span className="mt-3 flex min-h-10 items-center gap-1 text-sm font-bold text-[#0e5a70]">{done ? "Revisar aula" : started ? "Continuar aula" : "Começar aula"} <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+              <span className="mt-3 flex min-h-10 items-center gap-1 text-sm font-bold text-[#0e5a70] group-hover:text-[#0b4758]">{done ? "Revisar aula" : started ? "Continuar aula" : "Começar aula"} <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
             </button>;
           })}
         </div>
