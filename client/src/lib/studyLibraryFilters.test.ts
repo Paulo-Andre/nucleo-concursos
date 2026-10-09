@@ -18,6 +18,14 @@ describe("filtros da biblioteca de estudos", () => {
     expect(filterStudyLibrary(modules, "", "completed", completed, started).map(item => item.id)).toEqual(["one"]);
     expect(filterStudyLibrary(modules, "", "in-progress", completed, started).map(item => item.id)).toEqual(["two"]);
   });
+  it("combina disciplina, conteúdo selecionado, texto e progresso", () => {
+    expect(filterStudyLibrary(modules, "", "all", completed, started, module => module.discipline, { discipline: "Português" }).map(item => item.id)).toEqual(["one"]);
+    expect(filterStudyLibrary(modules, "", "all", completed, started, module => module.discipline, { contentId: "two" }).map(item => item.id)).toEqual(["two"]);
+    expect(filterStudyLibrary(modules, "lógico", "in-progress", completed, started, module => module.discipline, { discipline: "Matemática", contentId: "two" }).map(item => item.id)).toEqual(["two"]);
+    expect(filterStudyLibrary(modules, "", "completed", completed, started, module => module.discipline, { discipline: "Direito" })).toEqual([]);
+    expect(filterStudyLibrary(modules, "", "all", completed, started, module => module.discipline, { discipline: "Português", contentId: "two" })).toEqual([]);
+  });
+
   it("mantém a ordem original e permite pesquisar por disciplina", () => {
     expect(filterStudyLibrary(modules, "direito", "all", completed, started).map(item => item.id)).toEqual(["three"]);
     expect(filterStudyLibrary(modules, "", "all", completed, started).map(item => item.id)).toEqual(["one", "two", "three"]);
