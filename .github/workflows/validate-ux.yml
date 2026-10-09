@@ -1,0 +1,32 @@
+name: Validar experiência do aluno
+
+on:
+  push:
+    branches:
+      - feat/ux-acessibilidade-jornada-aluno
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      - name: Verificar TypeScript
+        run: pnpm check
+      # Os testes de integração do servidor exigem MySQL e segredos de teste isolados.
+      # Esta validação de interface não deve usar credenciais de produção.
+      - name: Executar testes do frontend
+        run: pnpm exec vitest run client/src
+      - name: Compilar aplicação
+        run: pnpm build
