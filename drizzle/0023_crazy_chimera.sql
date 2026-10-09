@@ -1,5 +1,4 @@
 ALTER TABLE `platformGeneralSettings` ADD `loginButtonText` varchar(80);--> statement-breakpoint
-ALTER TABLE `platformGeneralSettings` ADD `loginButtonText` varchar(80);--> statement-breakpoint
 ALTER TABLE `platformGeneralSettings` ADD `heroPrimaryCtaText` varchar(120);--> statement-breakpoint
 ALTER TABLE `platformGeneralSettings` ADD `heroSecondaryCtaText` varchar(120);--> statement-breakpoint
 ALTER TABLE `platformGeneralSettings` ADD `routineEyebrow` varchar(160);--> statement-breakpoint
