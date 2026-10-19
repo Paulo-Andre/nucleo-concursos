@@ -21,7 +21,7 @@ export function allowPublicAuthAction(req: Pick<Request, "ip">, action: PublicAc
   attempts.set(key, row);
 
   // Elimina chaves expiradas para não manter memória ilimitada.
-  if (++calls % 128 === 0) for (const [storedKey, stored] of attempts) {
+  if (++calls % 128 === 0) for (const [storedKey, stored] of Array.from(attempts.entries())) {
     const kind = storedKey.split(":")[0] as PublicAction;
     if (now - stored.start >= POLICIES[kind].windowMs) attempts.delete(storedKey);
   }
