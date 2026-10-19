@@ -34,6 +34,8 @@ test("B03 login ROOT, navegação do aluno e painel de administração",async({p
  await page.getByRole("textbox",{name:/Usuário ou e-mail/i}).fill("paulo");
  await page.locator('input[type="password"]').fill(process.env.ROOT_INITIAL_PASSWORD??"");
  await page.getByRole("button",{name:"Entrar na plataforma"}).click();
+ // Aguarda a aplicação autenticada montar antes de consultar isVisible (que não espera renderizações).
+ await expect(page.locator("#area-de-estudos")).toBeVisible({timeout});
  // Em telas pequenas a barra lateral é ocultada da árvore acessível até a gaveta ser aberta.
  const drawer=page.getByRole("button",{name:"Abrir navegação"});
  if(await drawer.isVisible())await drawer.click();
