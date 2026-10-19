@@ -2433,31 +2433,51 @@ export async function listStudyQuestions(userId: number, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const allRows = await db.select().from(questions).orderBy(desc(questions.updatedAt));
-  const rows = uniqueSimulationQuestions(allRows.filter(question => canUseQuestionInSimulation(question) && (question.status === "published" || question.status === "approved")));
+  const rows = uniqueSimulationQuestions(allRows.filter(question =>
+    canUseQuestionInSimulation(question) && (question.status === "published" || question.status === "approved")));
   const activeCourses = isAdmin ? [] : (await getUserCourseAccess(userId)).map(enrollment => enrollment.courseId);
   const allowedContentIds = isAdmin ? null : new Set(await getEligibleContentIdsForCourses(activeCourses));
-  const studyQuestions = await Promise.all(rows.map(async question => {
-    const linkedContents = await db.select({ id: contents.id, title: contents.title }).from(questionContentLinks)
-      .innerJoin(contents, eq(questionContentLinks.contentId, contents.id))
-      .where(and(eq(questionContentLinks.questionId, question.id), eq(contents.status, "published")));
-    const permittedContents = allowedContentIds
-      ? linkedContents.filter(content => allowedContentIds.has(content.id))
-      : linkedContents;
-    if (!permittedContents.length) return null;
-    const disciplineNames: string[] = [];
-    for (const content of permittedContents) {
-      const links = await db.select({ name: disciplines.name }).from(disciplineContents).innerJoin(disciplines, eq(disciplineContents.disciplineId, disciplines.id)).where(eq(disciplineContents.contentId, content.id));
-      for (const link of links) if (!disciplineNames.includes(link.name)) disciplineNames.push(link.name);
-    }
-    return {
+
+  // Antes havia duas consultas por questão/conteúdo (N+1); um conjunto de queries
+  // atende centenas de itens sem sobrecarregar MySQL e o painel do aluno.
+  const links = rows.length ? await db.select({
+    questionId: questionContentLinks.questionId, id: contents.id, title: contents.title,
+  }).from(questionContentLinks).innerJoin(contents, eq(questionContentLinks.contentId, contents.id))
+    .where(and(inArray(questionContentLinks.questionId, rows.map(q=>q.id)), eq(contents.status, "published"))) : [];
+
+  const linkedByQuestion = new Map<number, {id:number;title:string}[]>();
+  const allowedContentSet = new Set<number>();
+  for(const link of links){
+    if(allowedContentIds && !allowedContentIds.has(link.id))continue;
+    const permitted=linkedByQuestion.get(link.questionId)??[];
+    if(!permitted.some(x=>x.id===link.id))permitted.push({id:link.id,title:link.title});
+    linkedByQuestion.set(link.questionId,permitted);
+    allowedContentSet.add(link.id);
+  }
+  const disciplineLinks = allowedContentSet.size ? await db.select({
+    contentId: disciplineContents.contentId, name: disciplines.name,
+  }).from(disciplineContents).innerJoin(disciplines,eq(disciplineContents.disciplineId,disciplines.id))
+    .where(and(inArray(disciplineContents.contentId,Array.from(allowedContentSet)),eq(disciplines.status,"published"))) : [];
+  const disciplinesByContent = new Map<number,string[]>();
+  for(const link of disciplineLinks) {
+    const names=disciplinesByContent.get(link.contentId)??[];
+    if(!names.includes(link.name))names.push(link.name);
+    disciplinesByContent.set(link.contentId,names);
+  }
+  const studyQuestions=rows.flatMap(question=>{
+    const permitted=linkedByQuestion.get(question.id)??[];
+    if(!permitted.length)return [];
+    const disciplineNames=Array.from(new Set(permitted.flatMap(content=>disciplinesByContent.get(content.id)??[])));
+    return [{
       id: question.id, statement: question.statement, questionType: question.questionType,
       options: question.optionsJson ? JSON.parse(question.optionsJson) : [], answer: JSON.parse(question.answerJson),
-      explanation: question.explanation, difficulty: question.difficulty, source: question.source, banca: question.banca, year: question.year,
-      discipline: disciplineNames[0] ?? "Biblioteca central", subject: permittedContents.map(content => content.title).join(" · ") || "Conteúdo geral",
-      contentIds: permittedContents.map(content => content.id),
-    };
-  }));
-  return { requiresReviewMode: requiresExclusiveCentralBank(allRows), questions: studyQuestions.filter((question): question is NonNullable<typeof question> => question !== null) };
+      explanation: question.explanation, difficulty: question.difficulty, source: question.source,
+      banca: question.banca, year: question.year, discipline: disciplineNames[0] ?? "Biblioteca central",
+      subject: permitted.map(content=>content.title).join(" · ") || "Conteúdo geral",
+      contentIds: permitted.map(content=>content.id),
+    }];
+  });
+  return { requiresReviewMode: requiresExclusiveCentralBank(allRows), questions: studyQuestions };
 }
 
 async function getManagedQuestionById(questionId: number) {
