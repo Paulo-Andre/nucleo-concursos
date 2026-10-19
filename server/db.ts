@@ -1899,7 +1899,7 @@ export async function ensureDefaultKnowledgeBase(actorUserId: number) {
   const contentIdsByDiscipline = new Map<string, number[]>();
   let importedContents = 0;
 
-  for (const module of completeStudyModules) {
+  for (const module of [...completeStudyModules, ...specialLegislationModules]) {
     const disciplineCatalogId = getDisciplineIdForModule(module);
     if (!disciplineCatalogId) continue;
     const title = `${module.code} — ${module.title}`;
@@ -1931,29 +1931,42 @@ export async function ensureDefaultKnowledgeBase(actorUserId: number) {
   const currentDisciplines = await db.select({ id: disciplines.id, shortName: disciplines.shortName }).from(disciplines);
   const disciplineIdsByShortName = new Map(currentDisciplines.map(discipline => [discipline.shortName, discipline.id]));
   const availableCourseIds = new Set((await db.select({ id: courses.id }).from(courses)).map(course => course.id));
+  const existingCourseDisciplineLinks = new Set((await db.select({ courseId: courseDisciplines.courseId, disciplineId: courseDisciplines.disciplineId }).from(courseDisciplines))
+    .map(link => `${link.courseId}:${link.disciplineId}`));
+  const existingDisciplineContentLinks = new Set((await db.select({ disciplineId: disciplineContents.disciplineId, contentId: disciplineContents.contentId }).from(disciplineContents))
+    .map(link => `${link.disciplineId}:${link.contentId}`));
   let importedDisciplines = 0;
 
   for (const discipline of disciplineCatalog) {
     const shortName = discipline.shortName.toUpperCase();
-    if (disciplineIdsByShortName.has(shortName)) continue;
-    const result = await db.insert(disciplines).values({
-      name: discipline.name,
-      shortName,
-      description: discipline.description,
-      status: "published",
-      requiresReview: false,
-      createdByUserId: actorUserId,
-      updatedByUserId: actorUserId,
-    });
-    const disciplineId = Number(result[0].insertId);
-    disciplineIdsByShortName.set(shortName, disciplineId);
-    importedDisciplines += 1;
+    let disciplineId = disciplineIdsByShortName.get(shortName);
+    if (!disciplineId) {
+      const result = await db.insert(disciplines).values({
+        name: discipline.name,
+        shortName,
+        description: discipline.description,
+        status: "published",
+        requiresReview: false,
+        createdByUserId: actorUserId,
+        updatedByUserId: actorUserId,
+      });
+      disciplineId = Number(result[0].insertId);
+      disciplineIdsByShortName.set(shortName, disciplineId);
+      importedDisciplines += 1;
+    }
 
+    // Uma disciplina já existente também precisa receber conteúdos recém-importados.
     for (const contest of contestCatalog.filter(contest => contest.disciplineIds.includes(discipline.id) && availableCourseIds.has(contest.id))) {
+      const linkKey = `${contest.id}:${disciplineId}`;
+      if (existingCourseDisciplineLinks.has(linkKey)) continue;
       await db.insert(courseDisciplines).values({ courseId: contest.id, disciplineId, linkedByUserId: actorUserId });
+      existingCourseDisciplineLinks.add(linkKey);
     }
     for (const contentId of contentIdsByDiscipline.get(discipline.id) ?? []) {
+      const linkKey = `${disciplineId}:${contentId}`;
+      if (existingDisciplineContentLinks.has(linkKey)) continue;
       await db.insert(disciplineContents).values({ disciplineId, contentId, linkedByUserId: actorUserId });
+      existingDisciplineContentLinks.add(linkKey);
     }
   }
 
