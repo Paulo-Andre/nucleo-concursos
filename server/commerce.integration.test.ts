@@ -84,12 +84,17 @@ describe("ciclo comercial de planos e matrículas", () => {
       expect(checkout.preferenceId).toBeTruthy();
       expect(checkout.checkoutUrl).toMatch(/^https:\/\//);
 
-      const approvedOrder = await approveCommerceOrder(actor.id, paidOrder.id, "manual", "QA-TRANSFER-001");
+      const [approvedOrder, duplicateApproval] = await Promise.all([
+        approveCommerceOrder(actor.id, paidOrder.id, "manual", "QA-TRANSFER-001"),
+        approveCommerceOrder(actor.id, paidOrder.id, "manual", "QA-TRANSFER-001"),
+      ]);
+      expect(duplicateApproval.status).toBe("paid");
       expect(approvedOrder.status).toBe("paid");
       expect(approvedOrder.providerReference).toBe("QA-TRANSFER-001");
 
       const renewedEnrollment = (await db.select().from(courseEnrollments).where(and(eq(courseEnrollments.userId, learner.id), eq(courseEnrollments.courseId, course.id))).limit(1))[0];
       expect(renewedEnrollment?.expiresAt.getTime()).toBeGreaterThan(firstExpiration);
+      expect(Math.round(((renewedEnrollment?.expiresAt.getTime() ?? 0) - firstExpiration) / 86400000)).toBe(30);
       expect(renewedEnrollment?.sourceOrderId).toBe(paidOrder.id);
 
       const savedCoupon = (await db.select().from(commerceCoupons).where(eq(commerceCoupons.id, couponId!)).limit(1))[0];
