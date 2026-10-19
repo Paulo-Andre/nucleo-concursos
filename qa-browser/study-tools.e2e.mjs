@@ -9,7 +9,7 @@ test("C01 Treinador oferece busca integrada e cronômetro acessível", async ({ 
   await expect(page.locator("#area-de-estudos")).toBeVisible({ timeout: 20_000 });
 
   const drawer = page.getByRole("button", { name: "Abrir navegação" });
-  if (await drawer.isVisible()) await drawer.click();
+  if (test.info().project.name === "chromium-mobile") { await expect(drawer).toBeVisible({ timeout: 20_000 }); await drawer.click(); }
   await page.getByRole("button", { name: /Treinador/i }).first().click();
 
   const search = page.getByRole("region", { name: "Busca geral de estudos" });
