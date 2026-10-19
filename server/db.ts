@@ -46,6 +46,7 @@ import { DEFAULT_COURSES } from "./courseCatalog";
 import { canUseQuestionInSimulation, requiresExclusiveCentralBank, uniqueSimulationQuestions } from "./question-bank-policy";
 import { persistReviewDecision, type ReviewDecision as PersistedReviewDecision } from "./review-decision";
 import { completeStudyModules } from "../client/src/data/pfCompleteStudyData";
+import { specialLegislationModules } from "../client/src/data/pfSpecialLegislationModules";
 import { contestCatalog, disciplineCatalog, getDisciplineIdForModule } from "../client/src/data/pfCurriculumCatalog";
 import { questionBank, type StudyQuestion } from "../client/src/data/pfStudyData";
 import { loadPF2018Questions } from "./importProvasPF";
@@ -1344,11 +1345,30 @@ export async function dismissDailyQuickCheck(userId: number, courseId: string) {
   return { success: true } as const;
 }
 
-export async function recordAnswer(userId: number, questionId: string, correct: boolean) {
+export async function recordAnswer(userId: number, questionId: string, submittedAnswer: boolean, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+
+  const legacy = questionBank.find(question => question.id === questionId);
+  let expected: boolean;
+  if (legacy) {
+    const enrolled = isAdmin || (await getUserCourseAccess(userId)).some(enrollment => enrollment.courseId === "pf-agente");
+    if (!enrolled) throw new Error("Esta questão não pertence aos seus cursos ativos.");
+    expected = legacy.answer;
+  } else {
+    const persistedId = /^(?:central-)?([1-9][0-9]*)$/.exec(questionId)?.[1];
+    if (!persistedId) throw new Error("Questão não encontrada.");
+    const available = (await listStudyQuestions(userId, isAdmin)).questions.find(question => question.id === Number(persistedId));
+    if (!available || typeof available.answer !== "boolean") throw new Error("Questão não disponível para esta conta.");
+    expected = available.answer;
+  }
+
+  const correct = submittedAnswer === expected;
+  // Registrar tentativas para revisão; recompensa de XP somente na primeira resposta à questão.
+  const previous = await db.select({ id: studyAnswers.id }).from(studyAnswers)
+    .where(and(eq(studyAnswers.userId, userId), eq(studyAnswers.questionId, questionId))).limit(1);
   await db.insert(studyAnswers).values({ userId, questionId, correct });
-  await registerStudyActivity(userId, correct ? 8 : 2);
+  if (!previous.length) await registerStudyActivity(userId, correct ? 8 : 2);
   return getStudyState(userId);
 }
 
@@ -1383,9 +1403,17 @@ export async function removeStudyReviewItem(userId: number, id: number) {
   return listStudyReviewItems(userId);
 }
 
-export async function completeStudyModule(userId: number, moduleId: string) {
+export async function completeStudyModule(userId: number, moduleId: string, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+  const module = [...completeStudyModules, ...specialLegislationModules].find(item => item.id === moduleId);
+  if (!module) throw new Error("Módulo não pertence à biblioteca pedagógica.");
+  if (!isAdmin) {
+    const activeIds = new Set((await getUserCourseAccess(userId)).map(enrollment => enrollment.courseId));
+    const disciplineId = getDisciplineIdForModule(module);
+    const allowed = disciplineId && contestCatalog.some(contest => activeIds.has(contest.id) && contest.disciplineIds.includes(disciplineId));
+    if (!allowed) throw new Error("Módulo não autorizado para seus cursos.");
+  }
   const existing = await db.select().from(completedModules).where(and(eq(completedModules.userId, userId), eq(completedModules.moduleId, moduleId))).limit(1);
   if (!existing[0]) {
     await db.insert(completedModules).values({ userId, moduleId });
