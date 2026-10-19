@@ -51,7 +51,7 @@ function references(ids:string,names:string,byId:Map<number,unknown>,byName:Map<
   out.add(id);
  }
  if(!out.size)throw new Error(`Vincule pelo menos um(a) ${type} por ID ou nome.`);
- return [...out];
+ return Array.from(out);
 }
 function readYear(raw:string):number|null {
  if(!raw)return null;
