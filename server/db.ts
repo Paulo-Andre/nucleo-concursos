@@ -54,6 +54,7 @@ import { isValidCpf, normalizeCpf } from "./cpf";
 import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
 import { storagePut } from "./storage";
 import { serializeAdminBackup, type AdminBackupData } from "./adminBackup";
+import { scoreSimulation } from "./studyScoring";
 import { createPrivateBackupDownload } from "./privateBackupDownloads";
 import { isPlatformAlertVisibleForUser, type PlatformAlertAudience, type PlatformAlertLevel } from "./platformAlerts";
 import { resolveStudentContentNotice, type ContentNoticeKind } from "./content-notices";
@@ -87,7 +88,7 @@ type SimulationInput = {
   elapsedSeconds: number;
   byDiscipline: Record<string, { correct: number; total: number }>;
   byBlock: Record<string, { correct: number; total: number }>;
-  answers: { questionId: string; correct: boolean }[];
+  answers: { questionId: string; submittedAnswer: boolean }[];
   questionIds: string[];
   persistentAnswers?: { questionId: number; correct: boolean; snapshot: Record<string, unknown> }[];
 };
@@ -1422,23 +1423,63 @@ export async function completeStudyModule(userId: number, moduleId: string, isAd
   return getStudyState(userId);
 }
 
-export async function recordSimulation(userId: number, input: SimulationInput) {
+export async function recordSimulation(userId: number, input: SimulationInput, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+  const submittedIds = input.answers.map(answer => answer.questionId);
+  if (submittedIds.length !== input.questionIds.length ||
+    submittedIds.some((id, index) => id !== input.questionIds[index])) {
+    throw new Error("As respostas não correspondem às questões da tentativa.");
+  }
+  const canUseLegacy = isAdmin || (await getUserCourseAccess(userId)).some(enrollment => enrollment.courseId === "pf-agente");
+  const legacyBank = canUseLegacy ? questionBank.map(question => ({
+    canonicalKey: `legacy-${question.id}`,
+    questionId: question.id,
+    correctAnswer: question.answer,
+    discipline: question.discipline,
+    block: question.block,
+  })) : [];
+
+  const published = (await listStudyQuestions(userId, isAdmin)).questions.filter(question => typeof question.answer === "boolean");
+  const canonical = published.flatMap(question => {
+    const entry = {
+      canonicalKey: `central-${question.id}`,
+      correctAnswer: question.answer as boolean,
+      discipline: question.discipline,
+      block: "I",
+      persistedId: question.id,
+      snapshot: {
+        id: question.id,
+        statement: question.statement,
+        type: question.questionType,
+        answer: question.answer,
+        explanation: question.explanation,
+        discipline: question.discipline,
+        subject: question.subject,
+        difficulty: question.difficulty,
+        source: question.source,
+      },
+    };
+    return [{ ...entry, questionId: `central-${question.id}` }, { ...entry, questionId: String(question.id) }];
+  });
+  const scored = scoreSimulation(input.answers, [...legacyBank, ...canonical]);
+  // Nota, acertos e XP são calculados com o gabarito canônico, nunca com os totais enviados pelo navegador.
   await db.insert(simulationRecords).values({
     id: input.id,
     userId,
-    total: input.total,
-    correct: input.correct,
-    errors: input.errors,
+    total: scored.total,
+    correct: scored.correct,
+    errors: scored.errors,
     elapsedSeconds: input.elapsedSeconds,
-    byDisciplineJson: JSON.stringify(input.byDiscipline),
-    byBlockJson: JSON.stringify(input.byBlock),
+    byDisciplineJson: JSON.stringify(scored.byDiscipline),
+    byBlockJson: JSON.stringify(scored.byBlock),
   });
-  if (input.answers.length) await db.insert(studyAnswers).values(input.answers.map(answer => ({ ...answer, userId })));
-  const persistentAnswers = uniqueSimulationQuestions((input.persistentAnswers ?? []).map(answer => ({ ...answer, id: answer.questionId, status: "published" as const, requiresReview: true })));
-  if (persistentAnswers.length) await db.insert(simulationQuestions).values(persistentAnswers.map((answer, position) => ({ simulationId: input.id, questionId: answer.questionId, position: position + 1, answeredCorrectly: answer.correct, snapshotJson: JSON.stringify(answer.snapshot) })));
-  await registerStudyActivity(userId, input.correct * 8 + 15, input.questionIds);
+  if (scored.answers.length) await db.insert(studyAnswers).values(scored.answers.map(answer => ({ ...answer, userId })));
+  if (scored.persistent.length) await db.insert(simulationQuestions).values(scored.persistent.map((answer, position) => ({
+    simulationId: input.id, questionId: answer.questionId, position: position + 1,
+    answeredCorrectly: answer.correct, snapshotJson: JSON.stringify(answer.snapshot),
+  })));
+  await registerStudyActivity(userId, scored.correct * 8 + 15, submittedIds);
   return getStudyState(userId);
 }
 
