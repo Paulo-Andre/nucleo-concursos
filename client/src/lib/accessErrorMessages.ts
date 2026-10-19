@@ -34,8 +34,8 @@ function fieldMessage(issue: ValidationIssue): string | null {
   if (issue.code === "too_big" && typeof issue.maximum === "number") {
     return `O campo ${label} pode ter no máximo ${issue.maximum} caracteres.`;
   }
-  if (issue.code === "invalid_format" || issue.code === "invalid_string") {
-    if (field === "email") return "Informe um endereço de e-mail válido.";
+  if (field === "email" && (issue.code === "invalid_format" || issue.code === "invalid_string" || /invalid email/i.test(String(issue.message ?? "")))) {
+    return "Informe um endereço de e-mail válido.";
   }
   if (typeof issue.message === "string" && /^[\p{L}0-9 .,;:!?()\-]+$/u.test(issue.message) && issue.message.length < 180) return issue.message;
   return `Verifique o campo ${label} e tente novamente.`;
