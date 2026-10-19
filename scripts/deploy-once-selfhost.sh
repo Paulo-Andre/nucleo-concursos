@@ -34,6 +34,10 @@ git fetch --no-tags origin fix/qa-seguranca-aprendizagem-20261019
 [[ "$(git rev-parse "$RELEASE_REF")" == "$NUCLEO_RELEASE_SHA" ]] || { echo "O SHA da branch mudou depois da homologação. Revalidar antes de instalar."; exit 1; }
 OLD_HEAD="$(git rev-parse HEAD)"
 git merge-base --is-ancestor "$OLD_HEAD" "$NUCLEO_RELEASE_SHA" || { echo "Históricos divergentes. Não é possível avançar automaticamente."; exit 1; }
+if ! git diff --quiet "$OLD_HEAD" "$NUCLEO_RELEASE_SHA" -- drizzle/schema.ts drizzle.config.ts; then
+  echo "A estrutura do banco mudou. É obrigatório ensaiar as migrações em cópia isolada antes de publicar." >&2
+  exit 1
+fi
 
 umask 077
 BACKUP="$HOME/backups-nucleo/deploy-$(date +%Y%m%d-%H%M%S)"
@@ -48,8 +52,8 @@ echo "Protegendo configurações e arquivos locais..."
 tar -czf "$BACKUP/arquivos-config.tar.gz" -C "$TARGET_DIR" .env compose.yaml Dockerfile .dockerignore data
 tar -tzf "$BACKUP/arquivos-config.tar.gz" >/dev/null
 docker image inspect nucleo-concursos-app:latest >/dev/null
-docker image tag nucleo-concursos-app:latest "nucleo-concursos-app:rollback-$(date +%Y%m%d%H%M%S)"
-ROLLBACK_IMAGE="$(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '^nucleo-concursos-app:rollback-' | sort | tail -1)"
+ROLLBACK_IMAGE="nucleo-concursos-app:rollback-$(date +%Y%m%d%H%M%S)"
+docker image tag nucleo-concursos-app:latest "$ROLLBACK_IMAGE"
 echo "Backup verificado em: $BACKUP"
 echo "Imagem anterior: $ROLLBACK_IMAGE"
 
@@ -75,7 +79,7 @@ docker compose up -d --no-deps --no-build --force-recreate app
 echo "Verificando HTTP local..."
 success=0
 for attempt in $(seq 1 25); do
-  if curl --silent --fail --max-time 5 http://127.0.0.1:3000/ >/dev/null; then success=1;break;fi
+  if curl --silent --fail --max-time 5 http://127.0.0.1:3000/ >/dev/null && curl --silent --fail --max-time 5 http://127.0.0.1:3000/api/trpc/platform.settings >/dev/null; then success=1;break;fi
   sleep 2
 done
 [[ "$success" == "1" ]]
@@ -83,4 +87,4 @@ trap - ERR
 docker compose ps
 echo "Aplicação atualizada com sucesso: $(git rev-parse --short HEAD)"
 echo "Backup seguro: $BACKUP"
-echo "Confirme login, área ROOT, compra e estudos no navegador. Nenhuma migração destrutiva foi executada."
+echo "Confirme login, área ROOT, compra e estudos no navegador. Definição do banco sem mudanças estruturais nesta release."
