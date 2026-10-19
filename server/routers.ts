@@ -324,7 +324,7 @@ export const appRouter = router({
       const session = await startLocalSession(ctx, user.id);
       return { user: safeUser(user), ...session };
     }),
-    login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3), password: passwordSchema })).mutation(async ({ input, ctx }) => {
+    login: publicProcedure.input(z.object({ identifier: z.string().trim().min(1).max(320), password: z.string().min(1).max(128) })).mutation(async ({ input, ctx }) => {
       const rateLimitKeys = loginAttemptKeys(ctx.req, input.identifier);
       if (!isLoginAttemptAllowed(rateLimitKeys)) {
         throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `Muitas tentativas de acesso. Aguarde cerca de ${loginRetryAfterSeconds(rateLimitKeys)} segundos e tente novamente.` });
