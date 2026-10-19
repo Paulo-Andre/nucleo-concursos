@@ -1,4 +1,4 @@
-type AccessMode = "login" | "register" | "forgot" | "reset";
+type AccessMode = "login" | "register" | "forgot" | "reset" | "account";
 
 type ValidationIssue = {
   message?: unknown;
@@ -83,6 +83,7 @@ export function formatAccessError(error: unknown, mode: AccessMode): string {
   if (/A senha deve ter pelo menos 8 caracteres/i.test(raw)) return "A senha deve ter pelo menos 8 caracteres.";
   if (/Informe um e-mail válido/i.test(raw)) return "Informe um endereço de e-mail válido.";
 
+  if (mode === "account") return "Não foi possível atualizar seus dados. Tente novamente em instantes.";
   if (mode === "login") return "Não foi possível entrar. Verifique sua conexão e tente novamente.";
   if (mode === "forgot") return "Não foi possível solicitar a recuperação agora. Tente novamente em instantes.";
   if (mode === "reset") return "Não foi possível redefinir sua senha. Confira os dados e tente novamente.";
