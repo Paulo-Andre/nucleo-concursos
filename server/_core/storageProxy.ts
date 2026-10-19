@@ -11,6 +11,12 @@ export function registerStorageProxy(app: Express) {
       return;
     }
 
+    // Revoga URLs antigas de exportações administrativas; esta rota serve somente mídia pública.
+    if (/^admin-backups(?:\\/|$)/i.test(key.replace(/^\\/+/, ""))) {
+      res.status(404).end();
+      return;
+    }
+
     try {
       if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
         const filePath = resolveLocalStoragePath(key);
