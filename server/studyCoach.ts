@@ -150,6 +150,10 @@ export async function listErrorNotebook(userId: number, courseId: string, isAdmi
   const contents = await scopedContents(userId, courseId, isAdmin);
   const contentIds = new Set(contents.map(item => item.id));
   const valid = available.filter(item => item.contentIds.some(id => contentIds.has(id)));
+  // O caderno também incorpora os itens da trilha PF original (anterior ao banco central).
+  const legacy = courseId === "pf-agente"
+    ? questionBank.map(item => ({questionId:item.id,statement:item.statement,discipline:item.discipline,explanation:item.explanation}))
+    : [];
   const db = await getDb();
   if (!db) throw new Error("Banco indisponível");
   const answers = await db.select().from(studyAnswers).where(eq(studyAnswers.userId,userId)).orderBy(desc(studyAnswers.answeredAt)).limit(2000);
@@ -157,12 +161,18 @@ export async function listErrorNotebook(userId: number, courseId: string, isAdmi
   answers.forEach(answer => { if (!latest.has(answer.questionId)) latest.set(answer.questionId, answer.correct); });
   const notes = await db.select().from(studyNotes).where(and(eq(studyNotes.userId,userId),like(studyNotes.moduleId, "error:%")));
   const noteMap = new Map(notes.map(note=>[note.moduleId.slice(ERROR_PREFIX.length),safeJson(note.content)]));
-  return valid.filter(item => latest.get(String(item.id)) === false || latest.get(`central-${item.id}`) === false).map(item=>{
+  const persistedErrors = valid.filter(item => latest.get(String(item.id)) === false || latest.get(`central-${item.id}`) === false).map(item=>{
     const note = noteMap.get(`central-${item.id}`);
     return { questionId: `central-${item.id}`, statement: item.statement, discipline: item.discipline,
       explanation: item.explanation, reason: isRecord(note) && typeof note.reason === "string" ? note.reason : "nao_classificado",
       observation: isRecord(note) && typeof note.observation === "string" ? note.observation : "" };
   });
+  const legacyErrors = legacy.filter(item => latest.get(item.questionId) === false).map(item=>{
+    const note=noteMap.get(item.questionId);
+    return { ...item, reason:isRecord(note) && typeof note.reason==="string"?note.reason:"nao_classificado",
+      observation:isRecord(note) && typeof note.observation==="string"?note.observation:"" };
+  });
+  return [...persistedErrors, ...legacyErrors];
 }
 export async function classifyStudyError(userId:number,input:{courseId:string;questionId:string;reason:string;observation:string},isAdmin=false) {
  const errors = await listErrorNotebook(userId,input.courseId,isAdmin);
