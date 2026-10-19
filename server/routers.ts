@@ -113,6 +113,7 @@ import {
 import { createMercadoPagoCheckout } from "./mercadoPago";
 import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 import { sendPasswordResetEmail } from "./email";
+import { importSpreadsheet } from "./spreadsheetImport";
 import { createFlashcard, rateFlashcard, removeFlashcard, listFlashcards, getLearningDiagnostic, listErrorNotebook, classifyStudyError, rateQuestionReview } from "./studyCoach";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
@@ -597,6 +598,12 @@ export const appRouter = router({
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: contentSchema })).mutation(({ input, ctx }) => updateManagedContent(ctx.user.id, input.id, input.data)),
       changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listContentChangelog(input.id)),
       sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "content", input.id)),
+    }),
+    spreadsheets: router({
+      preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000)}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,0,true)),
+      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),expectedCount:z.number().int().min(1).max(250)}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,input.expectedCount,false)),
     }),
     questions: router({
       list: adminProcedure.input(z.object({ search: z.string().trim().max(200).optional(), status: knowledgeStatusSchema.optional(), contentId: entityIdSchema.optional() })).query(({ input }) => listManagedQuestions(input)),
