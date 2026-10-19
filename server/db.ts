@@ -58,6 +58,7 @@ import { scoreSimulation } from "./studyScoring";
 import { createPrivateBackupDownload } from "./privateBackupDownloads";
 import { isPlatformAlertVisibleForUser, type PlatformAlertAudience, type PlatformAlertLevel } from "./platformAlerts";
 import { resolveStudentContentNotice, type ContentNoticeKind } from "./content-notices";
+import { brazilStudyDayKey } from "../shared/brazilStudyDay";
 
 type UserUpsertInput = {
   openId: string;
@@ -157,7 +158,7 @@ function parseStudyReviewSnapshot(raw: string): StudyReviewSnapshot | null {
 }
 
 function currentStudyDay() {
-  return new Date().toISOString().slice(0, 10);
+  return brazilStudyDayKey();
 }
 
 export async function getDb() {
