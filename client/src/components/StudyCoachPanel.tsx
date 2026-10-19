@@ -3,6 +3,7 @@ import { Brain, CalendarCheck2, BookOpenCheck, Layers3, Target, Plus, Check, Tra
 import { trpc } from "@/lib/trpc";
 import { StudyFocusTimer } from "@/components/StudyFocusTimer";
 import { StudyGlobalSearchPanel } from "@/components/StudyGlobalSearchPanel";
+import { StudyEditalChecklist } from "@/components/StudyEditalChecklist";
 import type { StudyQuestion } from "@/data/pfStudyData";
 
 type ContentOption = { id: number; title: string; disciplineName: string; progress: {status: "started" | "completed"} | null };
@@ -47,6 +48,7 @@ export function StudyCoachPanel({courseId, contents, questions, onOpenContent, o
     <p className="mt-3 text-sm text-[#52666f]">Aulas iniciadas e disciplinas com menor acerto aparecem primeiro. O plano é uma sugestão e não impede que você estude outros temas.</p>
     {overview.isLoading?<p className="mt-4 text-sm">Preparando seu roteiro...</p>:current?.today.length?<div className="mt-4 grid gap-3 md:grid-cols-2">{current.today.map((item,index)=><button key={item.contentId} onClick={()=>onOpenContent(item.contentId)} className="rounded-xl border border-[#c7dcd5] bg-[#f5faf8] p-4 text-left transition hover:border-[#0e5a70] focus-visible:outline-2 focus-visible:outline-[#0e5a70]"><span className="text-xs font-bold text-[#0e5a70]">PASSO {index+1} · {item.minutes} MIN</span><h4 className="mt-1 text-base font-bold">{item.title}</h4><p className="mt-1 text-sm text-[#536d72]">{item.disciplineName} · {item.reason}</p><span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#0e5a70]"><BookOpenCheck className="h-4 w-4"/>Abrir aula</span></button>)}</div>:<p className="mt-5 text-sm text-[#52666f]">Não há conteúdos pendentes para este curso.</p>}
    </section>
+   <StudyEditalChecklist contents={contents} onOpen={onOpenContent}/>
    <section className="shell-card p-5 sm:p-6" aria-label="Diagnóstico de disciplinas">
     <p className="eyebrow flex items-center gap-2"><Target className="h-4 w-4"/>MAPA DE DOMÍNIO</p><h3 className="font-display mt-2 text-xl font-bold">Diagnóstico por disciplina</h3>
     <p className="mt-2 text-sm text-[#52666f]">Indicadores calculados por questões respondidas. Menos de dez questões representam uma amostra pequena.</p>
