@@ -2343,7 +2343,7 @@ export async function listStudyQuestions(userId: number, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const allRows = await db.select().from(questions).orderBy(desc(questions.updatedAt));
-  const rows = uniqueSimulationQuestions(allRows.filter(question => canUseQuestionInSimulation(question)));
+  const rows = uniqueSimulationQuestions(allRows.filter(question => canUseQuestionInSimulation(question) && (question.status === "published" || question.status === "approved")));
   const activeCourses = isAdmin ? [] : (await getUserCourseAccess(userId)).map(enrollment => enrollment.courseId);
   const allowedContentIds = isAdmin ? null : new Set(await getEligibleContentIdsForCourses(activeCourses));
   const studyQuestions = await Promise.all(rows.map(async question => {
