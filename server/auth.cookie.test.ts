@@ -12,13 +12,13 @@ describe("política de cookie de sessão", () => {
     expect(options).toMatchObject({ secure: false, sameSite: "lax", httpOnly: true, path: "/" });
   });
 
-  it("mantém SameSite=None somente em sessão HTTPS segura", () => {
+  it("mantém SameSite=Lax também em HTTPS", () => {
     const options = getSessionCookieOptions({
       protocol: "https",
       headers: {},
       hostname: "estudospf-peiyfhjy.manus.space",
     } as any);
 
-    expect(options).toMatchObject({ secure: true, sameSite: "none", httpOnly: true, path: "/" });
+    expect(options).toMatchObject({ secure: true, sameSite: "lax", httpOnly: true, path: "/" });
   });
 });
