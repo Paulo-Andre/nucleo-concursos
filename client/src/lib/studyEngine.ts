@@ -1,5 +1,6 @@
 /* Estudos PF — lógica de progresso: recompensa domínio demonstrado e preserva histórico local. */
 import { Block, StudyQuestion, blocks } from "@/data/pfStudyData";
+import { brazilStudyDayKey, brazilPreviousDay } from "@shared/brazilStudyDay";
 
 export type AnswerRecord = { questionId: string; correct: boolean; answeredAt: string };
 export type SimulationRecord = {
@@ -48,15 +49,13 @@ export function levelFromXp(xp: number) {
   return { label: levels[index], index: index + 1, current: xp - currentStart, next: 220, progress: Math.min(100, ((xp - currentStart) / 220) * 100) };
 }
 
-export function currentStreak(studyDates: string[]) {
+export function currentStreak(studyDates: string[], now = new Date()) {
   const days = new Set(studyDates);
+  let cursor = days.has(brazilStudyDayKey(now)) ? now : brazilPreviousDay(now);
   let streak = 0;
-  const cursor = new Date();
-  while (true) {
-    const key = cursor.toISOString().slice(0, 10);
-    if (!days.has(key)) break;
+  while (days.has(brazilStudyDayKey(cursor))) {
     streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
+    cursor = brazilPreviousDay(cursor);
   }
   return streak;
 }
