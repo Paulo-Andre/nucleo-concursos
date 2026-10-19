@@ -1,13 +1,14 @@
 name: QA segurança e regressão
 
 on:
-  push:
-    branches:
-      - fix/qa-seguranca-aprendizagem-20261019
   pull_request:
     branches:
       - feat/ux-acessibilidade-jornada-aluno
   workflow_dispatch:
+
+concurrency:
+  group: qa-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
