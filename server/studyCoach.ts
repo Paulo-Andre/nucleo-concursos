@@ -111,13 +111,13 @@ export async function getLearningDiagnostic(userId: number, courseId: string, is
   const latest = new Map<string, typeof answers[number]>();
   for (const answer of answers) if (!latest.has(answer.questionId) && questionMap.has(answer.questionId)) latest.set(answer.questionId, answer);
   const stats = new Map<string, {correct: number; total: number}>();
-  for (const answer of latest.values()) {
+  for (const answer of Array.from(latest.values())) {
     const discipline = questionMap.get(answer.questionId)!.discipline;
     const stat = stats.get(discipline) ?? { correct: 0, total: 0 };
     stat.total++; if (answer.correct) stat.correct++;
     stats.set(discipline, stat);
   }
-  const disciplines = Array.from(new Set([...contents.map(item => item.disciplineName), ...stats.keys()]))
+  const disciplines = Array.from(new Set([...contents.map(item => item.disciplineName), ...Array.from(stats.keys())]))
     .map(name => {
       const score = stats.get(name) ?? { correct: 0, total: 0 };
       return { name, ...score, accuracy: score.total ? Math.round(score.correct * 100 / score.total) : null,
