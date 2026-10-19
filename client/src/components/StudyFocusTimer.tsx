@@ -6,6 +6,7 @@ export function StudyFocusTimer() {
   const [minutes, setMinutes] = useState<15 | 25 | 40 | 60>(25);
   const [remaining, setRemaining] = useState(25 * 60);
   const [running, setRunning] = useState(false);
+  const [started, setStarted] = useState(false);
   const [complete, setComplete] = useState(false);
   const deadline = useRef<number | null>(null);
 
@@ -18,6 +19,7 @@ export function StudyFocusTimer() {
       if (next === 0) {
         deadline.current = null;
         setRunning(false);
+        setStarted(false);
         setComplete(true);
       }
     };
@@ -34,6 +36,7 @@ export function StudyFocusTimer() {
       deadline.current = Date.now() + remaining * 1000;
     }
     setComplete(false);
+    setStarted(true);
     setRunning(true);
   };
   const pause = () => {
@@ -44,6 +47,7 @@ export function StudyFocusTimer() {
   const reset = (nextMinutes = minutes) => {
     deadline.current = null;
     setRunning(false);
+    setStarted(false);
     setComplete(false);
     setRemaining(nextMinutes * 60);
   };
@@ -64,7 +68,7 @@ export function StudyFocusTimer() {
       <div role="timer" aria-label="Tempo restante do modo foco" className="font-display min-w-32 text-4xl font-bold tabular-nums text-[#0e5a70]">{focusTimeLabel(remaining)}</div>
       <div className="flex flex-wrap gap-2">
         {running ? <button type="button" onClick={pause} className="action-button inline-flex min-h-11 items-center gap-2"><Pause className="h-4 w-4" aria-hidden="true"/>Pausar</button>
-          : <button type="button" onClick={start} className="action-button inline-flex min-h-11 items-center gap-2"><Play className="h-4 w-4" aria-hidden="true"/>{remaining === minutes * 60 ? "Iniciar foco" : "Continuar"}</button>}
+          : <button type="button" onClick={start} className="action-button inline-flex min-h-11 items-center gap-2"><Play className="h-4 w-4" aria-hidden="true"/>{started ? "Continuar" : "Iniciar foco"}</button>}
         <button type="button" onClick={()=>reset()} className="ghost-button inline-flex min-h-11 items-center gap-2"><RotateCcw className="h-4 w-4" aria-hidden="true"/>Reiniciar</button>
       </div>
     </div>
