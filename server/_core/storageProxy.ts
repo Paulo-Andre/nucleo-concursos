@@ -12,7 +12,7 @@ export function registerStorageProxy(app: Express) {
     }
 
     // Revoga URLs antigas de exportações administrativas; esta rota serve somente mídia pública.
-    if (/^admin-backups(?:\\/|$)/i.test(key.replace(/^\\/+/, ""))) {
+    if (key.replaceAll(String.fromCharCode(92), "/").split("/").filter(Boolean)[0]?.toLowerCase() === "admin-backups") {
       res.status(404).end();
       return;
     }
