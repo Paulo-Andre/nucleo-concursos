@@ -5,7 +5,8 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
-import { createContext } from "./context";
+import { createContext, resolveSessionUser } from "./context";
+import { takePrivateBackupDownload, disposePrivateBackupDownload } from "../privateBackupDownloads";
 import { serveStatic, setupVite } from "./vite";
 import { ensureRootAccount } from "../auth/rootBootstrap";
 import { processMercadoPagoWebhook, resolveMercadoPagoNotificationDataId } from "../mercadoPago";
@@ -50,6 +51,21 @@ async function startServer() {
   app.use(express.json({ limit: "8mb" }));
   app.use(express.urlencoded({ limit: "8mb", extended: true }));
   registerStorageProxy(app);
+  app.get("/api/admin/backups/:token", async (req, res) => {
+    // Downloads exigem sessão ROOT viva, sem cache e com token único de cinco minutos.
+    res.setHeader("Cache-Control", "no-store, private");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    const user = await resolveSessionUser(req);
+    if (!user || user.role !== "admin") return res.sendStatus(403);
+    const backup = takePrivateBackupDownload(req.params.token, user.id);
+    if (!backup) return res.sendStatus(404);
+    res.download(backup.filePath, backup.fileName, {
+      headers: { "Cache-Control": "no-store, private", "Content-Type": "application/json" },
+    }, error => {
+      void disposePrivateBackupDownload(backup).catch(() => {});
+      if (error && !res.headersSent) res.sendStatus(500);
+    });
+  });
   app.post("/api/payments/mercado-pago/webhook", async (req, res) => {
     try {
       const dataId = resolveMercadoPagoNotificationDataId({
