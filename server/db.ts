@@ -259,7 +259,11 @@ export async function updateUserRole(userId: number, role: "user" | "admin") {
 export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+  // Troca de senha sempre invalida todas as sessões, inclusive no reset administrativo.
+  await db.transaction(async tx => {
+    await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
+    await tx.delete(authSessions).where(eq(authSessions.userId, userId));
+  });
 }
 
 export async function createPasswordResetToken(userId: number, tokenHash: string, expiresAt: Date) {
