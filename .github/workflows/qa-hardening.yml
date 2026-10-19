@@ -39,7 +39,7 @@ jobs:
       ROOT_INITIAL_PASSWORD: qa_root_password_local_ci_only
       OWNER_OPEN_ID: ""
       RESEND_API_KEY: ""
-      MERCADO_PAGO_ACCESS_TOKEN: ""
+      MERCADO_PAGO_ACCESS_TOKEN: "TEST-ci-only-fake-not-valid-for-api"
       MERCADO_PAGO_WEBHOOK_SECRET: "qa_webhook_signature_test_only_never_in_production"
     steps:
       - uses: actions/checkout@v4
@@ -57,6 +57,6 @@ jobs:
       - name: Preparar dados exclusivos de QA
         run: pnpm exec tsx scripts/seed-qa.ts
       - name: Executar toda a regressão (frontend e servidor)
-        run: pnpm test
+        run: pnpm exec vitest run --maxWorkers=1 --minWorkers=1 --no-file-parallelism
       - name: Compilar para produção
         run: pnpm build
