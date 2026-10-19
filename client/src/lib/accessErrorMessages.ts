@@ -37,7 +37,7 @@ function fieldMessage(issue: ValidationIssue): string | null {
   if (field === "email" && (issue.code === "invalid_format" || issue.code === "invalid_string" || /invalid email/i.test(String(issue.message ?? "")))) {
     return "Informe um endereço de e-mail válido.";
   }
-  if (typeof issue.message === "string" && /^[\p{L}0-9 .,;:!?()\-]+$/u.test(issue.message) && issue.message.length < 180) return issue.message;
+  if (typeof issue.message === "string" && /^[A-Za-zÀ-ÖØ-öø-ÿ0-9 .,;:!?()\-]+$/.test(issue.message) && issue.message.length < 180) return issue.message;
   return `Verifique o campo ${label} e tente novamente.`;
 }
 
