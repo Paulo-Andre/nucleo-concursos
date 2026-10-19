@@ -66,7 +66,11 @@ export function formatAccessError(error: unknown, mode: AccessMode): string {
   if (!issues.length && (raw.startsWith("[") || raw.startsWith("{"))) {
     try { issues = getValidationIssues(JSON.parse(raw)); } catch { /* Resposta inválida: não exibir detalhes internos. */ }
   }
-  if (issues.length) return fieldMessage(issues[0]) ?? "Confira os dados informados e tente novamente.";
+  if (issues.length) {
+    // Acesso não é criação de senha: nunca revelar tamanho mínimo ou regras de cadastro.
+    if (mode === "login") return "Usuário ou senha incorretos. Verifique os dados e tente novamente.";
+    return fieldMessage(issues[0]) ?? "Confira os dados informados e tente novamente.";
+  }
 
   const code = object?.data?.code;
   if (code === "TOO_MANY_REQUESTS" || /muitas tentativas|muitas solicitações/i.test(raw)) {
