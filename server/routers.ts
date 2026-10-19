@@ -403,7 +403,7 @@ export const appRouter = router({
       persistentAnswers: z.array(z.object({ questionId: entityIdSchema, correct: z.boolean(), snapshot: z.record(z.string(), z.unknown()) })).optional(),
     })).mutation(({ input, ctx }) => recordSimulation(ctx.user.id, input)),
     questions: router({
-      list: enrollmentRequiredProcedure.query(() => listStudyQuestions()),
+      list: enrollmentRequiredProcedure.query(({ ctx }) => listStudyQuestions(ctx.user.id, ctx.user.role === "admin")),
     }),
     review: router({
       list: contestEnrollmentRequiredProcedure.query(({ ctx }) => listStudyReviewItems(ctx.user.id)),
