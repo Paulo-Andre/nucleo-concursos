@@ -50,6 +50,8 @@ jobs:
           cache: pnpm
       - name: Instalar dependências travadas
         run: pnpm install --frozen-lockfile
+      - name: Validar sintaxe dos scripts de publicação e restauração
+        run: bash -n scripts/deploy-once-selfhost.sh scripts/verify-qa-restore.sh
       - name: Checar TypeScript
         run: pnpm check
       - name: Testar migrações em MySQL limpo
