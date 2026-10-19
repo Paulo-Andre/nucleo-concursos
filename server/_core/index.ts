@@ -36,6 +36,8 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   app.disable("x-powered-by");
+  // Somente proxy local é confiável por padrão; configure TRUST_PROXY para CIDRs explícitos se necessário.
+  app.set("trust proxy", process.env.TRUST_PROXY?.trim() || "loopback");
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     // A prévia ROOT é carregada pela mesma origem; as demais páginas seguem sem poder ser incorporadas.
@@ -88,6 +90,20 @@ async function startServer() {
   });
   app.post("/api/scheduled/weeklyReset", weeklyResetHandler);
   // tRPC API
+  app.use((req, res, next) => {
+    if (req.method !== "POST" || !req.path.startsWith("/api/trpc")) return next();
+    const source = req.get("origin");
+    const fetchSite = req.get("sec-fetch-site");
+    if (fetchSite === "cross-site") return res.status(403).json({ error: "Origem não autorizada" });
+    if (source) {
+      try {
+        if (new URL(source).host !== req.get("host")) return res.status(403).json({ error: "Origem não autorizada" });
+      } catch {
+        return res.status(403).json({ error: "Origem não autorizada" });
+      }
+    }
+    next();
+  });
   app.use(
     "/api/trpc",
     createExpressMiddleware({
