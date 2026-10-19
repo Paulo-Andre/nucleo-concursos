@@ -1079,8 +1079,16 @@ async function getEligibleContentIdsForCourses(courseIds: string[]) {
   const db = await getDb();
   if (!db || !courseIds.length) return [];
   const rows = await db.select({ contentId: disciplineContents.contentId }).from(courseDisciplines)
+    .innerJoin(courses, eq(courseDisciplines.courseId, courses.id))
+    .innerJoin(disciplines, eq(courseDisciplines.disciplineId, disciplines.id))
     .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
-    .where(inArray(courseDisciplines.courseId, courseIds));
+    .innerJoin(contents, eq(disciplineContents.contentId, contents.id))
+    .where(and(
+      inArray(courseDisciplines.courseId, courseIds),
+      eq(courses.isActive, true),
+      eq(disciplines.status, "published"),
+      eq(contents.status, "published"),
+    ));
   return Array.from(new Set(rows.map(row => row.contentId)));
 }
 
@@ -1133,7 +1141,7 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
     .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
     .innerJoin(contents, eq(disciplineContents.contentId, contents.id))
     .innerJoin(disciplines, eq(disciplineContents.disciplineId, disciplines.id))
-    .where(eq(courseDisciplines.courseId, courseId));
+    .where(and(eq(courseDisciplines.courseId, courseId), eq(contents.status, "published"), eq(disciplines.status, "published")));
   const unique = new Map<number, StudyCourseContent>();
   rows.forEach(content => unique.set(content.id, content));
   return Array.from(unique.values()).sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
@@ -1309,7 +1317,7 @@ export async function getDailyQuickCheck(userId: number, courseId: string) {
   const profile = await ensureStudyProfile(userId);
   const day = currentStudyDay();
   const allowedContentIds = await getEligibleContentIdsForCourses([courseId]);
-  const questionPool = (await listStudyQuestions()).questions.filter(question => question.contentIds.some(contentId => allowedContentIds.includes(contentId)));
+  const questionPool = (await listStudyQuestions(userId)).questions.filter(question => question.contentIds.some(contentId => allowedContentIds.includes(contentId)));
   const persistedQuestion = profile.dailyQuickCheckDate === day && profile.dailyQuickCheckCourseId === courseId
     ? questionPool.find(question => String(question.id) === profile.dailyQuickCheckQuestionId)
     : undefined;
@@ -2331,15 +2339,23 @@ export async function listManagedQuestions(input: { search?: string; status?: Kn
 }
 
 /** Projeção para alunos: respeita o modo simples e a revisão configurável, sem duplicar a questão por conteúdo. */
-export async function listStudyQuestions() {
+export async function listStudyQuestions(userId: number, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const allRows = await db.select().from(questions).orderBy(desc(questions.updatedAt));
   const rows = uniqueSimulationQuestions(allRows.filter(question => canUseQuestionInSimulation(question)));
+  const activeCourses = isAdmin ? [] : (await getUserCourseAccess(userId)).map(enrollment => enrollment.courseId);
+  const allowedContentIds = isAdmin ? null : new Set(await getEligibleContentIdsForCourses(activeCourses));
   const studyQuestions = await Promise.all(rows.map(async question => {
-    const linkedContents = await db.select({ id: contents.id, title: contents.title }).from(questionContentLinks).innerJoin(contents, eq(questionContentLinks.contentId, contents.id)).where(eq(questionContentLinks.questionId, question.id));
+    const linkedContents = await db.select({ id: contents.id, title: contents.title }).from(questionContentLinks)
+      .innerJoin(contents, eq(questionContentLinks.contentId, contents.id))
+      .where(and(eq(questionContentLinks.questionId, question.id), eq(contents.status, "published")));
+    const permittedContents = allowedContentIds
+      ? linkedContents.filter(content => allowedContentIds.has(content.id))
+      : linkedContents;
+    if (!permittedContents.length) return null;
     const disciplineNames: string[] = [];
-    for (const content of linkedContents) {
+    for (const content of permittedContents) {
       const links = await db.select({ name: disciplines.name }).from(disciplineContents).innerJoin(disciplines, eq(disciplineContents.disciplineId, disciplines.id)).where(eq(disciplineContents.contentId, content.id));
       for (const link of links) if (!disciplineNames.includes(link.name)) disciplineNames.push(link.name);
     }
@@ -2347,11 +2363,11 @@ export async function listStudyQuestions() {
       id: question.id, statement: question.statement, questionType: question.questionType,
       options: question.optionsJson ? JSON.parse(question.optionsJson) : [], answer: JSON.parse(question.answerJson),
       explanation: question.explanation, difficulty: question.difficulty, source: question.source, banca: question.banca, year: question.year,
-      discipline: disciplineNames[0] ?? "Biblioteca central", subject: linkedContents.map(content => content.title).join(" · ") || "Conteúdo geral",
-      contentIds: linkedContents.map(content => content.id),
+      discipline: disciplineNames[0] ?? "Biblioteca central", subject: permittedContents.map(content => content.title).join(" · ") || "Conteúdo geral",
+      contentIds: permittedContents.map(content => content.id),
     };
   }));
-  return { requiresReviewMode: requiresExclusiveCentralBank(allRows), questions: studyQuestions };
+  return { requiresReviewMode: requiresExclusiveCentralBank(allRows), questions: studyQuestions.filter((question): question is NonNullable<typeof question> => question !== null) };
 }
 
 async function getManagedQuestionById(questionId: number) {
