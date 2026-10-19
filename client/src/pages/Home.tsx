@@ -297,7 +297,8 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
 
   function updateState(updater: (current: StudyState) => StudyState) { setState((current) => updater(current)); }
 
-  function registerAnswer(question: StudyQuestion, correct: boolean) {
+  function registerAnswer(question: StudyQuestion, submittedAnswer: boolean) {
+    const correct = question.answer === submittedAnswer;
     const today = new Date().toISOString().slice(0, 10);
     updateState((current) => ({
       ...current,
@@ -306,7 +307,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
       studyDates: current.studyDates.includes(today) ? current.studyDates : [...current.studyDates, today],
       lastStudyDate: today,
     }));
-    answerMutation.mutate({ questionId: question.id, correct }, { onSuccess: serverState => setState(serverState as StudyState) });
+    answerMutation.mutate({ questionId: question.id, submittedAnswer }, { onSuccess: serverState => setState(serverState as StudyState) });
   }
 
   function addToPersonalReview(question: StudyQuestion) {
@@ -437,7 +438,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
           {view === "Acessos" && <MyAccessesArea onBuyMore={() => setView("Cursos")} />}
         </>}</div>
       </main>
-          {view === "Painel" && !simulation && !simulationResult && quickQuestion && (manualQuickQuestion !== null || !dailyCheckQuery.data?.dismissed) && <QuickCheck question={quickQuestion} answer={quickAnswer} correct={quickCorrect} reviewSaved={((personalReviewsQuery.data ?? []) as PersonalReviewItem[]).some(item => item.questionKey === quickQuestion.id)} reviewPending={addPersonalReviewMutation.isPending} onSaveForReview={() => addToPersonalReview(quickQuestion)} onAnswer={(answer) => { setQuickAnswer(answer); registerAnswer(quickQuestion, answer === quickQuestion.answer); }} onDismiss={() => manualQuickQuestion ? setManualQuickQuestion(null) : dismissDailyCheckMutation.mutate({ courseId: effectiveContestId })} />}
+          {view === "Painel" && !simulation && !simulationResult && quickQuestion && (manualQuickQuestion !== null || !dailyCheckQuery.data?.dismissed) && <QuickCheck question={quickQuestion} answer={quickAnswer} correct={quickCorrect} reviewSaved={((personalReviewsQuery.data ?? []) as PersonalReviewItem[]).some(item => item.questionKey === quickQuestion.id)} reviewPending={addPersonalReviewMutation.isPending} onSaveForReview={() => addToPersonalReview(quickQuestion)} onAnswer={(answer) => { setQuickAnswer(answer); registerAnswer(quickQuestion, answer); }} onDismiss={() => manualQuickQuestion ? setManualQuickQuestion(null) : dismissDailyCheckMutation.mutate({ courseId: effectiveContestId })} />}
       {openedModule && <ModulePanel module={openedModule} body={contentByModuleId.get(openedModule.id)?.body ?? null} completed={state.completedModules.includes(openedModule.id)} onComplete={() => completeModule(openedModule)} onClose={() => setOpenedModule(null)} />}
       {openedPublishedContentId !== null && (contentProgressQuery.data?.contents ?? []).some(content => content.id === openedPublishedContentId) && <PublishedLessonPanel content={(contentProgressQuery.data!.contents as StudyProgressItem[]).find(item => item.id === openedPublishedContentId)!} completing={completeContentMutation.isPending} onComplete={() => completeContentMutation.mutate({ courseId: effectiveContestId, contentId: openedPublishedContentId })} onClose={() => setOpenedPublishedContentId(null)} />}
       {accountOpen && <AccountPanel user={user} onClose={() => setAccountOpen(false)} />}
