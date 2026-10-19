@@ -94,7 +94,7 @@ describe("E2E autenticado de aluno e ROOT", () => {
         elapsedSeconds: 1,
         byDiscipline: {},
         byBlock: {},
-        answers: [{ questionId: String(question.id), correct: true }],
+        answers: [{ questionId: String(question.id), submittedAnswer: question.answer as boolean }],
         questionIds: [String(question.id)],
         persistentAnswers: [{
           questionId: question.id,
