@@ -4,6 +4,7 @@
  * filetes, códigos e progresso apresentado como registro de treinamento — não como dashboard SaaS.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { brazilStudyDayKey } from "@shared/brazilStudyDay";
 import {
   Award, BarChart3, BookOpen, Brain, CalendarClock, Check, ChevronRight, CircleHelp, Clock3, CreditCard, Flame, Gauge,
   GraduationCap, History, LayoutDashboard, Menu, MessageSquareText, Play, RotateCcw, ShieldCheck, Trash2,
@@ -299,7 +300,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
 
   function registerAnswer(question: StudyQuestion, submittedAnswer: boolean) {
     const correct = question.answer === submittedAnswer;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = brazilStudyDayKey();
     updateState((current) => ({
       ...current,
       xp: current.xp + (correct ? 8 : 2),
@@ -324,7 +325,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
 
   function completeModule(module: StudyModule) {
     if (state.completedModules.includes(module.id)) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = brazilStudyDayKey();
     updateState((current) => ({ ...current, completedModules: [...current.completedModules, module.id], xp: current.xp + 20, studyDates: current.studyDates.includes(today) ? current.studyDates : [...current.studyDates, today], lastStudyDate: today }));
     moduleMutation.mutate({ moduleId: module.id }, { onSuccess: serverState => setState(serverState as StudyState) });
     const content = contentByModuleId.get(module.id);
@@ -392,7 +393,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
       answerRecords.push({ questionId: item.id, correct: isCorrect, answeredAt: new Date().toISOString() });
     });
     const result: SimulationRecord = { id: `sim-${Date.now()}`, date: new Date().toISOString(), total: simulation.questions.length, correct, errors: simulation.questions.length - correct, elapsedSeconds: Math.round((Date.now() - simulation.startedAt) / 1000), byDiscipline, byBlock };
-    const today = new Date().toISOString().slice(0, 10);
+    const today = brazilStudyDayKey();
     updateState((current) => ({ ...current, xp: current.xp + correct * 8 + 15, simulations: [...current.simulations, result], answers: [...current.answers, ...answerRecords], usedQuestionIds: Array.from(new Set([...current.usedQuestionIds, ...simulation.questions.map((item) => item.id)])), studyDates: current.studyDates.includes(today) ? current.studyDates : [...current.studyDates, today], lastStudyDate: today, weeklySimulationCorrect: current.weeklySimulationCorrect + correct }));
     simulationMutation.mutate({ id: result.id, total: result.total, correct: result.correct, errors: result.errors, elapsedSeconds: result.elapsedSeconds, byDiscipline: result.byDiscipline, byBlock: result.byBlock, answers: answerRecords.map(answer => ({ questionId: answer.questionId, submittedAnswer: nextAnswers[answer.questionId] })), questionIds: simulation.questions.map(item => item.id), persistentAnswers: simulation.questions.filter((item): item is SimulationQuestion & { persistentQuestionId: number } => typeof item.persistentQuestionId === "number").map(item => ({ questionId: item.persistentQuestionId, correct: nextAnswers[item.id] === item.answer, snapshot: { statement: item.statement, type: "certo_errado", answer: item.answer, explanation: item.explanation, discipline: item.discipline, subject: item.subject, difficulty: item.difficulty, source: item.source } })) }, { onSuccess: serverState => setState(serverState as StudyState) });
     setSimulation(null);
