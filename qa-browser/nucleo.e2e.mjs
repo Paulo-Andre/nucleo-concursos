@@ -38,7 +38,7 @@ test("B03 login ROOT, navegação do aluno e painel de administração",async({p
  await expect(page.locator("#area-de-estudos")).toBeVisible({timeout});
  // Em telas pequenas a barra lateral é ocultada da árvore acessível até a gaveta ser aberta.
  const drawer=page.getByRole("button",{name:"Abrir navegação"});
- if(await drawer.isVisible())await drawer.click();
+ if(test.info().project.name==="chromium-mobile"){await expect(drawer).toBeVisible({timeout});await drawer.click();}
  await expect(page.getByRole("navigation",{name:"Áreas de estudo"})).toBeVisible({timeout});
  await page.getByRole("button",{name:/Treinador/i}).first().click();
  await expect(page.getByText("Seu treinador de estudos")).toBeVisible({timeout});
