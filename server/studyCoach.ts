@@ -145,7 +145,6 @@ export async function getLearningDiagnostic(userId: number, courseId: string, is
     caution: "As prioridades são estimativas baseadas em respostas registradas; amostras pequenas não comprovam domínio." };
 }
 export async function listErrorNotebook(userId: number, courseId: string, isAdmin = false) {
-  const info = await getLearningDiagnostic(userId, courseId, isAdmin, 40);
   const available = (await listStudyQuestions(userId, isAdmin)).questions;
   const contents = await scopedContents(userId, courseId, isAdmin);
   const contentIds = new Set(contents.map(item => item.id));
