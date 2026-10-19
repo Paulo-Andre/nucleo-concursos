@@ -43,5 +43,18 @@ test("B03 login ROOT, navegação do aluno e painel de administração",async({p
  await page.getByRole("button",{name:/Treinador/i}).first().click();
  await expect(page.getByText("Seu treinador de estudos")).toBeVisible({timeout});
  await expect(page.getByText("Flashcards inteligentes")).toBeVisible();
+ // Jornada completa: criar cartão privado, recuperar resposta e agendar próxima revisão.
+ const front=`Pergunta QA ${test.info().project.name} ${Date.now()}`;
+ const answer="O gabarito é conferido no servidor e o cartão pertence à conta autenticada.";
+ await page.getByPlaceholder("O que preciso lembrar?").fill(front);
+ await page.getByPlaceholder("Explique com suas palavras.").fill(answer);
+ await page.getByRole("button",{name:"Salvar flashcard"}).click();
+ const card=page.locator("article").filter({hasText:front});
+ await expect(card).toBeVisible({timeout});
+ await card.getByRole("button",{name:"Mostrar resposta"}).click();
+ await expect(card).toContainText(answer);
+ await card.getByRole("button",{name:"Lembrei",exact:true}).click();
+ await expect(card).toHaveCount(0,{timeout});
+
  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(2);
 });
