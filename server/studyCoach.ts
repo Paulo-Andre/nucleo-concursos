@@ -106,7 +106,7 @@ export async function getLearningDiagnostic(userId: number, courseId: string, is
       [String(question.id), { discipline: question.discipline }] as const,
       [`central-${question.id}`, { discipline: question.discipline }] as const,
     ]));
-  if (courseId === "pf-agente" || isAdmin) questionBank.forEach(question => questionMap.set(question.id, { discipline: question.discipline }));
+  if (courseId === "pf-agente") questionBank.forEach(question => questionMap.set(question.id, { discipline: question.discipline }));
   const answers = await db.select().from(studyAnswers).where(eq(studyAnswers.userId, userId)).orderBy(desc(studyAnswers.answeredAt)).limit(2000);
   const latest = new Map<string, typeof answers[number]>();
   for (const answer of answers) if (!latest.has(answer.questionId) && questionMap.has(answer.questionId)) latest.set(answer.questionId, answer);
