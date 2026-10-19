@@ -53,6 +53,7 @@ import { isValidCpf, normalizeCpf } from "./cpf";
 import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
 import { storagePut } from "./storage";
 import { serializeAdminBackup, type AdminBackupData } from "./adminBackup";
+import { createPrivateBackupDownload } from "./privateBackupDownloads";
 import { isPlatformAlertVisibleForUser, type PlatformAlertAudience, type PlatformAlertLevel } from "./platformAlerts";
 import { resolveStudentContentNotice, type ContentNoticeKind } from "./content-notices";
 
@@ -1516,10 +1517,10 @@ export async function createAdministrativeBackup(actorUserId: number) {
   if (bytes > 25 * 1024 * 1024) throw new Error("O backup ultrapassou 25 MB. Solicite uma exportação assistida para evitar um arquivo incompleto.");
   const stamp = exportedAt.toISOString().replace(/[:.]/g, "-");
   const fileName = `nucleo-concursos-backup-${stamp}.json`;
-  const stored = await storagePut(`admin-backups/${actorUserId}/${fileName}`, serialized, "application/json");
+  const stored = await createPrivateBackupDownload(actorUserId, fileName, serialized);
   const recordCount = Object.values(payload.tableCounts).reduce((sum, count) => sum + count, 0);
   await writeAdminAudit(actorUserId, null, "EXPORTACAO_DE_BACKUP", `Exportação lógica gerada com ${recordCount} registros e ${bytes} bytes, sem credenciais de sessão.`);
-  return { fileName, downloadUrl: stored.url, exportedAt: exportedAt.toISOString(), bytes, tableCounts: payload.tableCounts };
+  return { fileName, downloadUrl: stored.downloadUrl, expiresAt: stored.expiresAt, exportedAt: exportedAt.toISOString(), bytes, tableCounts: payload.tableCounts };
 }
 
 export async function updateManagedUser(userId: number, input: { name: string; username: string; email: string; cpf?: string }) {
