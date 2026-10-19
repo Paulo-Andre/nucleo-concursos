@@ -1380,7 +1380,14 @@ export async function listStudyReviewItems(userId: number, status: "pending" | "
   const rows = await db.select().from(studyReviewItems).where(and(eq(studyReviewItems.userId, userId), eq(studyReviewItems.status, status))).orderBy(desc(studyReviewItems.createdAt));
   return rows.flatMap(item => {
     const snapshot = parseStudyReviewSnapshot(item.snapshotJson);
-    return snapshot ? [{ id: item.id, questionKey: item.questionKey, snapshot, status: item.status, createdAt: item.createdAt.toISOString(), reviewedAt: item.reviewedAt?.toISOString() ?? null }] : [];
+    let dueAt = item.createdAt.toISOString();
+    try {
+      const parsed = JSON.parse(item.snapshotJson);
+      if (typeof parsed?.reviewSchedule?.dueAt === "string" && Number.isFinite(Date.parse(parsed.reviewSchedule.dueAt))) dueAt = parsed.reviewSchedule.dueAt;
+    } catch { /* Dados antigos continuam revisáveis. */ }
+    return snapshot ? [{ id: item.id, questionKey: item.questionKey, snapshot, status: item.status,
+      dueAt, due: Date.parse(dueAt) <= Date.now(), createdAt: item.createdAt.toISOString(),
+      reviewedAt: item.reviewedAt?.toISOString() ?? null }] : [];
   });
 }
 
