@@ -86,7 +86,7 @@ function parseWorksheet(xml: string, shared: string[]): string[][] {
  return rows;
 }
 function splitCsv(raw: string): string[][] {
- const head=raw.slice(0,4096);const delimiter=(head.match(/;/g)||[]).length>(head.match(/,/g)||[]).length?";":",";
+ const head=raw.slice(0,4096).split(/\r?\n/,1)[0];const delimiter=(head.match(/;/g)||[]).length>(head.match(/,/g)||[]).length?";":",";
  const rows:string[][]=[];let row:string[]=[],value="",quoted=false;
  for(let i=0;i<raw.length;i++){
   const c=raw[i];
