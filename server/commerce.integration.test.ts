@@ -76,13 +76,16 @@ describe("ciclo comercial de planos e matrículas", () => {
       expect(paidOrder.status).toBe("pending_payment");
       expect(paidOrder.totalCents).toBe(19_900);
 
-      const checkout = await createMercadoPagoCheckout(learner.id, paidOrder.id, {
-        origin: "https://estudospf-peiyfhjy.manus.space",
-        notificationUrl: "https://estudospf-peiyfhjy.manus.space/api/payments/mercado-pago/webhook",
-      });
-      expect(checkout.orderId).toBe(paidOrder.id);
-      expect(checkout.preferenceId).toBeTruthy();
-      expect(checkout.checkoutUrl).toMatch(/^https:\/\//);
+      // A aprovação e matrícula são testadas sempre; checkout externo exige opt-in e credencial próprios.
+      if (process.env.RUN_EXTERNAL_PAYMENTS_TESTS === "1" && process.env.MERCADO_PAGO_ACCESS_TOKEN) {
+        const checkout = await createMercadoPagoCheckout(learner.id, paidOrder.id, {
+          origin: "https://estudospf-peiyfhjy.manus.space",
+          notificationUrl: "https://estudospf-peiyfhjy.manus.space/api/payments/mercado-pago/webhook",
+        });
+        expect(checkout.orderId).toBe(paidOrder.id);
+        expect(checkout.preferenceId).toBeTruthy();
+        expect(checkout.checkoutUrl).toMatch(/^https:\/\//);
+      }
 
       const [approvedOrder, duplicateApproval] = await Promise.all([
         approveCommerceOrder(actor.id, paidOrder.id, "manual", "QA-TRANSFER-001"),
