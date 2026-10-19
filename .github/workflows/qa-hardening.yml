@@ -40,7 +40,7 @@ jobs:
       OWNER_OPEN_ID: ""
       RESEND_API_KEY: ""
       MERCADO_PAGO_ACCESS_TOKEN: ""
-      MERCADO_PAGO_WEBHOOK_SECRET: ""
+      MERCADO_PAGO_WEBHOOK_SECRET: "qa_webhook_signature_test_only_never_in_production"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
