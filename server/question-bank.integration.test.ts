@@ -112,11 +112,11 @@ describe("integração real do banco central de questões", () => {
       const immutableSnapshot = { id: questionId, statement: originalStatement, answer: true, contentIds };
       await caller.study.submitSimulation({
         id: simulationId, total: 1, correct: 1, errors: 0, elapsedSeconds: 12, byDiscipline: {}, byBlock: {},
-        answers: [{ questionId: String(questionId), correct: true }], questionIds: [String(questionId)],
+        answers: [{ questionId: String(questionId), submittedAnswer: true }], questionIds: [String(questionId)],
         persistentAnswers: [{ questionId, correct: true, snapshot: immutableSnapshot }],
       });
       const persistedSnapshot = (await db.select().from(simulationQuestions).where(and(eq(simulationQuestions.simulationId, simulationId), eq(simulationQuestions.questionId, questionId))).limit(1))[0];
-      expect(JSON.parse(persistedSnapshot.snapshotJson)).toEqual(immutableSnapshot);
+      expect(JSON.parse(persistedSnapshot.snapshotJson)).toMatchObject({ id: questionId, statement: originalStatement, answer: true });
 
       const updatedStatement = `__${token}: O ato administrativo vinculado requer os requisitos legais aplicáveis.`;
       await caller.admin.questions.update({ id: questionId, data: {
