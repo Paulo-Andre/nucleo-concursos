@@ -91,6 +91,7 @@ import { isAllowedCourseCoverUrl } from "./courseCoverUrl";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
 import { clearSuccessfulLoginAttempt, isLoginAttemptAllowed, loginAttemptKeys, loginRetryAfterSeconds, recordFailedLoginAttempt } from "./auth/loginRateLimit";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
+import { allowPublicAuthAction } from "./auth/publicActionRateLimit";
 import { storagePut } from "./storage";
 import {
   approveCommerceOrder,
@@ -306,6 +307,7 @@ export const appRouter = router({
     me: publicProcedure.query(({ ctx }) => (ctx.user ? safeUser(ctx.user) : null)),
     bootstrapStatus: publicProcedure.query(() => ({ rootBootstrapReady: hasRootBootstrapSecret() })),
     register: publicProcedure.input(profileSchema.extend({ cpf: cpfSchema, password: passwordSchema, passwordConfirmation: passwordSchema })).mutation(async ({ input, ctx }) => {
+      if (!allowPublicAuthAction(ctx.req, "register")) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Muitos cadastros desta origem. Tente novamente mais tarde." });
       if (input.password !== input.passwordConfirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
       if (await getUserByIdentifier(input.username)) {
         throw new TRPCError({ code: "CONFLICT", message: "Este nome de usuário já está em uso." });
@@ -352,6 +354,7 @@ export const appRouter = router({
       return { success: true };
     }),
     requestPasswordReset: publicProcedure.input(z.object({ email: z.string().trim().toLowerCase().email("Informe um e-mail válido.").max(320) })).mutation(async ({ input, ctx }) => {
+      if (!allowPublicAuthAction(ctx.req, "password-reset")) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Muitas solicitações. Aguarde alguns minutos antes de tentar novamente." });
       const user = await getUserByIdentifier(input.email);
       if (user?.email && !user.isBlocked && user.email.toLowerCase() === input.email) {
         const token = createSessionToken();
