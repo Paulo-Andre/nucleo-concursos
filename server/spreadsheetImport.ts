@@ -23,7 +23,7 @@ const normalize=(s:string)=>s.trim().normalize("NFD").replace(/[\u0300-\u036f]/g
 const pieces=(s:string)=>s.split(/[|;,]/).map(x=>x.trim()).filter(Boolean);
 const list=(s:string)=>s.split(/[|;]/).map(x=>x.trim()).filter(Boolean);
 const boolean=(s:string)=>["sim","s","yes","true","1"].includes(normalize(s));
-const text=(row:Record<string,string>,key:string,max:number)=>String(row[key]??"").trim().slice(0,max+1);
+const text=(row:Record<string,string>,key:string,max:number)=>{const value=String(row[key]??"").trim();if(value.length>max)throw new Error(`Campo ${key} excede ${max} caracteres.`);return value;};
 function status(raw:string):Status {
  if(!raw)return "draft";
  if(!statuses.has(raw.toLowerCase()))throw new Error("Status inválido: "+raw);
@@ -101,7 +101,9 @@ export async function prepareSpreadsheetImport(input:Input):Promise<Parsed> {
     if(label.length<12||label.length>20000)throw new Error("Enunciado deve conter entre 12 e 20000 caracteres.");
     const questionType=normalize(row.tipo||"certo_errado");
     if(!["certo_errado","multipla_escolha"].includes(questionType))throw new Error("Tipo deve ser certo_errado ou multipla_escolha.");
-    const options=["a","b","c","d","e"].map(k=>row[`alternativa_${k}`]?.trim()||"").filter(Boolean);
+    const optionColumns=["a","b","c","d","e"].map(k=>row[`alternativa_${k}`]?.trim()||"");
+    const options=optionColumns.filter(Boolean);
+    if(optionColumns.some((value,index)=>Boolean(value)&&optionColumns.slice(0,index).some(previous=>!previous)))throw new Error("Preencha as alternativas em ordem, sem pular letras.");
     const letter=normalize(row.resposta||"");
     let answer:boolean|string;
     if(questionType==="certo_errado"){
