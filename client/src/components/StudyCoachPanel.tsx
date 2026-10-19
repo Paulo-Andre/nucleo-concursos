@@ -1,13 +1,18 @@
 import { useMemo, useState } from "react";
 import { Brain, CalendarCheck2, BookOpenCheck, Layers3, Target, Plus, Check, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { StudyFocusTimer } from "@/components/StudyFocusTimer";
+import { StudyGlobalSearchPanel } from "@/components/StudyGlobalSearchPanel";
+import type { StudyQuestion } from "@/data/pfStudyData";
 
 type ContentOption = { id: number; title: string; disciplineName: string; progress: {status: "started" | "completed"} | null };
 const reasonLabels: Record<string,string> = {nao_classificado:"Não classificado", desatencao:"Desatenção",conteudo:"Falta de domínio", interpretacao:"Interpretação",tempo:"Tempo"};
 const ratingLabels: Record<string,string> = {again:"Não lembrei",hard:"Difícil",good:"Lembrei",easy:"Muito fácil"};
 
-export function StudyCoachPanel({courseId, contents, onOpenContent}:{
-  courseId: string; contents: ContentOption[]; onOpenContent: (id: number) => void;
+export function StudyCoachPanel({courseId, contents, questions, onOpenContent, onPracticeQuestion}:{
+  courseId: string; contents: ContentOption[]; questions: StudyQuestion[];
+  onOpenContent: (id: number) => void;
+  onPracticeQuestion: (question: StudyQuestion) => void;
 }) {
  const [minutes,setMinutes] = useState<20|40|60>(40);
  const [newFront,setNewFront] = useState("");
@@ -33,6 +38,8 @@ export function StudyCoachPanel({courseId, contents, onOpenContent}:{
  const current = overview.data;
  return <div className="space-y-6" aria-label="Treinador de aprendizagem">
    <header className="border-b border-[#d7cfc1] pb-5"><p className="eyebrow">ESTUDO BASEADO EM EVIDÊNCIAS</p><h2 className="font-display mt-2 text-2xl font-extrabold sm:text-3xl">Seu treinador de estudos</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-[#52666f]">Planejamento diário, revisão espaçada e recuperação dos pontos fracos. As recomendações usam suas respostas e conteúdos autorizados.</p></header>
+   <StudyGlobalSearchPanel lessons={contents} questions={questions} onOpenLesson={onOpenContent} onPracticeQuestion={onPracticeQuestion}/>
+   <StudyFocusTimer/>
    {notice&&<p role="status" className="rounded-xl border border-[#bcd8d0] bg-[#edf7f4] p-3 text-sm text-[#245c5c]">{notice}</p>}
    {(overview.isError||cards.isError||errors.isError)&&<div role="alert" className="rounded-xl border border-[#e7b2a7] bg-[#fff5ee] p-4 text-sm text-[#903b2a]">Não foi possível carregar alguns recursos. <button type="button" className="font-bold underline" onClick={()=>{void overview.refetch();void cards.refetch();void errors.refetch();}}>Tentar novamente</button></div>}
    <section className="shell-card p-5 sm:p-6" aria-label="Plano diário">
