@@ -45,7 +45,6 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
     setMessageTone(null);
     try {
       if (mode === "login") {
-        if (form.password.length < 8) { setMessageTone("error"); setMessage("A senha deve ter pelo menos 8 caracteres."); return; }
         await login.mutateAsync({ identifier: form.identifier, password: form.password });
       } else if (mode === "register") {
         if (!hasValidCpfDigits(form.cpf)) { setMessageTone("error"); setMessage("Informe um CPF válido."); return; }
