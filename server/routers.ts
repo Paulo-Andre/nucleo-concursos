@@ -113,6 +113,7 @@ import {
 import { createMercadoPagoCheckout } from "./mercadoPago";
 import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 import { sendPasswordResetEmail } from "./email";
+import { createFlashcard, rateFlashcard, removeFlashcard, listFlashcards, getLearningDiagnostic, listErrorNotebook, classifyStudyError, rateQuestionReview } from "./studyCoach";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
 const passwordSchema = z.string().min(8, "A senha deve ter pelo menos 8 caracteres.").max(128);
@@ -410,9 +411,21 @@ export const appRouter = router({
     }),
     review: router({
       list: contestEnrollmentRequiredProcedure.query(({ ctx }) => listStudyReviewItems(ctx.user.id)),
+      rate: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema, rating: z.enum(["again","hard","good","easy"]) })).mutation(({ctx,input}) => rateQuestionReview(ctx.user.id,input.id,input.rating)),
       add: contestEnrollmentRequiredProcedure.input(z.object({ questionKey: z.string().trim().min(1).max(80), snapshot: studyReviewSnapshotSchema })).mutation(({ input, ctx }) => saveStudyReviewItem(ctx.user.id, input)),
       complete: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => completeStudyReviewItem(ctx.user.id, input.id)),
       remove: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyReviewItem(ctx.user.id, input.id)),
+    }),
+    coach: router({
+      overview: enrollmentRequiredProcedure.input(z.object({
+        courseId: courseIdSchema, minutes: z.union([z.literal(20),z.literal(40),z.literal(60)]).default(40),
+      })).query(({ input,ctx }) => getLearningDiagnostic(ctx.user.id,input.courseId,ctx.user.role === "admin",input.minutes)),
+      flashcards: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema})).query(({input,ctx}) => listFlashcards(ctx.user.id,input.courseId,ctx.user.role === "admin")),
+      addFlashcard: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,contentId:entityIdSchema,front:z.string().trim().min(3).max(350),back:z.string().trim().min(2).max(1600)})).mutation(({input,ctx}) => createFlashcard(ctx.user.id,input,ctx.user.role === "admin")),
+      rateFlashcard: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,id:z.string().uuid(),rating:z.enum(["again","hard","good","easy"])})).mutation(({input,ctx}) => rateFlashcard(ctx.user.id,input,ctx.user.role === "admin")),
+      removeFlashcard: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,id:z.string().uuid()})).mutation(({input,ctx}) => removeFlashcard(ctx.user.id,input,ctx.user.role === "admin")),
+      errors: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema})).query(({input,ctx}) => listErrorNotebook(ctx.user.id,input.courseId,ctx.user.role === "admin")),
+      classifyError: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,questionId:z.string().trim().max(80),reason:z.enum(["desatencao","conteudo","interpretacao","tempo","nao_classificado"]),observation:z.string().trim().max(1500)})).mutation(({input,ctx}) => classifyStudyError(ctx.user.id,input,ctx.user.role === "admin")),
     }),
     note: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).query(({ input, ctx }) => import("./db").then(({ getNote }) => getNote(ctx.user.id, input.moduleId))),
     saveNote: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80), content: z.string().trim().max(12000) })).mutation(({ input, ctx }) => saveNote(ctx.user.id, input.moduleId, input.content)),
