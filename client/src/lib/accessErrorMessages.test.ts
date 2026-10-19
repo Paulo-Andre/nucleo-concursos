@@ -6,7 +6,13 @@ describe("mensagens de autenticação amigáveis", () => {
     const error = {
       message: JSON.stringify([{ origin: "string", code: "too_small", minimum: 8, inclusive: true, path: ["password"], message: "A senha deve ter pelo menos 8 caracteres." }]),
     };
-    expect(formatAccessError(error, "login")).toBe("A senha deve ter pelo menos 8 caracteres.");
+    expect(formatAccessError(error, "login")).toBe("Usuário ou senha incorretos. Verifique os dados e tente novamente.");
+    expect(formatAccessError(error, "register")).toBe("A senha deve ter pelo menos 8 caracteres.");
+  });
+
+  it("não expõe regras de comprimento no login, inclusive em validações tRPC", () => {
+    expect(formatAccessError({ data: { zodError: { fieldErrors: { password: ["A senha deve ter pelo menos 8 caracteres."] } } } }, "login"))
+      .toBe("Usuário ou senha incorretos. Verifique os dados e tente novamente.");
   });
 
   it("interpreta erros estruturados do tRPC", () => {
