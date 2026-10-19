@@ -58,5 +58,24 @@ jobs:
         run: pnpm exec tsx scripts/seed-qa.ts
       - name: Executar toda a regressão (frontend e servidor)
         run: pnpm exec vitest run --maxWorkers=1 --minWorkers=1 --no-file-parallelism
+      - name: Restauração real do backup SQL sintético
+        env:
+          QA_RESTORE: "1"
+        run: bash scripts/verify-qa-restore.sh
       - name: Compilar para produção
         run: pnpm build
+      - name: Instalar Playwright apenas neste job de QA
+        run: pnpm add -D @playwright/test@1.56.0 --ignore-scripts
+      - name: Instalar Chromium de homologação
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Testar jornadas em navegador real (mobile e desktop)
+        run: pnpm exec playwright test --config=playwright.config.mjs
+      - name: Guardar evidências de falhas do navegador
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-playwright-evidencias
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
