@@ -63,12 +63,12 @@ function indexFromLetters(letters: string) {
 function parseWorksheet(xml: string, shared: string[]): string[][] {
  const rows: string[][]=[];
  const rowRe=/<(?:\w+:)?row\b[^>]*>([\s\S]*?)<\/(?:\w+:)?row>/gi;
- for (const row of xml.matchAll(rowRe)) {
+ for (const row of Array.from(xml.matchAll(rowRe))) {
   if (rows.length>=MAX_ROWS+1) throw new Error("Limite de 1000 linhas excedido.");
   const values:string[]=[];
   const cellRe=/<(?:\w+:)?c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:\w+:)?c>)/gi;
   let nextCol=0;
-  for (const cell of row[1].matchAll(cellRe)) {
+  for (const cell of Array.from(row[1].matchAll(cellRe))) {
     const attr=cell[1]||"",inner=cell[2]||"";
     const position=/\br=["']([A-Z]+)\d+["']/i.exec(attr)?.[1];
     const col=position?indexFromLetters(position):nextCol;
