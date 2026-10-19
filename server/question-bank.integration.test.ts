@@ -124,7 +124,7 @@ describe("integração real do banco central de questões", () => {
         difficulty: "intermediate", source: `teste-${token}`, banca: "E2E", year: 2026, requiresReview: true, status: "approved", contentIds,
       } });
       auditDetails.push(`Questão ${questionId} atualizada sem substituição do identificador.`);
-      expect(JSON.parse((await db.select().from(simulationQuestions).where(eq(simulationQuestions.simulationId, simulationId)).limit(1))[0].snapshotJson)).toEqual(immutableSnapshot);
+      expect(JSON.parse((await db.select().from(simulationQuestions).where(eq(simulationQuestions.simulationId, simulationId)).limit(1))[0].snapshotJson)).toEqual(JSON.parse(persistedSnapshot.snapshotJson));
       expect((await caller.admin.questions.changelog({ id: questionId })).some(change => change.changedField === "statement" && change.oldValue?.includes(originalStatement))).toBe(true);
     } finally {
       await db.delete(simulationQuestions).where(eq(simulationQuestions.simulationId, simulationId));
