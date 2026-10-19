@@ -30,6 +30,8 @@ import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 import { CourseAccessRequired } from "@/components/CourseAccessRequired";
 import { StudentAlerts } from "@/components/StudentAlerts";
 import { RichContentBody } from "@/components/RichContentBody";
+import { LessonVideoPlayer } from "@/components/LessonVideoPlayer";
+import { filterPublishedStudyContents, type PublishedContentFilter } from "@/lib/publishedStudyContents";
 import { Textarea } from "@/components/ui/textarea";
 import { simulationAnswerFeedback } from "@/lib/simulationReviewHelpers";
 import { CompetitionIdentity, getCompetitionIdentity } from "@/lib/competitionIdentity";
@@ -144,6 +146,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
     return stored ?? activeContestId;
   });
   const [openedModule, setOpenedModule] = useState<StudyModule | null>(() => studyModules.find((module) => module.id === new URLSearchParams(window.location.search).get("aula")) ?? null);
+  const [openedPublishedContentId, setOpenedPublishedContentId] = useState<number | null>(null);
   const [manualQuickQuestion, setManualQuickQuestion] = useState<StudyQuestion | null>(null);
   const [quickAnswer, setQuickAnswer] = useState<boolean | null>(null);
   const [simulation, setSimulation] = useState<ActiveSimulation>(null);
@@ -333,10 +336,17 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
     setOpenedModule(module);
   }
 
+  function openPublishedContent(content: StudyProgressItem) {
+    // Identidade estável do banco; funciona para aulas criadas depois do deploy.
+    setOpenedPublishedContentId(content.id);
+    openContentMutation.mutate({ courseId: effectiveContestId, contentId: content.id });
+  }
+
   function openScheduledContent(contentId: number) {
     const content = (contentProgressQuery.data?.contents ?? []).find(item => item.id === contentId) as StudyProgressItem | undefined;
     const module = content ? availableModules.find(item => item.title === content.title.replace(/^[^—]+—\s*/, "")) : undefined;
     if (module) openModuleWithProgress(module);
+    else if (content) openPublishedContent(content);
     else setView("Conteúdo");
   }
 
@@ -418,7 +428,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
         <div className="mx-auto max-w-[1540px] p-4 sm:p-7 lg:p-10"><ContestSelector contestId={effectiveContestId} courses={permittedCourses} onChange={setContestId} />{view === "Painel" && user.role !== "admin" && <StudentAlerts />}{simulation ? <SimulationScreen simulation={simulation} onAnswer={submitSimulationAnswer} onExit={() => { if (window.confirm("Abandonar este simulado? Suas respostas desta tentativa ainda não serão registradas.")) setSimulation(null); }} /> : simulationResult ? <SimulationResult result={simulationResult} onAgain={() => startSimulation(simulationResult.total)} onClose={() => { setSimulationResult(null); setView("Histórico"); }} /> : <>
           {view === "Painel" && <Dashboard state={state} modules={availableModules} contestName={activeCourseTitle} coverImageUrl={activeCourse?.coverImageUrl} panelLabel={activeCourse?.panelLabel} panelBadge={activeCourse?.panelBadge} panelTitle={activeCourse?.panelTitle} panelDescription={activeCourse?.panelDescription} panelCtaText={activeCourse?.panelCtaText} level={level} totalAnswers={totalAnswers} overallScore={overallScore} streak={streak} studiedPercent={studiedPercent} focus={focus} historyChart={historyChart} onStudy={() => setView("Conteúdo")} onSimulate={tutorialCourse ? undefined : () => setView("Simulados")} continueItem={(contentProgressQuery.data?.continueItem ?? null) as StudyProgressItem | null} onOpenScheduledContent={openScheduledContent} onOpenPlanner={() => setView("Roteiro")} />}
           {view === "Roteiro" && <WeeklyStudyPlanner progressItems={(contentProgressQuery.data?.contents ?? []) as StudyProgressItem[]} roadmapItems={(roadmapQuery.data ?? []) as RoadmapItem[]} onOpenScheduledContent={openScheduledContent} onSaveRoadmap={(input) => saveRoadmapMutation.mutateAsync({ courseId: effectiveContestId, ...input }).then(() => undefined)} onRemoveRoadmap={(id) => removeRoadmapMutation.mutateAsync({ id }).then(() => undefined)} saving={saveRoadmapMutation.isPending || removeRoadmapMutation.isPending} />}
-          {view === "Conteúdo" && <StudyArea state={state} modules={availableModules} contestName={activeCourseTitle} contentByModuleId={contentByModuleId} onOpen={openModuleWithProgress} />}
+          {view === "Conteúdo" && <StudyArea state={state} modules={availableModules} contestName={activeCourseTitle} contents={(contentProgressQuery.data?.contents ?? []) as StudyProgressItem[]} loading={contentProgressQuery.isLoading} error={contentProgressQuery.isError} onOpen={openModuleWithProgress} onOpenPublished={openPublishedContent} onRetry={() => void contentProgressQuery.refetch()} />}
           {!tutorialCourse && view === "Simulados" && <Simulations onStart={startSimulation} state={state} notice={simulationNotice} strictReviewMode={centralQuestionsQuery.data?.requiresReviewMode === true} centralCount={persistentSimulationQuestions.length} isPfCourse={effectiveContestId === "pf-agente"} />}
           {!tutorialCourse && view === "Competição" && <><CompetitionMedal identity={personalCompetitionIdentity} totalPoints={personalCompetitionScoreQuery.data?.totalPoints ?? 0} position={personalCompetitionScoreQuery.data?.position ?? null} loading={personalCompetitionScoreQuery.isLoading} /><CompetitionArea defaultCourseId={effectiveContestId} /><CompetitionProgressPanel defaultCourseId={effectiveContestId} /></>}
           {!tutorialCourse && view === "Revisar" && <ReviewArea state={state} modules={availableModules} personalReviews={(personalReviewsQuery.data ?? []) as PersonalReviewItem[]} personalReviewsLoading={personalReviewsQuery.isLoading} onStartQuestion={(question) => { setManualQuickQuestion(question); setQuickAnswer(null); setView("Painel"); }} onCompletePersonalReview={completePersonalReview} onRemovePersonalReview={removePersonalReview} reviewPending={completePersonalReviewMutation.isPending || removePersonalReviewMutation.isPending} />}
@@ -429,6 +439,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
       </main>
           {view === "Painel" && !simulation && !simulationResult && quickQuestion && (manualQuickQuestion !== null || !dailyCheckQuery.data?.dismissed) && <QuickCheck question={quickQuestion} answer={quickAnswer} correct={quickCorrect} reviewSaved={((personalReviewsQuery.data ?? []) as PersonalReviewItem[]).some(item => item.questionKey === quickQuestion.id)} reviewPending={addPersonalReviewMutation.isPending} onSaveForReview={() => addToPersonalReview(quickQuestion)} onAnswer={(answer) => { setQuickAnswer(answer); registerAnswer(quickQuestion, answer === quickQuestion.answer); }} onDismiss={() => manualQuickQuestion ? setManualQuickQuestion(null) : dismissDailyCheckMutation.mutate({ courseId: effectiveContestId })} />}
       {openedModule && <ModulePanel module={openedModule} body={contentByModuleId.get(openedModule.id)?.body ?? null} completed={state.completedModules.includes(openedModule.id)} onComplete={() => completeModule(openedModule)} onClose={() => setOpenedModule(null)} />}
+      {openedPublishedContentId !== null && (contentProgressQuery.data?.contents ?? []).some(content => content.id === openedPublishedContentId) && <PublishedLessonPanel content={(contentProgressQuery.data!.contents as StudyProgressItem[]).find(item => item.id === openedPublishedContentId)!} completing={completeContentMutation.isPending} onComplete={() => completeContentMutation.mutate({ courseId: effectiveContestId, contentId: openedPublishedContentId })} onClose={() => setOpenedPublishedContentId(null)} />}
       {accountOpen && <AccountPanel user={user} onClose={() => setAccountOpen(false)} />}
       {commerceOpen && <CommercePanel initialPlanId={commercePlanFocus} onClose={() => { setCommerceOpen(false); setCommercePlanFocus(null); }} />}
       {rootManagementOpen && user.role === "admin" && <RootManagementPanel activeSection={rootManagementSection} onSectionChange={setRootManagementSection} onClose={() => setRootManagementOpen(false)} />}
@@ -599,124 +610,133 @@ function Dashboard({ state, modules, contestName, coverImageUrl, panelLabel, pan
 
 function Metric({ icon: Icon, label, value, detail, color }: { icon: typeof Zap; label: string; value: string; detail: string; color: "teal" | "blue" | "amber" | "orange" }) { const styles = { teal: "border-[#9bcabc] text-[#0e5a70]", blue: "border-[#9dbdc8] text-[#245c70]", amber: "border-[#dfc08c] text-[#a36b23]", orange: "border-[#dfb090] text-[#b45e2d]" }; return <div className="relative border border-[#d5cdbd] bg-[#fffdf8] p-5 shadow-[0_8px_18px_-20px_rgba(21,45,56,.7)]"><span className={`absolute right-4 top-4 border px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${styles[color]}`}>REG</span><div><p className="text-[10px] font-bold tracking-[0.16em] text-[#6f7d83]">{label}</p><p className="font-display mt-2 text-3xl font-extrabold tracking-tight text-[#17343e]">{value}</p></div><div className="mt-4 flex items-center gap-2 border-t border-[#ebe4d8] pt-3"><Icon className={`h-3.5 w-3.5 ${styles[color].split(" ")[1]}`} /><p className="text-xs text-[#6f7d83]">{detail}</p></div></div>; }
 
-function StudyArea({ state, modules, contestName, contentByModuleId, onOpen }: { state: StudyState; modules: StudyModule[]; contestName: string; contentByModuleId: Map<string, StudyProgressItem>; onOpen: (module: StudyModule) => void }) {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StudyLibraryFilter>("all");
-  const [disciplineFilter, setDisciplineFilter] = useState("all");
-  const [contentFilter, setContentFilter] = useState("all");
-  const completedIds = new Set(state.completedModules);
-  const isCompleted = (module: StudyModule) => completedIds.has(module.id);
-  const isStarted = (module: StudyModule) => contentByModuleId.get(module.id)?.progress?.status === "started";
-  const disciplineOf = (module: StudyModule) => {
-    const disciplineId = getDisciplineIdForModule(module);
-    return disciplineId ? getDisciplineById(disciplineId)?.name ?? module.discipline : module.discipline;
-  };
-  const disciplines = Array.from(new Set(modules.map(disciplineOf))).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  // Ignora seleções antigas ao mudar de curso, sem ocultar conteúdos do novo curso.
-  const selectedDiscipline = disciplines.includes(disciplineFilter) ? disciplineFilter : "all";
-  const contentOptions = modules.filter(module => selectedDiscipline === "all" || disciplineOf(module) === selectedDiscipline);
-  const selectedContent = contentOptions.some(module => module.id === contentFilter) ? contentFilter : "all";
-  const filtered = filterStudyLibrary(modules, search, statusFilter, isCompleted, isStarted, disciplineOf, {
-    discipline: selectedDiscipline === "all" ? undefined : selectedDiscipline,
-    contentId: selectedContent === "all" ? undefined : selectedContent,
-  });
-  const byDiscipline = filtered.reduce<Record<string, StudyModule[]>>((groups, module) => {
-    (groups[disciplineOf(module)] ??= []).push(module);
-    return groups;
+function StudyArea({
+  state, modules, contestName, contents, loading, error, onOpen, onOpenPublished, onRetry,
+}: {
+  state: StudyState;
+  modules: StudyModule[];
+  contestName: string;
+  contents: StudyProgressItem[];
+  loading: boolean;
+  error: boolean;
+  onOpen: (module: StudyModule) => void;
+  onOpenPublished: (content: StudyProgressItem) => void;
+  onRetry: () => void;
+}) {
+  const [filters, setFilters] = useState<PublishedContentFilter>({ search: "", discipline: "all", contentId: "all", status: "all" });
+  const clearFilters = () => setFilters({ search: "", discipline: "all", contentId: "all", status: "all" });
+  const byLegacyTitle = new Map(modules.map(module => [`${module.code} — ${module.title}`, module]));
+  const legacyCompletedIds = new Set(contents.filter(content => {
+    const legacy = byLegacyTitle.get(content.title);
+    return legacy && state.completedModules.includes(legacy.id);
+  }).map(content => content.id));
+  const disciplines = Array.from(new Set(contents.map(content => content.disciplineName))).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const selectedDiscipline = disciplines.includes(filters.discipline) ? filters.discipline : "all";
+  const availableByDiscipline = contents.filter(item => selectedDiscipline === "all" || item.disciplineName === selectedDiscipline);
+  const selectedContentId = availableByDiscipline.some(item => String(item.id) === filters.contentId) ? filters.contentId : "all";
+  const activeFilters = { ...filters, discipline: selectedDiscipline, contentId: selectedContentId };
+  const visible = filterPublishedStudyContents(contents, activeFilters, legacyCompletedIds);
+  const hasFilters = Boolean(filters.search.trim() || selectedDiscipline !== "all" || selectedContentId !== "all" || filters.status !== "all");
+  const completedCount = contents.filter(item => item.progress?.status === "completed" || legacyCompletedIds.has(item.id)).length;
+  const groups = visible.reduce<Record<string, StudyProgressItem[]>>((result, item) => {
+    (result[item.disciplineName] ??= []).push(item);
+    return result;
   }, {});
-  const hasFilters = Boolean(search.trim() || statusFilter !== "all" || selectedDiscipline !== "all" || selectedContent !== "all");
-  const completedCount = modules.filter(isCompleted).length;
-  const clearFilters = () => { setSearch(""); setStatusFilter("all"); setDisciplineFilter("all"); setContentFilter("all"); };
 
   return <div className="space-y-6">
     <section className="flex flex-col justify-between gap-4 border-b border-[#d7cfc1] pb-6 sm:flex-row sm:items-end">
       <div className="min-w-0">
         <p className="eyebrow">Biblioteca de estudos · {contestName}</p>
         <h2 className="font-display mt-2 text-2xl font-extrabold sm:text-3xl">Suas aulas, no seu ritmo.</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#52666f]">Filtre por disciplina, escolha um conteúdo específico ou pesquise uma aula. Continue de onde parou ou revise o que já concluiu.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#52666f]">Encontre todas as aulas publicadas para o seu curso. Os filtros combinam disciplina, conteúdo e andamento.</p>
       </div>
       <div role="status" className="shrink-0 rounded-xl border border-[#d5cdbd] bg-[#fffdf8] px-4 py-3 text-sm font-semibold text-[#0e5a70]">
-        {completedCount} de {modules.length} aulas concluídas
+        {completedCount} de {contents.length} aulas concluídas
       </div>
     </section>
     <section aria-label="Filtrar conteúdos" className="filter-panel rounded-2xl p-4 sm:p-5">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,.9fr)_auto] xl:items-end">
         <label className="min-w-0 text-sm font-semibold text-[#254751]">
           Pesquisar conteúdo
-          <span className="relative mt-1.5 block">
-            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#63807d]" />
-            <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Nome, assunto ou código" className="filter-control pl-10" />
+          <span className="relative mt-1.5 block"><Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[#63807d]"/>
+            <input type="search" value={filters.search} onChange={event => setFilters(current => ({ ...current, search: event.target.value }))} placeholder="Título, assunto, disciplina" className="filter-control pl-10"/>
           </span>
         </label>
         <label className="min-w-0 text-sm font-semibold text-[#254751]">
           Disciplina
-          <select value={selectedDiscipline} onChange={event => { setDisciplineFilter(event.target.value); setContentFilter("all"); }} className="filter-control mt-1.5">
+          <select value={selectedDiscipline} onChange={event => setFilters(current => ({ ...current, discipline: event.target.value, contentId: "all" }))} className="filter-control mt-1.5">
             <option value="all">Todas as disciplinas</option>
             {disciplines.map(discipline => <option key={discipline} value={discipline}>{discipline}</option>)}
           </select>
         </label>
         <label className="min-w-0 text-sm font-semibold text-[#254751]">
           Conteúdo / aula
-          <select value={selectedContent} onChange={event => setContentFilter(event.target.value)} className="filter-control mt-1.5">
+          <select value={selectedContentId} onChange={event => setFilters(current => ({ ...current, contentId: event.target.value }))} className="filter-control mt-1.5">
             <option value="all">Todos os conteúdos</option>
-            {contentOptions.map(module => <option key={module.id} value={module.id}>{module.code} — {module.title}</option>)}
+            {availableByDiscipline.map(item => <option key={item.id} value={String(item.id)}>{item.title}</option>)}
           </select>
         </label>
         <label className="min-w-0 text-sm font-semibold text-[#254751]">
           Situação
-          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value as StudyLibraryFilter)} className="filter-control mt-1.5">
+          <select value={filters.status} onChange={event => setFilters(current => ({ ...current, status: event.target.value as PublishedContentFilter["status"] }))} className="filter-control mt-1.5">
             <option value="all">Todas as aulas</option>
+            <option value="not-started">Não iniciadas</option>
             <option value="in-progress">Em andamento</option>
             <option value="completed">Concluídas</option>
           </select>
         </label>
         <button type="button" onClick={clearFilters} disabled={!hasFilters} className="ghost-button w-full disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2 xl:col-span-1">Limpar filtros</button>
       </div>
-      <p role="status" aria-live="polite" className="mt-3 text-sm font-medium text-[#315c62]">
-        {filtered.length} conteúdo{filtered.length === 1 ? "" : "s"} encontrado{filtered.length === 1 ? "" : "s"}
-      </p>
+      <p role="status" aria-live="polite" className="mt-3 text-sm font-medium text-[#315c62]">{loading ? "Carregando biblioteca…" : `${visible.length} conteúdo(s) encontrado(s)`}</p>
     </section>
-
-    {!filtered.length ? <section className="rounded-2xl border border-dashed border-[#c9c0b3] bg-[#fffdf8] p-8 text-center">
+    {error ? <section role="alert" className="shell-card p-6 text-center"><h3 className="font-display text-lg font-bold">Não foi possível carregar as aulas.</h3><button type="button" onClick={onRetry} className="action-button mt-3">Tentar novamente</button></section>
+    : loading ? <section className="shell-card p-6 text-sm text-[#52666f]">Carregando as aulas do curso…</section>
+    : !visible.length ? <section className="rounded-2xl border border-dashed border-[#c9c0b3] bg-[#fffdf8] p-8 text-center">
       <h3 className="font-display text-xl font-bold">Nenhuma aula encontrada</h3>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#62727a]">{hasFilters ? "Altere a disciplina, o conteúdo selecionado ou a situação para ampliar os resultados." : "Não há aulas disponíveis nesta trilha no momento."}</p>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#52666f]">{hasFilters ? "Altere os filtros para ampliar os resultados." : "Ainda não há aulas publicadas e vinculadas a este curso."}</p>
       {hasFilters && <button type="button" onClick={clearFilters} className="ghost-button mt-4">Mostrar todas as aulas</button>}
-    </section> : Object.entries(byDiscipline).map(([discipline, disciplineModules]) => {
-      const contentCount = disciplineModules.reduce((total, module) => total + (allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length), 0);
-      return <section key={discipline} aria-label={discipline}>
-        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h3 className="font-display text-base font-bold text-[#0e5a70]">{discipline}</h3>
-          <span aria-hidden="true" className="h-px min-w-8 flex-1 bg-[#d7cfc1]" />
-          <span className="text-xs font-semibold text-[#665c4f]">{disciplineModules.length} aulas · {contentCount} seções e tópicos</span>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {disciplineModules.map(module => {
-            const done = isCompleted(module);
-            const started = !done && isStarted(module);
-            const notice = contentByModuleId.get(module.id)?.notice;
-            const status = done ? "Concluída" : started ? "Em andamento" : "Não iniciada";
-            return <button type="button" key={module.id} onClick={() => onOpen(module)} aria-label={`Abrir aula ${module.title}. Situação: ${status}`} className="group shell-card study-content-card relative flex min-h-48 flex-col overflow-hidden p-5 text-left">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-lg bg-[#e8f0ee] px-2 py-1 text-xs font-semibold text-[#0e5a70]">{module.code}</span>
-                  {notice && <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${notice.kind === "new" ? "border-[#8bc9b7] bg-[#ecfaf4] text-[#176a5a]" : "border-[#efc47d] bg-[#fff5e5] text-[#8d611a]"}`}>{notice.label}</span>}
-                </div>
-                <span className={`rounded-lg px-2 py-1 text-xs font-bold ${done ? "bg-[#e4f3ed] text-[#17644e]" : started ? "bg-[#fff1d7] text-[#795213]" : "bg-[#edf0f0] text-[#4b6268]"}`}>
-                  {done && <Check aria-hidden="true" className="mr-1 inline h-3.5 w-3.5" />}{status}
-                </span>
-              </div>
-              <h4 className="font-display break-words text-base font-bold text-[#17343e]">{module.title}</h4>
-              <p className="mt-2 text-sm leading-6 text-[#52666f]">{module.summary}</p>
-              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4 text-xs font-semibold text-[#52666f]">
-                <span className="flex items-center gap-1"><Clock3 className="h-4 w-4" aria-hidden="true" />{module.estimatedMinutes} min</span>
-                <span>{allApostilaByModule[module.id]?.secoes.length ?? module.concepts.length} tópicos</span>
-              </div>
-              <span className="mt-3 flex min-h-10 items-center gap-1 text-sm font-bold text-[#0e5a70] group-hover:text-[#0b4758]">{done ? "Revisar aula" : started ? "Continuar aula" : "Começar aula"} <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
-            </button>;
-          })}
-        </div>
-      </section>;
-    })}
+    </section> : Object.entries(groups).map(([discipline, items]) => <section key={discipline} aria-label={discipline}>
+      <div className="mb-3 flex flex-wrap items-center gap-3"><h3 className="font-display text-base font-bold text-[#0e5a70]">{discipline}</h3><span aria-hidden="true" className="h-px min-w-8 flex-1 bg-[#d7cfc1]"/><span className="text-sm text-[#52666f]">{items.length} aula(s)</span></div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map(item => {
+        const legacy = byLegacyTitle.get(item.title);
+        const done = item.progress?.status === "completed" || legacyCompletedIds.has(item.id);
+        const started = !done && item.progress?.status === "started";
+        const status = done ? "Concluída" : started ? "Em andamento" : "Não iniciada";
+        return <button type="button" key={item.id} onClick={() => legacy ? onOpen(legacy) : onOpenPublished(item)} aria-label={`Abrir aula ${item.title}. Situação: ${status}`} className="group shell-card study-content-card flex min-h-48 flex-col overflow-hidden p-5 text-left">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            {item.notice && <span className="rounded-full border border-[#8bc9b7] bg-[#ecfaf4] px-2 py-1 text-xs font-semibold text-[#176a5a]">{item.notice.label}</span>}
+            <span className={`rounded-lg px-2 py-1 text-xs font-bold ${done ? "bg-[#e4f3ed] text-[#17644e]" : started ? "bg-[#fff1d7] text-[#795213]" : "bg-[#edf0f0] text-[#4b6268]"}`}>{done && <Check className="mr-1 inline h-3.5 w-3.5" aria-hidden="true"/>}{status}</span>
+          </div>
+          <h4 className="font-display text-lg font-bold leading-7 text-[#173d4a]">{item.title}</h4>
+          <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#52666f]">{item.cardText || item.description || item.objective || "Abra esta aula para estudar o conteúdo."}</p>
+          <span className="mt-auto flex items-center gap-2 pt-4 text-sm font-bold text-[#0e5a70] group-hover:text-[#0b4758]">Abrir aula <ChevronRight className="h-4 w-4" aria-hidden="true"/></span>
+        </button>;
+      })}</div>
+    </section>)}
+  </div>;
+}
+
+function PublishedLessonPanel({ content, completing, onComplete, onClose }: { content: StudyProgressItem; completing: boolean; onComplete: () => void; onClose: () => void }) {
+  const completed = content.progress?.status === "completed";
+  const material = content.materialUrl && /^(https?:\\/\\/|\\/manus-storage\\/)/i.test(content.materialUrl) ? content.materialUrl : null;
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-[#152d38]/60 p-2 backdrop-blur-sm sm:p-4">
+    <section role="dialog" aria-modal="true" aria-label={`Aula: ${content.title}`} className="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[#fffdf8] shadow-2xl">
+      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[#d9e2de] p-4 sm:p-6">
+        <div><p className="eyebrow">{content.disciplineName} · CONTEÚDO DIDÁTICO</p><h2 className="font-display mt-2 text-xl font-bold text-[#173d4a]">{content.title}</h2></div>
+        <button type="button" onClick={onClose} aria-label="Fechar aula" className="ghost-button shrink-0"><X className="h-5 w-5"/></button>
+      </header>
+      <div className="min-h-0 overflow-y-auto space-y-6 p-4 sm:p-6">
+        {content.objective && <section className="rounded-xl border border-[#bcd8d0] bg-[#edf7f4] p-4"><h3 className="font-bold text-[#173d4a]">Objetivo da aula</h3><p className="mt-2 text-sm leading-6 text-[#315c62]">{content.objective}</p></section>}
+        {content.body?.trim() ? <RichContentBody body={content.body} /> : <p className="text-sm leading-7 text-[#52666f]">{content.description || "O texto desta aula ainda não foi disponibilizado."}</p>}
+        {content.videoUrl && <LessonVideoPlayer url={content.videoUrl} title={content.videoLabel || content.title}/>}
+        {material && <a href={material} target="_blank" rel="noopener noreferrer" className="ghost-button">Abrir material complementar <ChevronRight className="h-4 w-4"/></a>}
+        <StudyNotePanel moduleId={`content-${content.id}`}/>
+      </div>
+      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[#d9e2de] bg-[#f5f1e8] p-4 sm:px-6">
+        <p className="text-sm font-semibold text-[#315c62]">{completed ? "Aula concluída" : "Marque a aula como concluída quando terminar de estudar."}</p>
+        <button type="button" disabled={completed || completing} onClick={onComplete} className="action-button disabled:cursor-not-allowed disabled:opacity-50">{completed ? "Concluída" : completing ? "Salvando…" : "Concluir aula"}</button>
+      </footer>
+    </section>
   </div>;
 }
 function ModulePanel({ module, body, completed, onComplete, onClose }: { module: StudyModule; body: string | null; completed: boolean; onComplete: () => void; onClose: () => void }) {
