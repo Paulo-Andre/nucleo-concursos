@@ -40,7 +40,7 @@ import { canOpenTutorialView, isTutorialCourseExperience } from "@/lib/tutorialC
 import { isStorefrontPreviewMode } from "@/lib/storefrontPreview";
 import { resolveVisibleStudyCourseId, visibleStudyCourses } from "@/lib/studyCourseAccess";
 import { resolveStudyWorkspaceAccessState } from "@/lib/studyWorkspaceAccess";
-import { filterStudyLibrary, type StudyLibraryFilter } from "@/lib/studyLibraryFilters";
+
 
 type View = "Painel" | "Conteúdo" | "Roteiro" | "Simulados" | "Competição" | "Revisar" | "Histórico" | "Cursos" | "Acessos";
 type SimulationQuestion = StudyQuestion & { persistentQuestionId?: number };
@@ -718,7 +718,7 @@ function StudyArea({
 
 function PublishedLessonPanel({ content, completing, onComplete, onClose }: { content: StudyProgressItem; completing: boolean; onComplete: () => void; onClose: () => void }) {
   const completed = content.progress?.status === "completed";
-  const material = content.materialUrl && /^(https?:\\/\\/|\\/manus-storage\\/)/i.test(content.materialUrl) ? content.materialUrl : null;
+  const material = content.materialUrl && (content.materialUrl.startsWith("https://") || content.materialUrl.startsWith("http://") || content.materialUrl.startsWith("/manus-storage/")) ? content.materialUrl : null;
   return <div className="fixed inset-0 z-50 grid place-items-center bg-[#152d38]/60 p-2 backdrop-blur-sm sm:p-4">
     <section role="dialog" aria-modal="true" aria-label={`Aula: ${content.title}`} className="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[#fffdf8] shadow-2xl">
       <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[#d9e2de] p-4 sm:p-6">
