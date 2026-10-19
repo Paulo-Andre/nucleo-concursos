@@ -384,10 +384,10 @@ export const appRouter = router({
     state: enrollmentRequiredProcedure.query(({ ctx }) => getStudyState(ctx.user.id)),
     access: protectedProcedure.query(({ ctx }) => getUserCourseAccess(ctx.user.id)),
     courseCatalog: protectedProcedure.query(({ ctx }) => listStudyCourseCatalog(ctx.user.id, ctx.user.role === "admin")),
-    answer: enrollmentRequiredProcedure.input(z.object({ questionId: z.string().trim().min(1).max(80), correct: z.boolean() })).mutation(({ input, ctx }) => recordAnswer(ctx.user.id, input.questionId, input.correct)),
+    answer: enrollmentRequiredProcedure.input(z.object({ questionId: z.string().trim().min(1).max(80), submittedAnswer: z.boolean() })).mutation(({ input, ctx }) => recordAnswer(ctx.user.id, input.questionId, input.submittedAnswer, ctx.user.role === "admin")),
     dailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getDailyQuickCheck(ctx.user.id, input.courseId)),
     dismissDailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).mutation(({ input, ctx }) => dismissDailyQuickCheck(ctx.user.id, input.courseId)),
-    completeModule: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => completeStudyModule(ctx.user.id, input.moduleId)),
+    completeModule: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => completeStudyModule(ctx.user.id, input.moduleId, ctx.user.role === "admin")),
     contentProgress: router({
       get: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getStudyCourseProgress(ctx.user.id, input.courseId, ctx.user.role === "admin")),
       open: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, contentId: entityIdSchema })).mutation(({ input, ctx }) => openStudyContent(ctx.user.id, input, ctx.user.role === "admin")),
