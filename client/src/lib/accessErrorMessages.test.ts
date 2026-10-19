@@ -11,7 +11,7 @@ describe("mensagens de autenticação amigáveis", () => {
 
   it("interpreta erros estruturados do tRPC", () => {
     const error = { data: { zodError: { fieldErrors: { email: ["Invalid email address"] } } } };
-    expect(formatAccessError(error, "forgot")).toBe("Invalid email address");
+    expect(formatAccessError(error, "forgot")).toBe("Informe um endereço de e-mail válido.");
   });
 
   it("preserva mensagens seguras para credenciais e bloqueio", () => {
