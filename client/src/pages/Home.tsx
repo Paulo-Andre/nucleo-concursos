@@ -17,7 +17,7 @@ import { apostilaByModule as baseApostilaByModule } from "@/data/pfApostilaData"
 import { specialLegislationModules, specialApostilaByModule } from "@/data/pfSpecialLegislationModules";
 import { activeContestId, contestCatalog, getDisciplineById, getDisciplineIdForModule, getDisciplinesForContest } from "@/data/pfCurriculumCatalog";
 import { ApostilaModulePanel } from "@/components/ApostilaModulePanel";
-import { AnswerRecord, currentStreak, emptyState, levelFromXp, selectBalancedBooleanQuestions, selectSimulationQuestions, SimulationRecord, StudyState } from "@/lib/studyEngine";
+import { AnswerRecord, currentStreak, emptyState, levelFromXp, selectBalancedBooleanQuestions, SimulationRecord, StudyState } from "@/lib/studyEngine";
 import { useAuth } from "@/_core/hooks/useAuth";
 import AccessGate from "@/pages/AccessGate";
 import { trpc } from "@/lib/trpc";
@@ -187,7 +187,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
   const permittedContestIds = useMemo(() => permittedCourses.map(course => course.id), [permittedCourses]);
   const effectiveContestId = resolveVisibleStudyCourseId(permittedCourses, contestId, activeContestId);
   const activeCourse = useMemo(() => permittedCourses.find(course => course.id === effectiveContestId) ?? null, [permittedCourses, effectiveContestId]);
-  const activeContest = useMemo(() => contestCatalog.find(contest => contest.id === effectiveContestId) ?? null, [effectiveContestId]);
+  const activeContest = useMemo(() => activeCourse ? (contestCatalog.find(contest => contest.id === activeCourse.id) ?? null) : null, [activeCourse]);
   const activeCourseTitle = activeCourse?.title ?? activeContest?.name ?? "Curso de estudo";
   const activeCourseRole = activeContest?.role ?? (activeCourse?.courseType === "tutorial" ? "Tutorial" : activeCourse?.track ?? "Trilha de estudo");
   const tutorialCourse = isTutorialCourseExperience(user.role, activeCourse?.courseType);
@@ -225,7 +225,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
   const centralQuestionsQuery = trpc.study.questions.list.useQuery(undefined, { enabled: hasConfirmedCourseAccess, refetchOnWindowFocus: false });
   const dailyCheckQuery = trpc.study.dailyCheck.useQuery({ courseId: effectiveContestId }, { enabled: user.role !== "admin" && permittedContestIds.includes(effectiveContestId), refetchOnWindowFocus: false });
   const personalReviewsQuery = trpc.study.review.list.useQuery(undefined, { enabled: hasConfirmedCourseAccess && !tutorialCourse, refetchOnWindowFocus: false });
-  const canUseActiveCourse = hasConfirmedCourseAccess && (user.role === "admin" || permittedContestIds.includes(effectiveContestId));
+  const canUseActiveCourse = hasConfirmedCourseAccess && Boolean(activeCourse) && (user.role === "admin" || permittedContestIds.includes(effectiveContestId));
   const contentProgressQuery = trpc.study.contentProgress.get.useQuery({ courseId: effectiveContestId }, { enabled: canUseActiveCourse, refetchOnWindowFocus: false });
   const roadmapQuery = trpc.study.roadmap.list.useQuery({ courseId: effectiveContestId }, { enabled: canUseActiveCourse, refetchOnWindowFocus: false });
   const personalCompetitionScoreQuery = trpc.competition.myScore.useQuery({}, { enabled: canUseActiveCourse && !tutorialCourse, refetchOnWindowFocus: false });
@@ -361,8 +361,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
     setSimulationResult(null);
     setSimulationNotice(null);
     const strictReviewMode = centralQuestionsQuery.data?.requiresReviewMode === true;
-    const bank = strictReviewMode ? persistentSimulationQuestions : [...persistentSimulationQuestions, ...questionBank];
-    const questions = strictReviewMode || persistentSimulationQuestions.length ? selectBalancedBooleanQuestions(bank, total, state.usedQuestionIds) : selectSimulationQuestions(questionBank, total, state.usedQuestionIds);
+    const questions = activeCourse ? selectBalancedBooleanQuestions(persistentSimulationQuestions, total, state.usedQuestionIds) : [];
     if (questions.length < total) {
       setSimulationNotice(strictReviewMode ? `Há somente ${questions.length} questão(ões) central(is) aprovada(s)/publicada(s) para revisão obrigatória. Publique ao menos ${total} para iniciar este simulado.` : `Há somente ${questions.length} questões disponíveis para este simulado.`);
       return;
@@ -437,7 +436,7 @@ function StudyWorkspace({ user, logout, initialView, initialCommercePlanId, onCo
           {view === "Roteiro" && <WeeklyStudyPlanner progressItems={(contentProgressQuery.data?.contents ?? []) as StudyProgressItem[]} roadmapItems={(roadmapQuery.data ?? []) as RoadmapItem[]} onOpenScheduledContent={openScheduledContent} onSaveRoadmap={(input) => saveRoadmapMutation.mutateAsync({ courseId: effectiveContestId, ...input }).then(() => undefined)} onRemoveRoadmap={(id) => removeRoadmapMutation.mutateAsync({ id }).then(() => undefined)} saving={saveRoadmapMutation.isPending || removeRoadmapMutation.isPending} />}
           {view === "Treinador" && <StudyCoachPanel courseId={effectiveContestId} contents={(contentProgressQuery.data?.contents ?? []) as StudyProgressItem[]} questions={activeCourseSearchQuestions} onOpenContent={(contentId) => { const found = (contentProgressQuery.data?.contents ?? []).find(item => item.id === contentId); if (found) openPublishedContent(found as StudyProgressItem); }} onPracticeQuestion={(question) => { setManualQuickQuestion(question); setQuickAnswer(null); setView("Painel"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />}
           {view === "Conteúdo" && <StudyArea state={state} modules={availableModules} contestName={activeCourseTitle} contents={(contentProgressQuery.data?.contents ?? []) as StudyProgressItem[]} loading={contentProgressQuery.isLoading} error={contentProgressQuery.isError} onOpen={openModuleWithProgress} onOpenPublished={openPublishedContent} onRetry={() => void contentProgressQuery.refetch()} />}
-          {!tutorialCourse && view === "Simulados" && <Simulations onStart={startSimulation} state={state} notice={simulationNotice} strictReviewMode={centralQuestionsQuery.data?.requiresReviewMode === true} centralCount={persistentSimulationQuestions.length} isPfCourse={effectiveContestId === "pf-agente"} />}
+          {!tutorialCourse && view === "Simulados" && <Simulations onStart={startSimulation} state={state} notice={simulationNotice} strictReviewMode={centralQuestionsQuery.data?.requiresReviewMode === true} centralCount={persistentSimulationQuestions.length} isPfCourse={Boolean(activeCourse) && effectiveContestId === "pf-agente"} />}
           {!tutorialCourse && view === "Competição" && <><CompetitionMedal identity={personalCompetitionIdentity} totalPoints={personalCompetitionScoreQuery.data?.totalPoints ?? 0} position={personalCompetitionScoreQuery.data?.position ?? null} loading={personalCompetitionScoreQuery.isLoading} /><CompetitionArea defaultCourseId={effectiveContestId} /><CompetitionProgressPanel defaultCourseId={effectiveContestId} /></>}
           {!tutorialCourse && view === "Revisar" && <ReviewArea state={state} modules={availableModules} personalReviews={(personalReviewsQuery.data ?? []) as PersonalReviewItem[]} personalReviewsLoading={personalReviewsQuery.isLoading} onStartQuestion={(question) => { setManualQuickQuestion(question); setQuickAnswer(null); setView("Painel"); }} onCompletePersonalReview={completePersonalReview} onRemovePersonalReview={removePersonalReview} reviewPending={completePersonalReviewMutation.isPending || removePersonalReviewMutation.isPending} />}
           {view === "Histórico" && <HistoryArea state={state} />}
