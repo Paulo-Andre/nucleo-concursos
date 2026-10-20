@@ -46,8 +46,8 @@ export function selectDailyQuickCheckQuestion<T extends DailyQuickCheckCandidate
   recentQuestionIds: string[];
   shownQuestionIds?: string[];
 }) {
-  const pool = input.questions.filter(question => question.questionType === "certo_errado" && question.statement.trim().length <= 420);
-  const eligibleQuestions = pool.length ? pool : input.questions.filter(question => question.questionType === "certo_errado");
+  // Todas as questões C/E publicadas devem participar, inclusive as longas ou avançadas.
+  const eligibleQuestions = input.questions.filter(question => question.questionType === "certo_errado");
   if (!eligibleQuestions.length) return null;
   const unique = Array.from(new Map(eligibleQuestions.map(question => [question.id, question])).values());
   const shown = new Set(input.shownQuestionIds ?? []);
