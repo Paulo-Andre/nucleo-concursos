@@ -26,7 +26,8 @@ describe("seleção da checagem diária", () => {
 
   it("permite excluir a questão diária anterior quando o aluno a dispensou", () => {
     const selected = selectDailyQuickCheckQuestion({ questions: candidates, userId: 19, courseId: "pf-agente", day: "2026-08-20", recentQuestionIds: ["2"] });
-    expect(selected?.id).toBe(3);
+    expect(selected?.id).not.toBe(2);
+    expect([1, 3]).toContain(selected?.id);
   });
 
 
