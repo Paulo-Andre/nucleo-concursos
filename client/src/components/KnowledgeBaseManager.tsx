@@ -101,7 +101,7 @@ function QuestionWorkspace({ contents, contentsLoading, questions, questionsLoad
   const [editing, setEditing] = useState<Question | null>(null);
   const [newQuestionRevision, setNewQuestionRevision] = useState(0);
   const [dailyContentId, setDailyContentId] = useState("");
-  const publishedContents = useMemo(() => contents.filter(content => content.status === "published" && content.disciplineIds.some(id => publishedDisciplineIds.includes(id))), [contents]);
+  const publishedContents = useMemo(() => contents.filter(content => content.status === "published" && content.disciplineIds.some(id => publishedDisciplineIds.includes(id))), [contents, publishedDisciplineIds]);
   const contentFilterId = Number(dailyContentId);
   const displayedQuestions = dailyMode
     ? questions.filter(question => question.questionType === "certo_errado"
