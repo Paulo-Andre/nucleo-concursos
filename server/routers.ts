@@ -208,9 +208,9 @@ const contentSchema = z.object({
   cardText: z.string().trim().max(1200).optional(),
   body: z.string().trim().max(30000).optional(),
   coverImageUrl: z.string().trim().max(2048).optional().or(z.literal("")),
-  videoUrl: z.string().trim().url("Informe uma URL de vídeo válida.").max(2048).optional().or(z.literal("")),
+  videoUrl: z.string().trim().max(2048).refine(value => !value || /^https?:\/\/[^/\s]+/i.test(value), "Use um link HTTP(S) válido para o vídeo.").optional(),
   videoLabel: z.string().trim().max(160).optional(),
-  materialUrl: z.string().trim().url("Informe uma URL de material válida.").max(2048).optional().or(z.literal("")),
+  materialUrl: z.string().trim().max(2048).refine(value => !value || /^https?:\/\/[^/\s]+/i.test(value) || /^\/manus-storage\/content-pdfs\/[0-9]+\/[a-f0-9-]+_[a-f0-9]+\.pdf$/.test(value), "Use uma URL HTTP(S) ou o PDF enviado pelo sistema.").optional(),
   materialLabel: z.string().trim().max(160).optional(),
   noticeKind: z.enum(["new", "updated"]).nullable().optional(),
   requiresReview: z.boolean().default(false),
@@ -221,6 +221,12 @@ const contentImageSchema = z.object({
   fileName: z.string().trim().min(1).max(180),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
   base64: z.string().min(4).max(5_600_000),
+});
+
+const contentPdfSchema = z.object({
+  fileName: z.string().trim().min(1).max(180),
+  mimeType: z.literal("application/pdf"),
+  base64: z.string().min(4).max(14_200_000),
 });
 
 function imageExtension(mimeType: z.infer<typeof contentImageSchema>["mimeType"]) {
@@ -592,6 +598,15 @@ export const appRouter = router({
         const bytes = Buffer.from(base64, "base64");
         if (!bytes.length || bytes.length > 4 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Envie uma imagem JPG, PNG ou WEBP de até 4 MB." });
         const stored = await storagePut(`content-covers/${ctx.user.id}/${crypto.randomUUID()}.${imageExtension(input.mimeType)}`, bytes, input.mimeType);
+        return { url: stored.url };
+      }),
+      uploadPdf: adminProcedure.input(contentPdfSchema).mutation(async ({ input, ctx }) => {
+        const base64 = input.base64.replace(/\s/g, "");
+        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) throw new TRPCError({ code: "BAD_REQUEST", message: "PDF codificado incorretamente." });
+        const bytes = Buffer.from(base64, "base64");
+        if (!bytes.length || bytes.length > 10 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "O PDF deve ter até 10 MB." });
+        if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-") throw new TRPCError({ code: "BAD_REQUEST", message: "O arquivo enviado não possui um cabeçalho PDF válido." });
+        const stored = await storagePut("content-pdfs/" + ctx.user.id + "/" + crypto.randomUUID() + ".pdf", bytes, "application/pdf");
         return { url: stored.url };
       }),
       create: adminProcedure.input(contentSchema).mutation(({ input, ctx }) => createManagedContent(ctx.user.id, input)),
