@@ -6,6 +6,9 @@ export type LessonResourceData = {
   title: string;
   videoUrl?: string | null;
   videoLabel?: string | null;
+  videoChannel?: string | null;
+  videoNote?: string | null;
+  videoOrigin?: "discipline" | "editorial";
   materialUrl?: string | null;
   materialLabel?: string | null;
 };
@@ -42,9 +45,9 @@ export function LessonResources({ content }: { content: LessonResourceData }) {
     <p className="mb-4 mt-1 text-xs leading-5 text-[#45686b]">Assista ao vídeo e consulte ou baixe o documento disponibilizado pelo professor.</p>
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-[#b8d5e3] bg-white p-3">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#0e5a70]"><PlayCircle aria-hidden="true" className="h-5 w-5"/>Vídeo da aula</div>
+        <div className="flex items-center gap-2 text-sm font-bold text-[#0e5a70]"><PlayCircle aria-hidden="true" className="h-5 w-5"/>{content.videoOrigin === "discipline" ? "Vídeo complementar da disciplina" : "Vídeo da aula"}</div>
         {video ? <a href="#reprodutor-da-aula" className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#0e5a70] px-4 py-2 text-xs font-bold text-white hover:bg-[#09495a]"><PlayCircle className="h-4 w-4" aria-hidden="true" /> Reproduzir vídeo</a>
-        : <p className="mt-2 text-xs text-[#687b80]">Nenhum vídeo cadastrado para esta aula.</p>}
+        : <p className="mt-2 text-xs text-[#687b80]">Nenhum vídeo associado a esta aula.</p>}
       </div>
       <div className="rounded-xl border border-[#dbcfb3] bg-white p-3">
         <div className="flex items-center gap-2 text-sm font-bold text-[#72501d]"><FileText aria-hidden="true" className="h-5 w-5"/>Documento da aula</div>
@@ -55,6 +58,6 @@ export function LessonResources({ content }: { content: LessonResourceData }) {
         {material && <p className="mt-2 text-[11px] text-[#667c7b]">{content.materialLabel || (pdf ? "Apostila em PDF" : "Material complementar")}{pdf && " · Alguns serviços externos podem abrir o PDF no navegador."}</p>}
       </div>
     </div>
-    {video && <div id="reprodutor-da-aula" className="mt-4 scroll-mt-5"><LessonVideoPlayer url={video} title={content.videoLabel || content.title}/></div>}
+    {video && <div id="reprodutor-da-aula" className="mt-4 scroll-mt-5"><LessonVideoPlayer url={video} title={content.videoLabel || content.title} channel={content.videoChannel || undefined} note={content.videoNote || undefined}/></div>}
   </section>;
 }
