@@ -19,6 +19,17 @@ describe("formatação didática de conteúdos", () => {
     expect(markup).not.toContain("<script>");
   });
 
+  it("destaca rótulos antes de dois-pontos sem marcar URLs como títulos", () => {
+    const markup = renderToStaticMarkup(createElement(RichContentBody, {
+      body: "Conceitos-chave: controle judicial\nPontos de atenção: legitimidade\n\nExemplo: dano causado\nhttps://exemplo.com/video",
+    }));
+    expect(markup).toContain("<strong");
+    expect(markup).toContain("Conceitos-chave:");
+    expect(markup).toContain("Pontos de atenção:");
+    expect(markup).toContain("Exemplo:");
+    expect(markup).not.toContain("https:</strong>");
+  });
+
   it("apresenta os comandos de destaque e fórmula no editor ROOT", () => {
     const markup = renderToStaticMarkup(createElement(ContentBodyEditor, { value: "", onChange: () => undefined }));
     expect(markup).toContain("Destacar seleção");
