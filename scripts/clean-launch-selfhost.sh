@@ -53,19 +53,22 @@ competitionAnswers
 TABLES
 )
 actual_tables=$(sql "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'")
-# Usar conjuntos Bash em vez de comm/sort: nomes MySQL não dependem da ordem de retorno
-# nem de diferenças de locale entre sort e comm no servidor.
-declare -A expected_map=() actual_map=()
-while IFS= read -r table; do
-  [[ -z "$table" ]] || expected_map["$table"]=1
-done <<< "$REQUIRED_TABLES"
-while IFS= read -r table; do
-  [[ -z "$table" ]] || actual_map["$table"]=1
-done <<< "$actual_tables"
+# A comparação usa nomes completos, sem dependência da ordem ou locale de sort/comm.
 missing_tables=""
 unknown_tables=""
-for table in "${!expected_map[@]}"; do
-  [[ -n "${actual_map[$table]:-}" ]] || missing_tables+="$table"
+while IFS= read -r table; do
+  [[ -n "$table" ]] || continue
+  if ! grep -Fxq -- "$table" <<< "$actual_tables"; then
+    missing_tables+="$table "
+  fi
+done <<< "$REQUIRED_TABLES"
+while IFS= read -r table; do
+  [[ -n "$table" && "$table" != "__drizzle_migrations" ]] || continue
+  if ! grep -Fxq -- "$table" <<< "$REQUIRED_TABLES"; then
+    unknown_tables+="$table "
+  fi
+done <<< "$actual_tables"
+if [[ -n "$missing_tables" || -n "$unknown_tables" ]]; then
   echo "Estrutura de tabelas não confere com a versão auditada."
   [[ -z "$missing_tables" ]] || printf 'Ausentes: %s\n' "$missing_tables"
   [[ -z "$unknown_tables" ]] || printf 'Desconhecidas: %s\n' "$unknown_tables"
