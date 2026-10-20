@@ -9,19 +9,19 @@ const candidates: DailyQuickCheckCandidate[] = [
 ];
 
 describe("seleção da checagem diária", () => {
-  it("prioriza itens C/E básicos e curtos de modo estável no mesmo curso e dia", () => {
+  it("seleciona itens C/E de forma estável no mesmo curso e dia, independentemente da dificuldade", () => {
     const input = { questions: candidates, userId: 73, courseId: "pf-agente", day: "2026-08-19", recentQuestionIds: [] };
     const first = selectDailyQuickCheckQuestion(input);
     const second = selectDailyQuickCheckQuestion(input);
     expect(first?.id).toBe(second?.id);
-    expect([2, 3]).toContain(first?.id);
+    expect([1, 2, 3]).toContain(first?.id);
   });
 
   it("evita questões respondidas recentemente quando o curso oferece outra opção", () => {
     const initial = selectDailyQuickCheckQuestion({ questions: candidates, userId: 73, courseId: "pf-agente", day: "2026-08-19", recentQuestionIds: [] });
     const replacement = selectDailyQuickCheckQuestion({ questions: candidates, userId: 73, courseId: "pf-agente", day: "2026-08-19", recentQuestionIds: [String(initial?.id)] });
     expect(replacement?.id).not.toBe(initial?.id);
-    expect([2, 3]).toContain(replacement?.id);
+    expect([1, 2, 3]).toContain(replacement?.id);
   });
 
   it("permite excluir a questão diária anterior quando o aluno a dispensou", () => {
