@@ -4,12 +4,20 @@ import {
   createLocalUser,
   ensureDefaultCourses,
   ensureDefaultKnowledgeBase,
+  hasPrelaunchCatalogReset,
   getUserByOpenId,
   getUserByUsername,
   updateUserRole,
 } from "../db";
 import { hashPassword } from "./localAuth";
 import { hasRootBootstrapSecret } from "./rootConfig";
+
+/** Evita recriar as aulas de exemplo depois da limpeza pré-lançamento. */
+async function seedInitialCatalogUnlessReset(rootId: number) {
+  if (await hasPrelaunchCatalogReset()) return;
+  await ensureDefaultCourses(rootId);
+  await ensureDefaultKnowledgeBase(rootId);
+}
 
 /**
  * Garante uma única conta ROOT local. A identidade OWNER_OPEN_ID é consultada
@@ -24,8 +32,7 @@ export async function ensureRootAccount() {
     if (existingLocal.loginMethod !== "local" || existingLocal.openId !== "local:paulo" || !existingLocal.passwordHash) {
       await convertUserToLocalRoot(existingLocal.id, await hashPassword(ENV.rootInitialPassword));
     }
-    await ensureDefaultCourses(existingLocal.id);
-    await ensureDefaultKnowledgeBase(existingLocal.id);
+    await seedInitialCatalogUnlessReset(existingLocal.id);
     return;
   }
 
@@ -36,8 +43,7 @@ export async function ensureRootAccount() {
     const existingOwner = await getUserByOpenId(ownerOpenId);
     if (existingOwner) {
       await convertUserToLocalRoot(existingOwner.id, await hashPassword(ENV.rootInitialPassword));
-      await ensureDefaultCourses(existingOwner.id);
-      await ensureDefaultKnowledgeBase(existingOwner.id);
+      await seedInitialCatalogUnlessReset(existingOwner.id);
       return;
     }
   }
@@ -50,6 +56,5 @@ export async function ensureRootAccount() {
     passwordHash,
     role: "admin",
   });
-  await ensureDefaultCourses(root.id);
-  await ensureDefaultKnowledgeBase(root.id);
+  await seedInitialCatalogUnlessReset(root.id);
 }
