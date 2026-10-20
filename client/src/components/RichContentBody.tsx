@@ -14,13 +14,21 @@ export function parseRichContentBody(body: string): RichContentBlock[] {
   });
 }
 
+/** Destaca automaticamente os rótulos editoriais no início da linha, sem interpretar HTML. */
+function LabeledLine({ line }: { line: string }) {
+  // Não transformar URL, horário ou sentenças com dois-pontos no meio em título.
+  const match = line.match(/^(\s*)([^:\n]{2,65}):(?!\/\/)(?=\s|$)/);
+  if (!match || !/[A-Za-zÀ-ÿ]/.test(match[2])) return <>{line}</>;
+  return <>{match[1]}<strong className="mr-1 inline rounded-md bg-[#e1f1ed] px-1.5 py-0.5 font-extrabold text-[#09596a]">{match[2]}:</strong>{line.slice(match[0].length)}</>;
+}
+
 function HighlightedText({ text }: { text: string }) {
   const parts = text.split(/(\[\[[\s\S]*?\]\])/g);
   return <>{parts.map((part, index) => {
     const highlighted = part.match(/^\[\[([\s\S]*?)\]\]$/);
     if (highlighted) return <mark key={index} className="rounded bg-[#fff0b8] px-1 font-semibold text-[#62490c]">{highlighted[1]}</mark>;
     const lines = part.split("\n");
-    return <span key={index}>{lines.map((line, lineIndex) => <span key={lineIndex}>{line}{lineIndex < lines.length - 1 && <br />}</span>)}</span>;
+    return <span key={index}>{lines.map((line, lineIndex) => <span key={lineIndex}><LabeledLine line={line}/>{lineIndex < lines.length - 1 && <br />}</span>)}</span>;
   })}</>;
 }
 
