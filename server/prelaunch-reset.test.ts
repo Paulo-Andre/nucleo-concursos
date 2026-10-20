@@ -22,6 +22,15 @@ describe("limpeza pré-lançamento", () => {
     expect(script).not.toMatch(/TRUNCATE TABLE|DROP TABLE|DELETE FROM __drizzle_migrations/i);
   });
 
+  it("não exige listas ordenadas do MySQL para comparar as tabelas", () => {
+    expect(script).not.toMatch(/\bcomm\s+-/);
+    expect(script).toContain("declare -A expected_map=() actual_map=()");
+    expect(script).toContain("expected_map[\"$table\"]=1");
+    expect(script).toContain("actual_map[\"$table\"]=1");
+    expect(script).toContain("missing_tables");
+    expect(script).toContain("unknown_tables");
+  });
+
   it("exige confirmação, versão validada, bloqueia tabelas desconhecidas e oferece modo sem backup", () => {
     expect(script).toContain("APAGAR_TUDO_MENOS_PAULO");
     expect(script).toContain("NUCLEO_CLEAN_RELEASE_SHA");
