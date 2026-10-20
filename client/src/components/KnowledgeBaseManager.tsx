@@ -3,7 +3,8 @@ import { BookOpenCheck, CheckCircle2, ClipboardCheck, FilePenLine, FileText, His
 import { trpc } from "@/lib/trpc";
 import { normalizeQuestionOptions, questionOptionLabel } from "@/lib/questionOptions";
 import { newQuestionFormKey, questionCreationSuccessMessage, questionFormValidationError } from "@/lib/questionFormValidation";
-import { countQuestionsByContent, filterLinkOptions, libraryLoadState, reviewEmptyStateMessage, reviewFlowSteps } from "@/lib/adminUiHelpers";
+import { filterLinkOptions, libraryLoadState, reviewEmptyStateMessage, reviewFlowSteps } from "@/lib/adminUiHelpers";
+import { countQuestionTypes, filterQuestionsByType, questionTypeLabel, type QuestionTypeFilter } from "@/lib/questionContentFilters";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentBodyEditor } from "@/components/ContentBodyEditor";
@@ -186,23 +187,101 @@ function QuestionCard({ question, pending, onEdit, onDelete, onAddToReview }: { 
   return <article className="border border-[#d3ded9] bg-white p-3"><div className="flex items-start justify-between gap-2"><p className="line-clamp-2 text-xs font-bold leading-5 text-[#1d4652]">#{question.id} · {question.statement}</p><StatusBadge status={question.status}/></div><p className="mt-2 text-[10px] text-[#718084]">{question.questionType === "certo_errado" ? "CERTO / ERRADO" : "MÚLTIPLA ESCOLHA"} · {question.banca ?? "Sem banca"}{question.year ? ` · ${question.year}` : ""}</p><div className="mt-2 flex flex-wrap gap-1">{question.contents.length ? question.contents.map(content => <span key={content.id} className="border border-[#c7dcd5] bg-[#f1f9f6] px-1.5 py-0.5 text-[9px] text-[#216459]">{content.title}</span>) : <span className="text-[10px] text-[#8a7770]">Sem conteúdo vinculado</span>}</div>{confirmingDeletion ? <div className="mt-3 border border-[#d8afa2] bg-[#fff0ec] p-2"><p className="text-[10px] leading-4 text-[#98462f]">Excluir esta questão definitivamente? Itens já usados em simulados são protegidos e devem ser inativados.</p><div className="mt-2 flex gap-3"><button disabled={pending} onClick={onDelete} className="text-[10px] font-bold text-[#98462f] hover:underline">Confirmar exclusão</button><button disabled={pending} onClick={() => setConfirmingDeletion(false)} className="text-[10px] font-bold text-[#5f706f] hover:underline">Cancelar</button></div></div> : <div className="mt-3 flex flex-wrap gap-3"><button disabled={pending} onClick={onEdit} className="text-[10px] font-bold text-[#0e5a70] hover:underline">Editar questão</button><button disabled={pending || question.status === "review"} onClick={onAddToReview} className="inline-flex items-center gap-1 text-[10px] font-bold text-[#8d611a] hover:underline"><Send className="h-3 w-3"/>Adicionar à revisão ROOT</button><button disabled={pending} onClick={() => setConfirmingDeletion(true)} className="text-[10px] font-bold text-[#98462f] hover:underline">Excluir</button></div>}</article>;
 }
 
+
 function QuestionsByContent({ contents, questions, loading, pending, onOpenQuestion }: { contents: Content[]; questions: Question[]; loading: boolean; pending: boolean; onOpenQuestion: (id: number) => void }) {
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<QuestionTypeFilter>("all");
   const [showEmpty, setShowEmpty] = useState(false);
   const [expandedContentIds, setExpandedContentIds] = useState<Set<number>>(() => new Set());
+
+  const totalCounts = useMemo(() => countQuestionTypes(questions), [questions]);
+  const matchingQuestions = useMemo(() => filterQuestionsByType(questions, typeFilter), [questions, typeFilter]);
   const allGroups = useMemo(() => contents
     .filter(content => `${content.title} ${content.description ?? ""}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
-    .map(content => ({ content, questions: questions.filter(question => question.contentIds.includes(content.id)) })), [contents, questions, search]);
-  const questionCountsByContent = useMemo(() => countQuestionsByContent(questions), [questions]);
-  const groupsWithQuestions = allGroups.filter(group => (questionCountsByContent.get(group.content.id) ?? 0) > 0);
+    .map(content => ({
+      content,
+      questions: matchingQuestions.filter(question => question.contentIds.includes(content.id)),
+    })), [contents, matchingQuestions, search]);
+  const groupsWithQuestions = allGroups.filter(group => group.questions.length > 0);
   const groups = showEmpty ? allGroups : groupsWithQuestions;
+
   const toggleExpanded = (contentId: number, isOpen: boolean) => setExpandedContentIds(current => {
     const next = new Set(current);
     if (isOpen) next.add(contentId); else next.delete(contentId);
     return next;
   });
+
   if (loading) return <div className="mt-5 border border-dashed border-[#b9d8cf] bg-[#f1f9f6] p-4 text-xs text-[#176a5a]">Carregando conteúdos e todas as questões vinculadas da biblioteca central…</div>;
-  return <div className="mt-5"><div className="border border-[#c7ded6] bg-white p-3 text-[11px] leading-5 text-[#45696c]"><b className="text-[#173d4a]">Questões do simulado por conteúdo:</b> há <b className="text-[#176a5a]">{questions.length} questão(ões) na biblioteca</b>, distribuídas em <b className="text-[#176a5a]">{groupsWithQuestions.length} conteúdo(s)</b>. A lista começa pelos conteúdos que já possuem questões, para que todas possam ser conferidas e editadas sem ficarem escondidas entre grupos vazios.</div><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setExpandedContentIds(new Set(groups.map(group => group.content.id)))} className="border border-[#b9d8cf] bg-[#f1f9f6] px-2.5 py-1.5 text-[10px] font-bold text-[#176a5a]">Expandir todas as questões visíveis</button><button type="button" onClick={() => setExpandedContentIds(new Set())} className="border border-[#c9d8d5] bg-white px-2.5 py-1.5 text-[10px] font-bold text-[#45696c]">Recolher grupos</button><button type="button" onClick={() => setShowEmpty(current => !current)} className="border border-[#c9d8d5] bg-white px-2.5 py-1.5 text-[10px] font-bold text-[#45696c]">{showEmpty ? "Ocultar conteúdos sem questões" : `Exibir também ${Math.max(0, allGroups.length - groupsWithQuestions.length)} conteúdo(s) sem questões`}</button></div><label className="relative mt-3 block"><Search className="absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Pesquisar conteúdo para localizar todas as suas questões" className="h-10 bg-white pl-9 text-xs"/></label><div className="mt-3 max-h-[38rem] space-y-2 overflow-y-auto pr-1">{groups.length === 0 ? <p className="border border-dashed border-[#c7beb0] bg-white p-4 text-xs text-[#718084]">Nenhum conteúdo com questões corresponde à busca. Você pode optar por exibir também os conteúdos ainda vazios.</p> : groups.map(({ content, questions: linkedQuestions }) => <details key={content.id} className="border border-[#d3ded9] bg-white" open={expandedContentIds.has(content.id)} onToggle={event => toggleExpanded(content.id, event.currentTarget.open)}><summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3"><span><b className="text-xs text-[#1d4652]">#{content.id} · {content.title}</b><small className="mt-1 block text-[10px] text-[#718084]">{content.disciplineIds.length} disciplina(s) vinculada(s)</small></span><span className="border border-[#c7dcd5] bg-[#f1f9f6] px-2 py-1 text-[10px] font-bold text-[#216459]">{linkedQuestions.length} questão(ões)</span></summary><div className="border-t border-[#e1e8e4] p-3">{linkedQuestions.length === 0 ? <p className="text-[11px] text-[#718084]">Ainda não há questões vinculadas a este conteúdo. Crie uma questão e marque este conteúdo no vínculo N:N.</p> : <div className="space-y-2">{linkedQuestions.map(question => <article key={question.id} className="border border-[#e1e8e4] bg-[#fbfdfc] p-2"><p className="line-clamp-2 text-[11px] font-semibold leading-5 text-[#1d4652]">#{question.id} · {question.statement}</p><div className="mt-2 flex items-center justify-between gap-2"><StatusBadge status={question.status}/><button disabled={pending} onClick={() => onOpenQuestion(question.id)} className="text-[10px] font-bold text-[#0e5a70] hover:underline">Editar questão</button></div></article>)}</div>}</div></details>)}</div></div>;
+
+  return (
+    <section aria-label="Questões por conteúdo" className="mt-5">
+      <div className="rounded-xl border border-[#c7ded6] bg-white p-4 text-xs leading-5 text-[#45696c]">
+        <h4 className="text-sm font-bold text-[#173d4a]">Questões por conteúdo</h4>
+        <p className="mt-1">A biblioteca contém <strong>{totalCounts.total} questões</strong>: <strong>{totalCounts.certoErrado} de Certo / Errado</strong> e <strong>{totalCounts.multiplaEscolha} de Múltipla escolha</strong>. Filtre pelo tipo sem abrir cada pergunta.</p>
+        <p className="mt-1 text-[11px]">A Checagem Diária usa somente questões publicadas do tipo Certo / Errado; o filtro abaixo apenas organiza a visualização e não altera a publicação.</p>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.55fr)]">
+        <label className="block text-xs font-bold text-[#254751]">
+          Pesquisar conteúdo
+          <span className="relative mt-1.5 block"><Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Pesquisar pelo título ou descrição" className="h-10 w-full bg-white pl-9 text-xs"/></span>
+        </label>
+        <label className="block text-xs font-bold text-[#254751]">
+          Filtrar pelo tipo de questão
+          <select aria-label="Filtrar pelo tipo de questão" value={typeFilter} onChange={event => setTypeFilter(event.target.value as QuestionTypeFilter)} className="mt-1.5 h-10 w-full rounded-lg border border-[#cec6b8] bg-white px-3 text-xs text-[#173d4a]">
+            <option value="all">Todos os tipos ({totalCounts.total})</option>
+            <option value="certo_errado">Certo / Errado ({totalCounts.certoErrado})</option>
+            <option value="multipla_escolha">Múltipla escolha ({totalCounts.multiplaEscolha})</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span role="status" aria-live="polite" className="mr-auto text-xs font-semibold text-[#315c62]">{matchingQuestions.length} questão(ões) do tipo selecionado · {groupsWithQuestions.length} conteúdo(s) com resultados</span>
+        <button type="button" onClick={() => setExpandedContentIds(new Set(groups.map(group => group.content.id)))} className="rounded-lg border border-[#b9d8cf] bg-[#f1f9f6] px-3 py-2 text-[11px] font-bold text-[#176a5a]">Expandir resultados</button>
+        <button type="button" onClick={() => setExpandedContentIds(new Set())} className="rounded-lg border border-[#c9d8d5] bg-white px-3 py-2 text-[11px] font-bold text-[#45696c]">Recolher todos</button>
+        <button type="button" onClick={() => setShowEmpty(current => !current)} className="rounded-lg border border-[#c9d8d5] bg-white px-3 py-2 text-[11px] font-bold text-[#45696c]">{showEmpty ? "Ocultar conteúdos sem resultado" : "Mostrar conteúdos sem resultado"}</button>
+      </div>
+
+      <div className="mt-3 max-h-[38rem] space-y-2 overflow-y-auto pr-1">
+        {groups.length === 0
+          ? <p role="status" className="rounded-lg border border-dashed border-[#c7beb0] bg-white p-4 text-xs text-[#718084]">Nenhuma questão deste tipo foi encontrada nos conteúdos pesquisados. Experimente outro tipo ou marque “Mostrar conteúdos sem resultado”.</p>
+          : groups.map(({ content, questions: linkedQuestions }) => {
+            const counts = countQuestionTypes(linkedQuestions);
+            return (
+              <details key={content.id} className="rounded-lg border border-[#d3ded9] bg-white" open={expandedContentIds.has(content.id)} onToggle={event => toggleExpanded(content.id, event.currentTarget.open)}>
+                <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 p-3">
+                  <span className="min-w-0 flex-1">
+                    <strong className="block break-words text-xs text-[#1d4652]">#{content.id} · {content.title}</strong>
+                    <span className="mt-1 block text-[10px] text-[#718084]">{content.disciplineIds.length} disciplina(s) vinculada(s)</span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {typeFilter !== "multipla_escolha" && <span className="rounded-md border border-[#a6d0ba] bg-[#eaf8ef] px-2 py-1 text-[10px] font-bold text-[#176347]">{counts.certoErrado} C/E</span>}
+                    {typeFilter !== "certo_errado" && <span className="rounded-md border border-[#b9cee8] bg-[#eef5ff] px-2 py-1 text-[10px] font-bold text-[#245583]">{counts.multiplaEscolha} Múltipla</span>}
+                  </span>
+                </summary>
+                <div className="space-y-2 border-t border-[#e1e8e4] p-3">
+                  {linkedQuestions.length === 0
+                    ? <p className="text-xs text-[#718084]">Nenhuma questão do tipo selecionado está vinculada a este conteúdo.</p>
+                    : linkedQuestions.map(question => (
+                      <article key={question.id} className="rounded-lg border border-[#e1e8e4] bg-[#fbfdfc] p-3">
+                        <div className="flex flex-wrap items-start gap-2">
+                          <span className={question.questionType === "certo_errado" ? "shrink-0 rounded-md border border-[#a6d0ba] bg-[#eaf8ef] px-2 py-1 text-[10px] font-extrabold text-[#176347]" : "shrink-0 rounded-md border border-[#b9cee8] bg-[#eef5ff] px-2 py-1 text-[10px] font-extrabold text-[#245583]"}>{questionTypeLabel(question.questionType)}</span>
+                          <p className="min-w-0 flex-1 text-xs font-semibold leading-5 text-[#1d4652]">#{question.id} · {question.statement}</p>
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                          <StatusBadge status={question.status}/>
+                          <button type="button" disabled={pending} onClick={() => onOpenQuestion(question.id)} className="min-h-10 rounded-lg px-2 text-xs font-bold text-[#0e5a70] hover:bg-[#edf7f4] hover:underline disabled:opacity-50">Editar questão</button>
+                        </div>
+                      </article>
+                    ))}
+                </div>
+              </details>
+            );
+          })}
+      </div>
+    </section>
+  );
 }
 
 function ContentWorkspace({ disciplines, contents, contentsLoading, pending, onCreate, onUpdate, onUploadImage, onUploadPdf, onSend }: { disciplines: Discipline[]; contents: Content[]; contentsLoading: boolean; pending: boolean; onCreate: (data: any) => void; onUpdate: (id: number, data: any) => void; onUploadImage: (data: { fileName: string; mimeType: "image/jpeg" | "image/png" | "image/webp"; base64: string }) => Promise<{ url: string }>; onUploadPdf: (data: { fileName: string; mimeType: "application/pdf"; base64: string }) => Promise<{ url: string }>; onSend: (id: number) => void }) {
