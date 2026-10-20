@@ -1,3 +1,4 @@
+import React from "react";
 import { ExternalLink, PlayCircle, ShieldCheck } from "lucide-react";
 import { resolveLessonVideoSource } from "@/lib/videoPlayer";
 
