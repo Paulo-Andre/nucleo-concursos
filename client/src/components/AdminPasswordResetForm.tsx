@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -22,7 +22,7 @@ export function AdminPasswordResetForm({ userName, pending, onReset }: Props) {
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const busy = pending || submitting;
 
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (busy) return;
     const validationError = validateManagedPasswordReset(password, confirmation);
