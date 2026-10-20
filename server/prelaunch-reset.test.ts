@@ -24,9 +24,8 @@ describe("limpeza pré-lançamento", () => {
 
   it("não exige listas ordenadas do MySQL para comparar as tabelas", () => {
     expect(script).not.toMatch(/\bcomm\s+-/);
-    expect(script).toContain("declare -A expected_map=() actual_map=()");
-    expect(script).toContain("expected_map[\"$table\"]=1");
-    expect(script).toContain("actual_map[\"$table\"]=1");
+    expect(script).toContain('grep -Fxq -- "$table" <<< "$actual_tables"');
+    expect(script).toContain('grep -Fxq -- "$table" <<< "$REQUIRED_TABLES"');
     expect(script).toContain("missing_tables");
     expect(script).toContain("unknown_tables");
   });
