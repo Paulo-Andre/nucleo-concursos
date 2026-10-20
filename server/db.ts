@@ -1804,6 +1804,19 @@ export async function deleteManagedCourse(actorUserId: number, courseId: string,
   return { id: existing.id, title: existing.title, removedLinks: links.length, removedEnrollments: enrollments.length };
 }
 
+/** Marcador persistente de limpeza pré-lançamento: impede que reinícios repovoem o catálogo.
+ * A marca é criada exclusivamente junto com a limpeza transacional, nunca ao iniciar o app.
+ */
+export const EMPTY_CATALOG_AUDIT_ACTION = "LIMPEZA_CATALOGO_PRE_LANCAMENTO";
+
+export async function hasPrelaunchCatalogReset() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select({ id: adminAuditLogs.id }).from(adminAuditLogs)
+    .where(eq(adminAuditLogs.action, EMPTY_CATALOG_AUDIT_ACTION)).limit(1);
+  return Boolean(rows[0]);
+}
+
 /** Cria as três matrizes iniciais uma única vez no banco de uma instância nova. */
 export async function ensureDefaultCourses(actorUserId: number) {
   const db = await getDb();
