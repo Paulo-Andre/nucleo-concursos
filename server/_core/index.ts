@@ -49,8 +49,9 @@ async function startServer() {
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     next();
   });
-  // O limite cobre os uploads de imagem permitidos (até 4 MB) sem aceitar cargas desnecessariamente grandes.
-  app.use(express.json({ limit: "8mb" }));
+  // Arquivos PDF de até 10 MB são codificados em base64 (~13,4 MB).
+  // Endpoints administrativos validam autorização, tipo e tamanho real antes de armazenar.
+  app.use(express.json({ limit: "16mb" }));
   app.use(express.urlencoded({ limit: "8mb", extended: true }));
   registerStorageProxy(app);
   app.get("/api/admin/backups/:token", async (req, res) => {
