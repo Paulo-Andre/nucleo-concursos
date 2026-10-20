@@ -269,6 +269,28 @@ export async function updateUserPassword(userId: number, passwordHash: string) {
   });
 }
 
+/** Redefinição ROOT: senha, invalidação de sessões/tokens e auditoria numa única transação. */
+export async function resetManagedUserPassword(actorUserId: number, userId: number, passwordHash: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  return db.transaction(async tx => {
+    const target = (await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1))[0];
+    if (!target) return false;
+
+    await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
+    await tx.delete(authSessions).where(eq(authSessions.userId, userId));
+    await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await tx.insert(adminAuditLogs).values({
+      actorUserId,
+      affectedUserId: userId,
+      action: "REDEFINICAO_DE_SENHA",
+      detail: "Senha redefinida pelo administrador; sessões e links antigos de recuperação invalidados.",
+    });
+    return true;
+  });
+}
+
 export async function createPasswordResetToken(userId: number, tokenHash: string, expiresAt: Date) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
