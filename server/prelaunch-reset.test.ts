@@ -22,9 +22,12 @@ describe("limpeza pré-lançamento", () => {
     expect(script).not.toMatch(/TRUNCATE TABLE|DROP TABLE|DELETE FROM __drizzle_migrations/i);
   });
 
-  it("exige confirmação, versão validada, backup e bloqueia tabelas desconhecidas", () => {
+  it("exige confirmação, versão validada, bloqueia tabelas desconhecidas e oferece modo sem backup", () => {
     expect(script).toContain("APAGAR_TUDO_MENOS_PAULO");
     expect(script).toContain("NUCLEO_CLEAN_RELEASE_SHA");
+    expect(script).toContain("--apply-without-backup");
+    expect(script).toContain("ACEITO_PERDA_IRREVERSIVEL");
+    expect(script).toContain('if [[ "$MODE" == "--apply" ]]; then');
     expect(script).toContain("unknown_tables");
     expect(script).toContain("banco-antes.sql");
     expect(script).toContain("sha256sum -c SHA256SUMS");
