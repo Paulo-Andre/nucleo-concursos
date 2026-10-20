@@ -1150,6 +1150,16 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
   return Array.from(unique.values()).sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
 }
 
+/** Restringe PDFs enviados à biblioteca a matrículas vigentes vinculadas a aulas publicadas. */
+export async function canAccessStoredContentPdf(userId: number, resourcePath: string): Promise<boolean> {
+  const enrollments = await getUserCourseAccess(userId);
+  for (const enrollment of enrollments) {
+    const contentsForCourse = await listStudyCourseContents(enrollment.courseId);
+    if (contentsForCourse.some(content => content.materialUrl === resourcePath)) return true;
+  }
+  return false;
+}
+
 function serializeContentProgress(content: StudyCourseContent, progress: typeof studyContentProgress.$inferSelect | undefined, latestOpenedAt: Date | null, enrollmentStartedAt: Date | null, isAdmin: boolean) {
   return {
     ...content,
