@@ -2581,6 +2581,11 @@ export async function deleteManagedQuestion(actorUserId: number, questionId: num
   if (!existing[0]) throw new Error("Questão não encontrada.");
   const simulationUse = await db.select({ id: simulationQuestions.id }).from(simulationQuestions).where(eq(simulationQuestions.questionId, questionId)).limit(1);
   if (simulationUse[0]) throw new Error("Esta questão já foi usada em um simulado e não pode ser excluída. Mude seu status para INATIVO para preservá-la no histórico.");
+  const dailyOrStudyAnswers = await db.select({ id: studyAnswers.id }).from(studyAnswers).where(or(
+    eq(studyAnswers.questionId, String(questionId)),
+    eq(studyAnswers.questionId, `central-${questionId}`),
+  )).limit(1);
+  if (dailyOrStudyAnswers[0]) throw new Error("Esta questão já foi respondida por um aluno, inclusive na checagem diária. Altere para INATIVO para preservar o histórico e evitar novas exibições.");
 
   await db.delete(reviewQueue).where(and(eq(reviewQueue.itemType, "question"), eq(reviewQueue.itemId, questionId)));
   await db.delete(questionChangelog).where(eq(questionChangelog.questionId, questionId));
