@@ -58,6 +58,7 @@ import {
   completeStudyReviewItem,
   consumePasswordResetToken,
   recordAnswer,
+  resetManagedUserPassword,
   recordSimulation,
   openStudyContent,
   removeStudyReviewItem,
@@ -666,8 +667,8 @@ export const appRouter = router({
     }),
     resetPassword: adminProcedure.input(z.object({ userId: z.number().int().positive(), newPassword: passwordSchema, confirmation: passwordSchema })).mutation(async ({ input, ctx }) => {
       if (input.newPassword !== input.confirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
-      await updateUserPassword(input.userId, await hashPassword(input.newPassword));
-      await writeAdminAudit(ctx.user.id, input.userId, "REDEFINICAO_DE_SENHA", "Senha redefinida pelo administrador sem exposição da credencial anterior.");
+      const updated = await resetManagedUserPassword(ctx.user.id, input.userId, await hashPassword(input.newPassword));
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Conta não encontrada. Atualize a lista de usuários." });
       return { success: true };
     }),
     setBlocked: adminProcedure.input(z.object({ userId: z.number().int().positive(), isBlocked: z.boolean() })).mutation(async ({ input, ctx }) => {
