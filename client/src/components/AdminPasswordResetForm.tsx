@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import React, { useState, type FormEvent } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
