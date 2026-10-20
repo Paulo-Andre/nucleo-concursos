@@ -51,7 +51,7 @@ import { contestCatalog, disciplineCatalog, getDisciplineIdForModule } from "../
 import { questionBank, type StudyQuestion } from "../client/src/data/pfStudyData";
 import { loadPF2018Questions } from "./importProvasPF";
 import { isValidCpf, normalizeCpf } from "./cpf";
-import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
+import { dailyCheckShownIds, recordDailyCheckSelection, selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
 import { storagePut } from "./storage";
 import { serializeAdminBackup, type AdminBackupData } from "./adminBackup";
 import { scoreSimulation } from "./studyScoring";
@@ -1095,7 +1095,7 @@ export async function getStudyState(userId: number) {
     xp: profile.xp,
     lastStudyDate: profile.lastStudyDate ?? undefined,
     studyDates: parseStringArray(profile.studyDatesJson),
-    usedQuestionIds: parseStringArray(profile.usedQuestionIdsJson),
+    usedQuestionIds: parseStringArray(profile.usedQuestionIdsJson).filter(id => !id.startsWith("daily:")),
     weeklySimulationCorrect,
   };
 }
@@ -1351,22 +1351,37 @@ export async function getDailyQuickCheck(userId: number, courseId: string) {
   if (!db) throw new Error("Banco de dados indisponível");
   const profile = await ensureStudyProfile(userId);
   const day = currentStudyDay();
-  const allowedContentIds = await getEligibleContentIdsForCourses([courseId]);
-  const questionPool = (await listStudyQuestions(userId)).questions.filter(question => question.contentIds.some(contentId => allowedContentIds.includes(contentId)));
+  const allowedContentIds = new Set(await getEligibleContentIdsForCourses([courseId]));
+  // Checagens utilizam apenas itens publicados, C/E e vinculados aos conteúdos deste curso.
+  const allStudyQuestions = (await listStudyQuestions(userId)).questions.filter(question =>
+    question.questionType === "certo_errado" && typeof question.answer === "boolean"
+      && question.contentIds.some(contentId => allowedContentIds.has(contentId)));
+  const publishedIds = allStudyQuestions.length ? await db.select({ id: questions.id }).from(questions).where(and(
+    eq(questions.status, "published"), inArray(questions.id, allStudyQuestions.map(question => question.id)),
+  )) : [];
+  const publishedSet = new Set(publishedIds.map(row => row.id));
+  const questionPool = allStudyQuestions.filter(question => publishedSet.has(question.id));
   const persistedQuestion = profile.dailyQuickCheckDate === day && profile.dailyQuickCheckCourseId === courseId
     ? questionPool.find(question => String(question.id) === profile.dailyQuickCheckQuestionId)
     : undefined;
   const recentAnswers = await db.select({ questionId: studyAnswers.questionId }).from(studyAnswers).where(eq(studyAnswers.userId, userId)).orderBy(desc(studyAnswers.answeredAt)).limit(20);
   const recentQuestionIds = [...recentAnswers.map(answer => answer.questionId), ...(profile.dailyQuickCheckQuestionId ? [profile.dailyQuickCheckQuestionId] : [])];
-  const question = persistedQuestion ?? selectDailyQuickCheckQuestion({ questions: questionPool, userId, courseId, day, recentQuestionIds });
+  const usedQuestionIds = parseStringArray(profile.usedQuestionIdsJson);
+  const shownQuestionIds = dailyCheckShownIds(courseId, usedQuestionIds);
+  const question = persistedQuestion ?? selectDailyQuickCheckQuestion({ questions: questionPool, userId, courseId, day, recentQuestionIds, shownQuestionIds });
   if (!question) return { date: day, dismissed: false, question: null };
 
-  if (!persistedQuestion) await db.update(studyProfiles).set({
-    dailyQuickCheckDate: day,
-    dailyQuickCheckCourseId: courseId,
-    dailyQuickCheckQuestionId: String(question.id),
-    dailyQuickCheckDismissed: false,
-  }).where(eq(studyProfiles.userId, userId));
+  if (!persistedQuestion) {
+    const freshQuestionsRemain = questionPool.some(candidate => !shownQuestionIds.includes(String(candidate.id)));
+    const nextHistory = recordDailyCheckSelection({ courseId, questionId: question.id, usedQuestionIds, resetCycle: !freshQuestionsRemain });
+    await db.update(studyProfiles).set({
+      dailyQuickCheckDate: day,
+      dailyQuickCheckCourseId: courseId,
+      dailyQuickCheckQuestionId: String(question.id),
+      dailyQuickCheckDismissed: false,
+      usedQuestionIdsJson: JSON.stringify(nextHistory),
+    }).where(eq(studyProfiles.userId, userId));
+  }
 
   return { date: day, dismissed: persistedQuestion ? profile.dailyQuickCheckDismissed : false, question };
 }
