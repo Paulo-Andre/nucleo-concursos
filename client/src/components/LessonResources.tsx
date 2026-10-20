@@ -1,3 +1,4 @@
+import React from "react";
 import { Download, ExternalLink, FileText, PlayCircle } from "lucide-react";
 import { LessonVideoPlayer } from "./LessonVideoPlayer";
 
