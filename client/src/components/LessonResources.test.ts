@@ -23,7 +23,7 @@ describe("recursos de aulas publicados", () => {
 
   it("explica quando ainda não existem vídeo e PDF", () => {
     const html = renderToStaticMarkup(createElement(LessonResources, { content: { title: "Aula sem anexos" } }));
-    expect(html).toContain("Nenhum vídeo cadastrado");
+    expect(html).toContain("Nenhum vídeo associado");
     expect(html).toContain("Nenhum PDF cadastrado");
     expect(html).not.toContain("download=");
   });
