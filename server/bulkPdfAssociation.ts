@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { adminAuditLogs, contentChangelog, contents, disciplineContents, disciplines } from "../drizzle/schema";
 import { getDb } from "./db";
 import { mapPdfFilesToContents, type PdfMappingFile } from "./bulkPdfMapping";
@@ -56,10 +56,15 @@ export async function confirmBulkPdfAssociation(actorUserId: number, input: {
       for (const contentId of entry.contentIds) {
         const old = byId.get(contentId);
         if (!old) throw new Error("Conteúdo não encontrado durante a confirmação.");
-        // Evita sobrescrever outra disciplina em vínculos compartilhados.
-        await tx.update(contents).set({ materialUrl: url, materialLabel: label, updatedByUserId: actorUserId }).where(
-          input.replaceExisting ? eq(contents.id, contentId) : and(eq(contents.id, contentId), eq(contents.materialUrl, old.materialUrl)),
-        );
+        // Confere a versão do vínculo na transação; evita substituir um PDF
+        // associado por outro administrador enquanto o lote era enviado.
+        const condition = old.materialUrl === null
+          ? isNull(contents.materialUrl)
+          : eq(contents.materialUrl, old.materialUrl);
+        const result = await tx.update(contents)
+          .set({ materialUrl: url, materialLabel: label, updatedByUserId: actorUserId })
+          .where(and(eq(contents.id, contentId), condition));
+        if (result[0].affectedRows !== 1) throw new Error("Uma aula foi alterada durante o envio. Nenhuma associação foi concluída; confira e tente novamente.");
         await tx.insert(contentChangelog).values({
           contentId, actorUserId, changedField: "materialUrl",
           oldValue: old.materialUrl, newValue: url,
