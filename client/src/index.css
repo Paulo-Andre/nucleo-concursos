@@ -1,6 +1,7 @@
 /* Estudos PF — Arquivo Operacional: papel mineral, grafite e Azul Evidência #0E5A70. */
 @import "tailwindcss";
 @import "tw-animate-css";
+@source "../../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -178,4 +179,151 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+
+/*
+ * Apostila digital — tipografia documental para conteúdo Markdown importado.
+ * Mantém leitura contínua, modal existente, cards de vídeo/PDF e rodapé da aula.
+ * Nenhum estilo escapa do corpo da aula para a interface administrativa.
+ */
+.lesson-article {
+  min-width: 0;
+  color: #344e5a;
+  font-size: 15px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  letter-spacing: 0.002em;
+}
+.lesson-article :where(p) {
+  margin-block: 0.85rem 1.15rem;
+  line-height: 1.85;
+}
+.lesson-article :where(h1, h2, h3, h4, h5, h6) {
+  clear: both;
+  color: #173d4a;
+  font-family: var(--font-display, inherit);
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+.lesson-article h1 {
+  margin: 2rem 0 1.1rem;
+  padding: 1rem 1.1rem;
+  border-left: 4px solid #0e5a70;
+  background: #f1f7f5;
+  border-radius: 0.5rem;
+  font-size: clamp(1.35rem, 2.7vw, 1.75rem);
+}
+.lesson-article h2 {
+  margin: 2rem 0 1rem;
+  border-bottom: 1px solid #cbded8;
+  padding-bottom: 0.6rem;
+  font-size: clamp(1.22rem, 2.3vw, 1.5rem);
+}
+.lesson-article h3 {
+  margin: 1.8rem 0 0.7rem;
+  padding-left: 0.8rem;
+  border-left: 3px solid #78b6a8;
+  font-size: 1.16rem;
+}
+.lesson-article h4 {
+  margin: 1.4rem 0 0.6rem;
+  font-size: 1.05rem;
+}
+.lesson-article :where(h5, h6) {
+  margin: 1.15rem 0 0.5rem;
+  font-size: 0.98rem;
+}
+.lesson-article :where(h1, h2, h3, h4) + p { margin-top: 0.55rem; }
+.lesson-article :where(ul, ol) {
+  margin: 1rem 0 1.3rem;
+  padding-left: 1.55rem;
+}
+.lesson-article ul { list-style-type: disc; }
+.lesson-article ol { list-style-type: decimal; }
+.lesson-article :where(li) {
+  display: list-item;
+  padding-left: 0.2rem;
+  margin-top: 0.45rem;
+  line-height: 1.75;
+}
+.lesson-article li::marker { color: #176a5a; font-weight: 700; }
+.lesson-article :where(li > ul, li > ol) { margin: 0.45rem 0 0.7rem; }
+.lesson-article blockquote {
+  margin: 1.4rem 0;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid #9ac5bd;
+  border-radius: 0.5rem;
+  background: #f1f8f5;
+  color: #2f5c61;
+  font-style: normal;
+}
+.lesson-article blockquote p:first-child { margin-top: 0; }
+.lesson-article blockquote p:last-child { margin-bottom: 0; }
+.lesson-article hr {
+  height: 1px;
+  border: 0;
+  background: #d4dfda;
+  margin: 2rem 0;
+}
+.lesson-article :where([data-streamdown="table-wrapper"]) {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1.35rem 0 1.6rem;
+  border: 1px solid #d2dfda;
+  border-radius: 0.75rem;
+}
+.lesson-article table {
+  width: 100%;
+  min-width: 440px;
+  border-collapse: collapse;
+  background: white;
+  font-size: 0.89rem;
+  line-height: 1.6;
+}
+.lesson-article :where(th, td) {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #dbe5df;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: normal;
+}
+.lesson-article th {
+  background: #eaf3f0;
+  color: #164c56;
+  font-weight: 800;
+}
+.lesson-article tbody tr:nth-child(even) { background: #f7faf8; }
+.lesson-article :where(pre, code) {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.lesson-article :where(pre) {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 1rem;
+  border-radius: 0.65rem;
+  border: 1px solid #cad8d3;
+  background: #edf3f1;
+  line-height: 1.6;
+}
+.lesson-article :where(p code, li code) {
+  border-radius: 0.3rem;
+  background: #eef3f1;
+  padding: 0.12rem 0.3rem;
+  font-size: 0.88em;
+}
+.lesson-article a {
+  color: #075e77;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+.lesson-article a:hover { color: #0e8090; }
+.lesson-article .lesson-formula { margin: 1.6rem 0; }
+@media (max-width: 640px) {
+  .lesson-article { font-size: 15px; line-height: 1.75; }
+  .lesson-article h1 { padding: 0.85rem; }
+  .lesson-article :where(th, td) { padding: 0.6rem 0.7rem; }
+  .lesson-article blockquote { padding: 0.85rem 1rem; }
 }
