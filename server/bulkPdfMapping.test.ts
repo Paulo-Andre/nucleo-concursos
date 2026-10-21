@@ -59,6 +59,24 @@ describe("identificação segura de PDFs para o Excel de Português", () => {
     expect(miss.unmatched).toEqual(["PT_Aula_12.pdf"]);
   });
 
+  it("permite corrigir manualmente a aula de destino antes de enviar o PDF", () => {
+    const result = mapPdfFilesToContents({
+      files: [{ fileName: "PT_Aula_01.pdf", targetLesson: 3 }],
+      contents,
+      replaceExisting: false,
+    });
+    expect(result.mappings[0].lesson).toBe(3);
+    expect(result.mappings[0].contentIds).toEqual([4]);
+    expect(result.mappings[0].contents).toEqual([
+      { id: 4, title: "Aula 03 — 01. O que é descrever?", hasPdf: false },
+    ]);
+    expect(result.availableLessons.map(item => item.lesson)).toEqual([1, 2, 3, 45]);
+    expect(() => mapPdfFilesToContents({
+      files: [{ fileName: "PT_Aula_01.pdf", targetLesson: 2 }, { fileName: "PT_Aula_03.pdf", targetLesson: 2 }],
+      contents, replaceExisting: true,
+    })).toThrow(/Mais de um PDF para a Aula 2/);
+  });
+
   it("não anexa por números que aparecem no meio de outros títulos", () => {
     expect(lessonNumberFromContentTitle("Capítulo 01 da Aula 01")).toBeNull();
     expect(lessonNumberFromContentTitle("Aula 0100 - conteúdo")).toBe(100);
