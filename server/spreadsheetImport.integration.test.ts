@@ -20,6 +20,17 @@ describe("importação Excel/CSV na biblioteca ROOT",()=>{
    const data={kind:"contents" as const,fileName:"conteudos.csv",base64:Buffer.from(row).toString("base64")};
    const valid=await importSpreadsheet(root.id,data,0,true);
    expect(valid).toMatchObject({valid:true,count:1,created:0});
+   // A antiga restrição de 250 linhas impedia importar aulas de várias disciplinas.
+   const largerCsv = [
+     "titulo;disciplina_ids;status",
+     ...Array.from({ length: 251 }, (_, index) => `${token} aula expandida ${index + 1};${disciplineId};draft`),
+   ].join("\n") + "\n";
+   const largerData = { kind: "contents" as const, fileName: "251-aulas.csv", base64: Buffer.from(largerCsv).toString("base64") };
+   const largerPreview = await importSpreadsheet(root.id, largerData, 0, true);
+   expect(largerPreview).toMatchObject({ valid: true, count: 251, created: 0, errors: [] });
+   expect(largerPreview.preview).toHaveLength(30);
+   expect((await db.select().from(contents).where(like(contents.title, `% ${token} aula expandida %`))).length).toBe(0);
+
    const broken=`titulo;disciplina_ids;status\n${token} válido;${disciplineId};draft\n${token} inválido;999999999;draft\n`;
    const brokenData={kind:"contents" as const,fileName:"conteudos.csv",base64:Buffer.from(broken).toString("base64")};
    const rejected=await importSpreadsheet(root.id,brokenData,2,false);
