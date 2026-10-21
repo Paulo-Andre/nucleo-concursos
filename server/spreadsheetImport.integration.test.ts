@@ -29,7 +29,7 @@ describe("importação Excel/CSV na biblioteca ROOT",()=>{
    const largerPreview = await importSpreadsheet(root.id, largerData, 0, true);
    expect(largerPreview).toMatchObject({ valid: true, count: 251, created: 0, errors: [] });
    expect(largerPreview.preview).toHaveLength(30);
-   expect((await db.select().from(contents).where(like(contents.title, `% ${token} aula expandida %`))).length).toBe(0);
+   expect((await db.select().from(contents).where(like(contents.title, `${token} aula expandida %`))).length).toBe(0);
 
    const broken=`titulo;disciplina_ids;status\n${token} válido;${disciplineId};draft\n${token} inválido;999999999;draft\n`;
    const brokenData={kind:"contents" as const,fileName:"conteudos.csv",base64:Buffer.from(broken).toString("base64")};
