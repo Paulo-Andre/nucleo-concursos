@@ -618,7 +618,7 @@ export const appRouter = router({
     spreadsheets: router({
       preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000)}))
         .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,0,true)),
-      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),expectedCount:z.number().int().min(1).max(250)}))
+      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),expectedCount:z.number().int().min(1).max(1000)}))
         .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,input.expectedCount,false)),
     }),
     questions: router({
