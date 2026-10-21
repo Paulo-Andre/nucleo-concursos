@@ -19,6 +19,7 @@ type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionR
 type Input = {kind:ImportKind;fileName:string;base64:string};
 const statuses = new Set(["draft","review","approved","published","inactive"]);
 const difficulties = new Set(["basic","intermediate","advanced"]);
+export const MAX_SPREADSHEET_IMPORT_ROWS = 1000;
 const normalize=(s:string)=>s.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");
 const pieces=(s:string)=>s.split(/[|;,]/).map(x=>x.trim()).filter(Boolean);
 const list=(s:string)=>s.split(/[|;]/).map(x=>x.trim()).filter(Boolean);
@@ -63,7 +64,7 @@ function readYear(raw:string):number|null {
 export async function prepareSpreadsheetImport(input:Input):Promise<Parsed> {
  const db=await getDb();if(!db)throw new Error("Banco indisponível.");
  const sheet=readSpreadsheet(input.fileName,input.base64);
- if(sheet.length>250)throw new Error("Importe no máximo 250 registros por lote.");
+ if(sheet.length>MAX_SPREADSHEET_IMPORT_ROWS)throw new Error(`A planilha possui ${sheet.length} registros preenchidos. O máximo é ${MAX_SPREADSHEET_IMPORT_ROWS} por arquivo. Divida em lotes menores.`);
  const [ds,cs,qs]=await Promise.all([
   db.select({id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName}).from(disciplines),
   db.select({id:contents.id,title:contents.title}).from(contents),
