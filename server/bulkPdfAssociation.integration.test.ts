@@ -2,7 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { adminAuditLogs, contentChangelog, contents, disciplineContents, disciplines } from "../drizzle/schema";
 import { getDb, getUserByUsername } from "./db";
-import { confirmBulkPdfAssociation, previewBulkPdfAssociation } from "./bulkPdfAssociation";
+import { confirmBulkPdfAssociation, listBulkPdfAssociations, moveBulkPdfAssociation, previewBulkPdfAssociation } from "./bulkPdfAssociation";
 
 describe("associação de apostilas por disciplina, em lote", () => {
   it("vincula o PDF a todos os capítulos de uma aula sem afetar outra disciplina", async () => {
@@ -35,7 +35,7 @@ describe("associação de apostilas por disciplina, em lote", () => {
         { disciplineId: base + 1, contentId: first + 2, linkedByUserId: admin.id },
       ]);
       const fileName = "PT_Aula_01.pdf";
-      const preview = await previewBulkPdfAssociation(base, [fileName], false);
+      const preview = await previewBulkPdfAssociation(base, [{ fileName }], false);
       expect(preview).toMatchObject({ totalFiles: 1, totalAssociations: 2, unmatched: [] });
       const url = `/manus-storage/content-pdfs/${admin.id}/${crypto.randomUUID()}_abcdef12.pdf`;
       const saved = await confirmBulkPdfAssociation(admin.id, {
@@ -44,14 +44,24 @@ describe("associação de apostilas por disciplina, em lote", () => {
       expect(saved).toEqual({ associated: 2, uploaded: 1 });
       const rows = await db.select().from(contents).where(inArray(contents.id, inserted));
       expect(rows.find(x => x.id === first)).toMatchObject({materialUrl: url, body: "Corpo preservado", status: "draft"});
-      expect(rows.find(x => x.id === first + 1)?.materialLabel).toBe("Apostila da Aula 01");
+      expect(rows.find(x => x.id === first + 1)?.materialLabel).toContain("PT_Aula_01.pdf");
       expect(rows.find(x => x.id === first + 2)?.materialUrl).toBeNull();
 
       await expect(confirmBulkPdfAssociation(admin.id, {
         disciplineId: base, files: [{ fileName, url }], replaceExisting: false, expectedCount: 2,
       })).rejects.toThrow(/prévia|conteúdo disponível/i);
-      const next = await previewBulkPdfAssociation(base, [fileName], false);
+      const next = await previewBulkPdfAssociation(base, [{ fileName }], false);
       expect(next.totalAssociations).toBe(0);
+      const existing = await listBulkPdfAssociations(base);
+      expect(existing.groups).toHaveLength(1);
+      expect(existing.groups[0].contentIds).toEqual([first, first + 1]);
+      expect(existing.groups[0].contents.map(row => row.title)).toHaveLength(2);
+
+      // A revisão posterior muda a aula sem reenviar o PDF; a disciplina de Direito
+      // não pode receber o arquivo de Português por acidente.
+      const movedPreview = await previewBulkPdfAssociation(base, [{ fileName, targetLesson: 1 }], true);
+      expect(movedPreview.mappings[0].contents).toHaveLength(2);
+
       const audits = await db.select().from(adminAuditLogs).where(eq(adminAuditLogs.action, "IMPORTACAO_PDFS_EM_LOTE"));
       expect(audits.some(x => x.detail.includes("disciplina " + base))).toBe(true);
     } finally {
