@@ -31,11 +31,11 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   const [targetLessons, setTargetLessons] = useState<Record<string, number>>({});
-  const [plan, setPlan] = useState<Awaited<ReturnType<typeof preview.mutateAsync>> | null>(null);
   const [needsRevalidation, setNeedsRevalidation] = useState(false);
   const [postTargets, setPostTargets] = useState<Record<string, number>>({});
   const [allowReplaceTarget, setAllowReplaceTarget] = useState(false);
   const preview = trpc.admin.pdfBatches.preview.useMutation();
+  const [plan, setPlan] = useState<Awaited<ReturnType<typeof preview.mutateAsync>> | null>(null);
   const uploadPdf = trpc.admin.contents.uploadPdf.useMutation();
   const confirm = trpc.admin.pdfBatches.confirm.useMutation();
   const savedLinks = trpc.admin.pdfBatches.list.useQuery({ disciplineId: Number(disciplineId) || 1 }, { enabled: Boolean(disciplineId) });
@@ -194,7 +194,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void verify()} disabled={busy || preview.isPending} className="ghost-button min-h-11 disabled:opacity-50">{needsRevalidation ? "Revalidar alterações" : "Conferir novamente"}</button>
         {valid && <button type="button" disabled={busy} onClick={() => void associate()} className="action-button min-h-11 disabled:opacity-50">
-          {busy ? "Processando apostilas..." : `Confirmar: enviar PDFs para \${result.totalAssociations} conteúdo(s)`}
+          {busy ? "Processando apostilas..." : `Confirmar: enviar PDFs para ${result.totalAssociations} conteúdo(s)`}
         </button>}
       </div>
     </section>}
