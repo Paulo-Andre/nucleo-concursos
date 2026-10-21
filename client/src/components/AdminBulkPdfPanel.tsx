@@ -212,11 +212,11 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
           const selected = postTargets[group.url] ?? (group.lessons.length === 1 ? group.lessons[0] : 0);
           return <article key={group.url} className="rounded-lg border border-[#d1e0d9] bg-[#fbfdfa] p-3">
             <p className="break-all text-xs font-bold text-[#173d4a]">{group.label}</p>
-            <p className="mt-1 text-xs text-[#52666f]">Aula(s) atual(is): {group.lessons.map(n => String(n).padStart(2, "0")).join(", ") || "Sem identificação"} · {group.contents.length} conteúdo(s)</p>
+            <p className="mt-1 text-xs text-[#52666f]">Aula(s) atual(is): {group.lessons.map((n: number) => String(n).padStart(2, "0")).join(", ") || "Sem identificação"} · {group.contents.length} conteúdo(s)</p>
             <details className="mt-2 text-xs">
               <summary className="cursor-pointer font-semibold text-[#0e5a70]">Ver os conteúdos onde este PDF está disponível</summary>
               <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto">
-                {group.contents.map(row => <li key={row.id}>#{row.id} — {row.title}</li>)}
+                {group.contents.map((row: { id: number; title: string }) => <li key={row.id}>#{row.id} — {row.title}</li>)}
               </ul>
             </details>
             <div className="mt-3 flex flex-wrap items-end gap-2">
