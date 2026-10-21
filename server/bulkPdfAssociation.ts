@@ -9,7 +9,7 @@ async function contentsForDiscipline(disciplineId: number) {
   if (!db) throw new Error("Banco de dados indisponível.");
   const discipline = await db.select({ id: disciplines.id }).from(disciplines).where(eq(disciplines.id, disciplineId)).limit(1);
   if (!discipline.length) throw new Error("Disciplina não encontrada. Cadastre e selecione a disciplina antes de importar.");
-  return db.select({ id: contents.id, title: contents.title, materialUrl: contents.materialUrl })
+  return db.select({ id: contents.id, title: contents.title, materialUrl: contents.materialUrl, materialLabel: contents.materialLabel })
     .from(disciplineContents).innerJoin(contents, eq(disciplineContents.contentId, contents.id))
     .where(eq(disciplineContents.disciplineId, disciplineId));
 }
@@ -93,6 +93,7 @@ export async function listBulkPdfAssociations(disciplineId: number) {
     const current = groups.get(row.materialUrl) ?? {
       url: row.materialUrl, label: "Apostila PDF", contentIds: [], contents: [],
     };
+    current.label = row.materialLabel || current.label;
     current.contentIds.push(row.id);
     current.contents.push({ id: row.id, title: row.title, lesson: lessonNumberFromContentTitle(row.title) });
     groups.set(row.materialUrl, current);
@@ -153,7 +154,11 @@ export async function moveBulkPdfAssociation(actorUserId: number, input: {
   await db.transaction(async tx => {
     for (const row of operations) {
       const before = row.before === null ? isNull(contents.materialUrl) : eq(contents.materialUrl, row.before);
-      const label = row.after ? `Apostila da Aula ${String(input.targetLesson).padStart(2, "0")}` : null;
+      const originalLabel = rows.find(item => item.materialUrl === input.sourceUrl)?.materialLabel ?? "";
+      const originalName = originalLabel.replace(/^Apostila da Aula \d+\s*—\s*/i, "");
+      const label = row.after
+        ? (`Apostila da Aula ${String(input.targetLesson).padStart(2, "0")}` + (originalName !== originalLabel ? ` — ${originalName}` : "")).slice(0, 160)
+        : null;
       const result = await tx.update(contents).set({
         materialUrl: row.after, materialLabel: label, updatedByUserId: actorUserId,
       }).where(and(eq(contents.id, row.id), before));
