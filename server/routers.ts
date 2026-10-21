@@ -115,6 +115,7 @@ import { createMercadoPagoCheckout } from "./mercadoPago";
 import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 import { sendPasswordResetEmail } from "./email";
 import { importSpreadsheet } from "./spreadsheetImport";
+import { previewBulkPdfAssociation, confirmBulkPdfAssociation } from "./bulkPdfAssociation";
 import { createFlashcard, rateFlashcard, removeFlashcard, listFlashcards, getLearningDiagnostic, listErrorNotebook, classifyStudyError, rateQuestionReview } from "./studyCoach";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
@@ -614,6 +615,22 @@ export const appRouter = router({
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: contentSchema })).mutation(({ input, ctx }) => updateManagedContent(ctx.user.id, input.id, input.data)),
       changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listContentChangelog(input.id)),
       sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "content", input.id)),
+    }),
+    pdfBatches: router({
+      preview: adminProcedure.input(z.object({
+        disciplineId: entityIdSchema,
+        fileNames: z.array(z.string().trim().min(5).max(180)).min(1).max(100),
+        replaceExisting: z.boolean().default(false),
+      })).mutation(({ input }) => previewBulkPdfAssociation(input.disciplineId, input.fileNames, input.replaceExisting)),
+      confirm: adminProcedure.input(z.object({
+        disciplineId: entityIdSchema,
+        files: z.array(z.object({
+          fileName: z.string().trim().min(5).max(180),
+          url: z.string().min(15).max(320),
+        })).min(1).max(100),
+        replaceExisting: z.boolean(),
+        expectedCount: z.number().int().min(1).max(20000),
+      })).mutation(({ input, ctx }) => confirmBulkPdfAssociation(ctx.user.id, input)),
     }),
     spreadsheets: router({
       preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000)}))
