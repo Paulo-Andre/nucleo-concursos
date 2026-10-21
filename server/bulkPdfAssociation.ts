@@ -99,15 +99,15 @@ export async function listBulkPdfAssociations(disciplineId: number) {
     groups.set(row.materialUrl, current);
   }
   const lessonNumbers = new Set(rows.map(row => lessonNumberFromContentTitle(row.title)).filter((n): n is number => n !== null));
-  const availableLessons = [...lessonNumbers].sort((a, b) => a - b).map(lesson => ({
+  const availableLessons = Array.from(lessonNumbers).sort((a, b) => a - b).map(lesson => ({
     lesson, contentCount: rows.filter(row => lessonNumberFromContentTitle(row.title) === lesson).length,
   }));
   return {
     disciplineId,
     availableLessons,
-    groups: [...groups.values()].map(group => ({
+    groups: Array.from(groups.values()).map(group => ({
       ...group, contentIds: group.contentIds.sort((a, b) => a - b),
-      lessons: [...new Set(group.contents.map(row => row.lesson).filter((n): n is number => n !== null))].sort((a,b) => a - b),
+      lessons: Array.from(new Set(group.contents.map(row => row.lesson).filter((n): n is number => n !== null))).sort((a,b) => a - b),
     })),
   };
 }
@@ -134,7 +134,7 @@ export async function moveBulkPdfAssociation(actorUserId: number, input: {
   if (!destination.length) throw new Error("Não existem conteúdos cadastrados nessa aula.");
   if (source.some(row => lessonNumberFromContentTitle(row.title) === null))
     throw new Error("Existem conteúdos sem identificação de aula neste PDF. Corrija-os em Conteúdos.");
-  const updatedRows = [...new Map([...source, ...destination].map(row => [row.id, row])).values()];
+  const updatedRows = Array.from(new Map([...source, ...destination].map(row => [row.id, row] as const)).values());
   // Um conteúdo pode estar vinculado a mais de uma disciplina. Nesse caso, para
   // não afetar uma disciplina não selecionada, o ajuste deve ser individual.
   const links = await db.select({ contentId: disciplineContents.contentId, disciplineId: disciplineContents.disciplineId })
