@@ -115,7 +115,7 @@ import { createMercadoPagoCheckout } from "./mercadoPago";
 import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 import { sendPasswordResetEmail } from "./email";
 import { importSpreadsheet } from "./spreadsheetImport";
-import { previewBulkPdfAssociation, confirmBulkPdfAssociation } from "./bulkPdfAssociation";
+import { previewBulkPdfAssociation, confirmBulkPdfAssociation, listBulkPdfAssociations, moveBulkPdfAssociation } from "./bulkPdfAssociation";
 import { createFlashcard, rateFlashcard, removeFlashcard, listFlashcards, getLearningDiagnostic, listErrorNotebook, classifyStudyError, rateQuestionReview } from "./studyCoach";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
@@ -619,13 +619,26 @@ export const appRouter = router({
     pdfBatches: router({
       preview: adminProcedure.input(z.object({
         disciplineId: entityIdSchema,
-        fileNames: z.array(z.string().trim().min(5).max(180)).min(1).max(100),
+        files: z.array(z.object({
+          fileName: z.string().trim().min(5).max(180),
+          targetLesson: z.number().int().min(1).max(999).optional(),
+        })).min(1).max(100),
         replaceExisting: z.boolean().default(false),
-      })).mutation(({ input }) => previewBulkPdfAssociation(input.disciplineId, input.fileNames, input.replaceExisting)),
+      })).mutation(({ input }) => previewBulkPdfAssociation(input.disciplineId, input.files, input.replaceExisting)),
+      list: adminProcedure.input(z.object({ disciplineId: entityIdSchema }))
+        .query(({ input }) => listBulkPdfAssociations(input.disciplineId)),
+      move: adminProcedure.input(z.object({
+        disciplineId: entityIdSchema,
+        sourceUrl: z.string().trim().min(20).max(320),
+        targetLesson: z.number().int().min(1).max(999),
+        replaceExisting: z.boolean(),
+        expectedSourceContentIds: z.array(entityIdSchema).min(1).max(1000),
+      })).mutation(({ input, ctx }) => moveBulkPdfAssociation(ctx.user.id, input)),
       confirm: adminProcedure.input(z.object({
         disciplineId: entityIdSchema,
         files: z.array(z.object({
           fileName: z.string().trim().min(5).max(180),
+          targetLesson: z.number().int().min(1).max(999).optional(),
           url: z.string().min(15).max(320),
         })).min(1).max(100),
         replaceExisting: z.boolean(),
