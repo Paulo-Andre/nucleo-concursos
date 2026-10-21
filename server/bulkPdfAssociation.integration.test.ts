@@ -26,13 +26,15 @@ describe("associação de apostilas por disciplina, em lote", () => {
         { title: "Aula 01 - 01 - Capítulo importado " + code, body: "Corpo preservado", status: "draft", createdByUserId: admin.id, updatedByUserId: admin.id },
         { title: "Aula 01 — 02. Capítulo importado " + code, status: "draft", createdByUserId: admin.id, updatedByUserId: admin.id },
         { title: "Aula 01 - Direito, não associar " + code, status: "draft", createdByUserId: admin.id, updatedByUserId: admin.id },
+        { title: "Aula 02 - Novo destino Português " + code, status: "draft", createdByUserId: admin.id, updatedByUserId: admin.id },
       ]);
       const first = Number(r[0].insertId);
-      inserted.push(first, first + 1, first + 2);
+      inserted.push(first, first + 1, first + 2, first + 3);
       await db.insert(disciplineContents).values([
         { disciplineId: base, contentId: first, linkedByUserId: admin.id },
         { disciplineId: base, contentId: first + 1, linkedByUserId: admin.id },
         { disciplineId: base + 1, contentId: first + 2, linkedByUserId: admin.id },
+        { disciplineId: base, contentId: first + 3, linkedByUserId: admin.id },
       ]);
       const fileName = "PT_Aula_01.pdf";
       const preview = await previewBulkPdfAssociation(base, [{ fileName }], false);
@@ -59,8 +61,25 @@ describe("associação de apostilas por disciplina, em lote", () => {
 
       // A revisão posterior muda a aula sem reenviar o PDF; a disciplina de Direito
       // não pode receber o arquivo de Português por acidente.
-      const movedPreview = await previewBulkPdfAssociation(base, [{ fileName, targetLesson: 1 }], true);
-      expect(movedPreview.mappings[0].contents).toHaveLength(2);
+      await expect(moveBulkPdfAssociation(admin.id, {
+        disciplineId: base, sourceUrl: url, targetLesson: 2, replaceExisting: false,
+        expectedSourceContentIds: [first],
+      })).rejects.toThrow(/vínculos foram alterados/);
+      const moved = await moveBulkPdfAssociation(admin.id, {
+        disciplineId: base, sourceUrl: url, targetLesson: 2, replaceExisting: false,
+        expectedSourceContentIds: [first, first + 1],
+      });
+      expect(moved).toEqual({ updated: 3, targetLesson: 2 });
+      const movedContents = await db.select().from(contents).where(inArray(contents.id, inserted));
+      expect(movedContents.find(row => row.id === first)?.materialUrl).toBeNull();
+      expect(movedContents.find(row => row.id === first + 1)?.materialUrl).toBeNull();
+      expect(movedContents.find(row => row.id === first + 3)?.materialUrl).toBe(url);
+      expect(movedContents.find(row => row.id === first + 2)?.materialUrl).toBeNull();
+      const current = await listBulkPdfAssociations(base);
+      expect(current.groups[0].lessons).toEqual([2]);
+      expect(current.groups[0].contentIds).toEqual([first + 3]);
+      const afterMove = await previewBulkPdfAssociation(base, [{ fileName, targetLesson: 2 }], false);
+      expect(afterMove.mappings[0].alreadyHasPdf).toBe(1);
 
       const audits = await db.select().from(adminAuditLogs).where(eq(adminAuditLogs.action, "IMPORTACAO_PDFS_EM_LOTE"));
       expect(audits.some(x => x.detail.includes("disciplina " + base))).toBe(true);
