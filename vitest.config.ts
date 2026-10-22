@@ -14,6 +14,10 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // O renderizador Markdown carrega estilos KaTeX. Transformar o módulo pelo
+    // Vite evita que o Node tente importar diretamente arquivos .css em testes SSR.
+    css: true,
+    server: { deps: { inline: ["streamdown", "katex"] } },
     include: ["server/**/*.test.ts", "server/**/*.spec.ts", "client/src/**/*.test.ts"],
   },
 });
