@@ -3,7 +3,9 @@
  * A formatação é apenas de apresentação: não altera o conteúdo salvo no banco.
  */
 export function normalizeLessonMarkdown(text: string): string {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  // Textos de planilhas são não confiáveis: escapar HTML bruto antes do parser.
+  // Tags HTML viram texto literal, mas títulos, tabelas, listas e negritos Markdown permanecem.
+  const lines = text.replace(/</g, "&lt;").replace(/\r\n?/g, "\n").split("\n");
   let inCodeFence = false;
   return lines.map(line => {
     if (/^\s*(```|~~~)/.test(line)) {
