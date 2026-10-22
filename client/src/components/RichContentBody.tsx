@@ -2,7 +2,6 @@ import React from "react";
 import { BlockMath } from "react-katex";
 import { Streamdown } from "streamdown";
 import { normalizeLessonMarkdown } from "@/lib/lessonMarkdown";
-import "katex/dist/katex.min.css";
 
 export type RichContentBlock =
   | { type: "formula"; formula: string }
