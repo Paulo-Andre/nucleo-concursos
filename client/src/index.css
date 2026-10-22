@@ -1,6 +1,7 @@
 /* Estudos PF — Arquivo Operacional: papel mineral, grafite e Azul Evidência #0E5A70. */
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "katex/dist/katex.min.css";
 @source "../../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
