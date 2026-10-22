@@ -26,6 +26,9 @@ describe("login local ROOT", () => {
 
     const { context, request, cookies } = createContext();
     const caller = appRouter.createCaller(context);
+    await expect(caller.auth.login({ identifier: "paulo", password: "123" }))
+      .rejects.toMatchObject({ code: "UNAUTHORIZED", message: "Usuário ou senha inválidos." });
+
     const signedIn = await caller.auth.login({ identifier: "paulo", password: password! });
 
     expect(signedIn).toMatchObject({ user: { username: "paulo", role: "admin" }, hadActiveSession: expect.any(Boolean) });

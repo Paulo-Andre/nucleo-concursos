@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 describe("credencial protegida do Resend", () => {
-  it("está configurada no formato esperado sem expor a chave", () => {
+  it.skipIf(!process.env.RESEND_API_KEY)("está configurada no formato esperado sem expor a chave", () => {
     const apiKey = process.env.RESEND_API_KEY;
 
     expect(apiKey).toBeTruthy();

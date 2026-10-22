@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { selectBalancedBooleanQuestions, selectSimulationQuestions } from "./studyEngine";
+import { currentStreak, selectBalancedBooleanQuestions, selectSimulationQuestions } from "./studyEngine";
+
+describe("sequência de estudo", () => {
+  it("mantém a sequência de ontem se o aluno ainda não estudou hoje em Brasília", () => {
+    const now = new Date("2026-10-20T02:30:00.000Z"); // Brasília: 19/10, 23h30
+    expect(currentStreak(["2026-10-17", "2026-10-18"], now)).toBe(2);
+    expect(currentStreak(["2026-10-18", "2026-10-19"], now)).toBe(2);
+    expect(currentStreak([], now)).toBe(0);
+  });
+});
 
 describe("seleção balanceada de simulados", () => {
   const binaryQuestions = Array.from({ length: 12 }, (_, index) => ({ id: `q-${index + 1}`, answer: index % 2 === 0, block: "I" as const }));

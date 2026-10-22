@@ -58,6 +58,7 @@ import {
   completeStudyReviewItem,
   consumePasswordResetToken,
   recordAnswer,
+  resetManagedUserPassword,
   recordSimulation,
   openStudyContent,
   removeStudyReviewItem,
@@ -91,6 +92,7 @@ import { isAllowedCourseCoverUrl } from "./courseCoverUrl";
 import { createSessionToken, hashPassword, hashSessionToken, LOCAL_SESSION_COOKIE, LOCAL_SESSION_MAX_AGE_MS, verifyPassword } from "./auth/localAuth";
 import { clearSuccessfulLoginAttempt, isLoginAttemptAllowed, loginAttemptKeys, loginRetryAfterSeconds, recordFailedLoginAttempt } from "./auth/loginRateLimit";
 import { hasRootBootstrapSecret } from "./auth/rootConfig";
+import { allowPublicAuthAction } from "./auth/publicActionRateLimit";
 import { storagePut } from "./storage";
 import {
   approveCommerceOrder,
@@ -112,6 +114,9 @@ import {
 import { createMercadoPagoCheckout } from "./mercadoPago";
 import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 import { sendPasswordResetEmail } from "./email";
+import { importSpreadsheet } from "./spreadsheetImport";
+import { previewBulkPdfAssociation, confirmBulkPdfAssociation, listBulkPdfAssociations, moveBulkPdfAssociation } from "./bulkPdfAssociation";
+import { createFlashcard, rateFlashcard, removeFlashcard, listFlashcards, getLearningDiagnostic, listErrorNotebook, classifyStudyError, rateQuestionReview } from "./studyCoach";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
 const passwordSchema = z.string().min(8, "A senha deve ter pelo menos 8 caracteres.").max(128);
@@ -205,9 +210,9 @@ const contentSchema = z.object({
   cardText: z.string().trim().max(1200).optional(),
   body: z.string().trim().max(30000).optional(),
   coverImageUrl: z.string().trim().max(2048).optional().or(z.literal("")),
-  videoUrl: z.string().trim().url("Informe uma URL de vídeo válida.").max(2048).optional().or(z.literal("")),
+  videoUrl: z.string().trim().max(2048).refine(value => !value || /^https?:\/\/[^/\s]+/i.test(value), "Use um link HTTP(S) válido para o vídeo.").optional(),
   videoLabel: z.string().trim().max(160).optional(),
-  materialUrl: z.string().trim().url("Informe uma URL de material válida.").max(2048).optional().or(z.literal("")),
+  materialUrl: z.string().trim().max(2048).refine(value => !value || /^https?:\/\/[^/\s]+/i.test(value) || /^\/manus-storage\/content-pdfs\/[0-9]+\/[a-f0-9-]+_[a-f0-9]+\.pdf$/.test(value), "Use uma URL HTTP(S) ou o PDF enviado pelo sistema.").optional(),
   materialLabel: z.string().trim().max(160).optional(),
   noticeKind: z.enum(["new", "updated"]).nullable().optional(),
   requiresReview: z.boolean().default(false),
@@ -218,6 +223,12 @@ const contentImageSchema = z.object({
   fileName: z.string().trim().min(1).max(180),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
   base64: z.string().min(4).max(5_600_000),
+});
+
+const contentPdfSchema = z.object({
+  fileName: z.string().trim().min(1).max(180),
+  mimeType: z.literal("application/pdf"),
+  base64: z.string().min(4).max(14_200_000),
 });
 
 function imageExtension(mimeType: z.infer<typeof contentImageSchema>["mimeType"]) {
@@ -306,6 +317,7 @@ export const appRouter = router({
     me: publicProcedure.query(({ ctx }) => (ctx.user ? safeUser(ctx.user) : null)),
     bootstrapStatus: publicProcedure.query(() => ({ rootBootstrapReady: hasRootBootstrapSecret() })),
     register: publicProcedure.input(profileSchema.extend({ cpf: cpfSchema, password: passwordSchema, passwordConfirmation: passwordSchema })).mutation(async ({ input, ctx }) => {
+      if (!allowPublicAuthAction(ctx.req, "register")) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Muitos cadastros desta origem. Tente novamente mais tarde." });
       if (input.password !== input.passwordConfirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
       if (await getUserByIdentifier(input.username)) {
         throw new TRPCError({ code: "CONFLICT", message: "Este nome de usuário já está em uso." });
@@ -320,7 +332,7 @@ export const appRouter = router({
       const session = await startLocalSession(ctx, user.id);
       return { user: safeUser(user), ...session };
     }),
-    login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3), password: passwordSchema })).mutation(async ({ input, ctx }) => {
+    login: publicProcedure.input(z.object({ identifier: z.string().trim().min(1).max(320), password: z.string().min(1).max(128) })).mutation(async ({ input, ctx }) => {
       const rateLimitKeys = loginAttemptKeys(ctx.req, input.identifier);
       if (!isLoginAttemptAllowed(rateLimitKeys)) {
         throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `Muitas tentativas de acesso. Aguarde cerca de ${loginRetryAfterSeconds(rateLimitKeys)} segundos e tente novamente.` });
@@ -352,6 +364,7 @@ export const appRouter = router({
       return { success: true };
     }),
     requestPasswordReset: publicProcedure.input(z.object({ email: z.string().trim().toLowerCase().email("Informe um e-mail válido.").max(320) })).mutation(async ({ input, ctx }) => {
+      if (!allowPublicAuthAction(ctx.req, "password-reset")) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Muitas solicitações. Aguarde alguns minutos antes de tentar novamente." });
       const user = await getUserByIdentifier(input.email);
       if (user?.email && !user.isBlocked && user.email.toLowerCase() === input.email) {
         const token = createSessionToken();
@@ -381,10 +394,10 @@ export const appRouter = router({
     state: enrollmentRequiredProcedure.query(({ ctx }) => getStudyState(ctx.user.id)),
     access: protectedProcedure.query(({ ctx }) => getUserCourseAccess(ctx.user.id)),
     courseCatalog: protectedProcedure.query(({ ctx }) => listStudyCourseCatalog(ctx.user.id, ctx.user.role === "admin")),
-    answer: enrollmentRequiredProcedure.input(z.object({ questionId: z.string().trim().min(1).max(80), correct: z.boolean() })).mutation(({ input, ctx }) => recordAnswer(ctx.user.id, input.questionId, input.correct)),
+    answer: enrollmentRequiredProcedure.input(z.object({ questionId: z.string().trim().min(1).max(80), submittedAnswer: z.boolean() })).mutation(({ input, ctx }) => recordAnswer(ctx.user.id, input.questionId, input.submittedAnswer, ctx.user.role === "admin")),
     dailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getDailyQuickCheck(ctx.user.id, input.courseId)),
     dismissDailyCheck: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).mutation(({ input, ctx }) => dismissDailyQuickCheck(ctx.user.id, input.courseId)),
-    completeModule: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => completeStudyModule(ctx.user.id, input.moduleId)),
+    completeModule: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).mutation(({ input, ctx }) => completeStudyModule(ctx.user.id, input.moduleId, ctx.user.role === "admin")),
     contentProgress: router({
       get: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema })).query(({ input, ctx }) => getStudyCourseProgress(ctx.user.id, input.courseId, ctx.user.role === "admin")),
       open: enrollmentRequiredProcedure.input(z.object({ courseId: courseIdSchema, contentId: entityIdSchema })).mutation(({ input, ctx }) => openStudyContent(ctx.user.id, input, ctx.user.role === "admin")),
@@ -398,18 +411,30 @@ export const appRouter = router({
     submitSimulation: contestEnrollmentRequiredProcedure.input(z.object({
       id: z.string().min(1).max(64), total: z.number().int().positive(), correct: z.number().int().nonnegative(), errors: z.number().int().nonnegative(), elapsedSeconds: z.number().int().nonnegative(),
       byDiscipline: metricSchema, byBlock: metricSchema,
-      answers: z.array(z.object({ questionId: z.string().min(1).max(80), correct: z.boolean() })),
+      answers: z.array(z.object({ questionId: z.string().min(1).max(80), submittedAnswer: z.boolean() })).min(1).max(250),
       questionIds: z.array(z.string().min(1).max(80)),
       persistentAnswers: z.array(z.object({ questionId: entityIdSchema, correct: z.boolean(), snapshot: z.record(z.string(), z.unknown()) })).optional(),
-    })).mutation(({ input, ctx }) => recordSimulation(ctx.user.id, input)),
+    })).mutation(({ input, ctx }) => recordSimulation(ctx.user.id, input, ctx.user.role === "admin")),
     questions: router({
-      list: enrollmentRequiredProcedure.query(() => listStudyQuestions()),
+      list: enrollmentRequiredProcedure.query(({ ctx }) => listStudyQuestions(ctx.user.id, ctx.user.role === "admin")),
     }),
     review: router({
       list: contestEnrollmentRequiredProcedure.query(({ ctx }) => listStudyReviewItems(ctx.user.id)),
+      rate: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema, rating: z.enum(["again","hard","good","easy"]) })).mutation(({ctx,input}) => rateQuestionReview(ctx.user.id,input.id,input.rating)),
       add: contestEnrollmentRequiredProcedure.input(z.object({ questionKey: z.string().trim().min(1).max(80), snapshot: studyReviewSnapshotSchema })).mutation(({ input, ctx }) => saveStudyReviewItem(ctx.user.id, input)),
       complete: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => completeStudyReviewItem(ctx.user.id, input.id)),
       remove: contestEnrollmentRequiredProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => removeStudyReviewItem(ctx.user.id, input.id)),
+    }),
+    coach: router({
+      overview: enrollmentRequiredProcedure.input(z.object({
+        courseId: courseIdSchema, minutes: z.union([z.literal(20),z.literal(40),z.literal(60)]).default(40),
+      })).query(({ input,ctx }) => getLearningDiagnostic(ctx.user.id,input.courseId,ctx.user.role === "admin",input.minutes)),
+      flashcards: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema})).query(({input,ctx}) => listFlashcards(ctx.user.id,input.courseId,ctx.user.role === "admin")),
+      addFlashcard: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,contentId:entityIdSchema,front:z.string().trim().min(3).max(350),back:z.string().trim().min(2).max(1600)})).mutation(({input,ctx}) => createFlashcard(ctx.user.id,input,ctx.user.role === "admin")),
+      rateFlashcard: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,id:z.string().uuid(),rating:z.enum(["again","hard","good","easy"])})).mutation(({input,ctx}) => rateFlashcard(ctx.user.id,input,ctx.user.role === "admin")),
+      removeFlashcard: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,id:z.string().uuid()})).mutation(({input,ctx}) => removeFlashcard(ctx.user.id,input,ctx.user.role === "admin")),
+      errors: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema})).query(({input,ctx}) => listErrorNotebook(ctx.user.id,input.courseId,ctx.user.role === "admin")),
+      classifyError: enrollmentRequiredProcedure.input(z.object({courseId:courseIdSchema,questionId:z.string().trim().max(80),reason:z.enum(["desatencao","conteudo","interpretacao","tempo","nao_classificado"]),observation:z.string().trim().max(1500)})).mutation(({input,ctx}) => classifyStudyError(ctx.user.id,input,ctx.user.role === "admin")),
     }),
     note: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80) })).query(({ input, ctx }) => import("./db").then(({ getNote }) => getNote(ctx.user.id, input.moduleId))),
     saveNote: enrollmentRequiredProcedure.input(z.object({ moduleId: z.string().trim().min(1).max(80), content: z.string().trim().max(12000) })).mutation(({ input, ctx }) => saveNote(ctx.user.id, input.moduleId, input.content)),
@@ -577,10 +602,54 @@ export const appRouter = router({
         const stored = await storagePut(`content-covers/${ctx.user.id}/${crypto.randomUUID()}.${imageExtension(input.mimeType)}`, bytes, input.mimeType);
         return { url: stored.url };
       }),
+      uploadPdf: adminProcedure.input(contentPdfSchema).mutation(async ({ input, ctx }) => {
+        const base64 = input.base64.replace(/\s/g, "");
+        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) throw new TRPCError({ code: "BAD_REQUEST", message: "PDF codificado incorretamente." });
+        const bytes = Buffer.from(base64, "base64");
+        if (!bytes.length || bytes.length > 10 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "O PDF deve ter até 10 MB." });
+        if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-") throw new TRPCError({ code: "BAD_REQUEST", message: "O arquivo enviado não possui um cabeçalho PDF válido." });
+        const stored = await storagePut("content-pdfs/" + ctx.user.id + "/" + crypto.randomUUID() + ".pdf", bytes, "application/pdf");
+        return { url: stored.url };
+      }),
       create: adminProcedure.input(contentSchema).mutation(({ input, ctx }) => createManagedContent(ctx.user.id, input)),
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: contentSchema })).mutation(({ input, ctx }) => updateManagedContent(ctx.user.id, input.id, input.data)),
       changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listContentChangelog(input.id)),
       sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "content", input.id)),
+    }),
+    pdfBatches: router({
+      preview: adminProcedure.input(z.object({
+        disciplineId: entityIdSchema,
+        files: z.array(z.object({
+          fileName: z.string().trim().min(5).max(180),
+          targetLesson: z.number().int().min(1).max(999).optional(),
+        })).min(1).max(100),
+        replaceExisting: z.boolean().default(false),
+      })).mutation(({ input }) => previewBulkPdfAssociation(input.disciplineId, input.files, input.replaceExisting)),
+      list: adminProcedure.input(z.object({ disciplineId: entityIdSchema }))
+        .query(({ input }) => listBulkPdfAssociations(input.disciplineId)),
+      move: adminProcedure.input(z.object({
+        disciplineId: entityIdSchema,
+        sourceUrl: z.string().trim().min(20).max(320),
+        targetLesson: z.number().int().min(1).max(999),
+        replaceExisting: z.boolean(),
+        expectedSourceContentIds: z.array(entityIdSchema).min(1).max(1000),
+      })).mutation(({ input, ctx }) => moveBulkPdfAssociation(ctx.user.id, input)),
+      confirm: adminProcedure.input(z.object({
+        disciplineId: entityIdSchema,
+        files: z.array(z.object({
+          fileName: z.string().trim().min(5).max(180),
+          targetLesson: z.number().int().min(1).max(999).optional(),
+          url: z.string().min(15).max(320),
+        })).min(1).max(100),
+        replaceExisting: z.boolean(),
+        expectedCount: z.number().int().min(1).max(20000),
+      })).mutation(({ input, ctx }) => confirmBulkPdfAssociation(ctx.user.id, input)),
+    }),
+    spreadsheets: router({
+      preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000)}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,0,true)),
+      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),expectedCount:z.number().int().min(1).max(1000)}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,input.expectedCount,false)),
     }),
     questions: router({
       list: adminProcedure.input(z.object({ search: z.string().trim().max(200).optional(), status: knowledgeStatusSchema.optional(), contentId: entityIdSchema.optional() })).query(({ input }) => listManagedQuestions(input)),
@@ -628,8 +697,8 @@ export const appRouter = router({
     }),
     resetPassword: adminProcedure.input(z.object({ userId: z.number().int().positive(), newPassword: passwordSchema, confirmation: passwordSchema })).mutation(async ({ input, ctx }) => {
       if (input.newPassword !== input.confirmation) throw new TRPCError({ code: "BAD_REQUEST", message: "A confirmação de senha não confere." });
-      await updateUserPassword(input.userId, await hashPassword(input.newPassword));
-      await writeAdminAudit(ctx.user.id, input.userId, "REDEFINICAO_DE_SENHA", "Senha redefinida pelo administrador sem exposição da credencial anterior.");
+      const updated = await resetManagedUserPassword(ctx.user.id, input.userId, await hashPassword(input.newPassword));
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Conta não encontrada. Atualize a lista de usuários." });
       return { success: true };
     }),
     setBlocked: adminProcedure.input(z.object({ userId: z.number().int().positive(), isBlocked: z.boolean() })).mutation(async ({ input, ctx }) => {

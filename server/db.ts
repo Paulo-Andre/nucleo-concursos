@@ -46,15 +46,19 @@ import { DEFAULT_COURSES } from "./courseCatalog";
 import { canUseQuestionInSimulation, requiresExclusiveCentralBank, uniqueSimulationQuestions } from "./question-bank-policy";
 import { persistReviewDecision, type ReviewDecision as PersistedReviewDecision } from "./review-decision";
 import { completeStudyModules } from "../client/src/data/pfCompleteStudyData";
+import { specialLegislationModules } from "../client/src/data/pfSpecialLegislationModules";
 import { contestCatalog, disciplineCatalog, getDisciplineIdForModule } from "../client/src/data/pfCurriculumCatalog";
 import { questionBank, type StudyQuestion } from "../client/src/data/pfStudyData";
 import { loadPF2018Questions } from "./importProvasPF";
 import { isValidCpf, normalizeCpf } from "./cpf";
-import { selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
+import { dailyCheckShownIds, recordDailyCheckSelection, selectDailyQuickCheckQuestion } from "./dailyQuickCheck";
 import { storagePut } from "./storage";
 import { serializeAdminBackup, type AdminBackupData } from "./adminBackup";
+import { scoreSimulation } from "./studyScoring";
+import { createPrivateBackupDownload } from "./privateBackupDownloads";
 import { isPlatformAlertVisibleForUser, type PlatformAlertAudience, type PlatformAlertLevel } from "./platformAlerts";
 import { resolveStudentContentNotice, type ContentNoticeKind } from "./content-notices";
+import { brazilStudyDayKey } from "../shared/brazilStudyDay";
 
 type UserUpsertInput = {
   openId: string;
@@ -85,7 +89,7 @@ type SimulationInput = {
   elapsedSeconds: number;
   byDiscipline: Record<string, { correct: number; total: number }>;
   byBlock: Record<string, { correct: number; total: number }>;
-  answers: { questionId: string; correct: boolean }[];
+  answers: { questionId: string; submittedAnswer: boolean }[];
   questionIds: string[];
   persistentAnswers?: { questionId: number; correct: boolean; snapshot: Record<string, unknown> }[];
 };
@@ -154,7 +158,7 @@ function parseStudyReviewSnapshot(raw: string): StudyReviewSnapshot | null {
 }
 
 function currentStudyDay() {
-  return new Date().toISOString().slice(0, 10);
+  return brazilStudyDayKey();
 }
 
 export async function getDb() {
@@ -258,7 +262,33 @@ export async function updateUserRole(userId: number, role: "user" | "admin") {
 export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+  // Troca de senha sempre invalida todas as sessões, inclusive no reset administrativo.
+  await db.transaction(async tx => {
+    await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
+    await tx.delete(authSessions).where(eq(authSessions.userId, userId));
+  });
+}
+
+/** Redefinição ROOT: senha, invalidação de sessões/tokens e auditoria numa única transação. */
+export async function resetManagedUserPassword(actorUserId: number, userId: number, passwordHash: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  return db.transaction(async tx => {
+    const target = (await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1))[0];
+    if (!target) return false;
+
+    await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
+    await tx.delete(authSessions).where(eq(authSessions.userId, userId));
+    await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await tx.insert(adminAuditLogs).values({
+      actorUserId,
+      affectedUserId: userId,
+      action: "REDEFINICAO_DE_SENHA",
+      detail: "Senha redefinida pelo administrador; sessões e links antigos de recuperação invalidados.",
+    });
+    return true;
+  });
 }
 
 export async function createPasswordResetToken(userId: number, tokenHash: string, expiresAt: Date) {
@@ -1065,7 +1095,7 @@ export async function getStudyState(userId: number) {
     xp: profile.xp,
     lastStudyDate: profile.lastStudyDate ?? undefined,
     studyDates: parseStringArray(profile.studyDatesJson),
-    usedQuestionIds: parseStringArray(profile.usedQuestionIdsJson),
+    usedQuestionIds: parseStringArray(profile.usedQuestionIdsJson).filter(id => !id.startsWith("daily:")),
     weeklySimulationCorrect,
   };
 }
@@ -1074,8 +1104,16 @@ async function getEligibleContentIdsForCourses(courseIds: string[]) {
   const db = await getDb();
   if (!db || !courseIds.length) return [];
   const rows = await db.select({ contentId: disciplineContents.contentId }).from(courseDisciplines)
+    .innerJoin(courses, eq(courseDisciplines.courseId, courses.id))
+    .innerJoin(disciplines, eq(courseDisciplines.disciplineId, disciplines.id))
     .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
-    .where(inArray(courseDisciplines.courseId, courseIds));
+    .innerJoin(contents, eq(disciplineContents.contentId, contents.id))
+    .where(and(
+      inArray(courseDisciplines.courseId, courseIds),
+      eq(courses.isActive, true),
+      eq(disciplines.status, "published"),
+      eq(contents.status, "published"),
+    ));
   return Array.from(new Set(rows.map(row => row.contentId)));
 }
 
@@ -1128,10 +1166,20 @@ async function listStudyCourseContents(courseId: string): Promise<StudyCourseCon
     .innerJoin(disciplineContents, eq(courseDisciplines.disciplineId, disciplineContents.disciplineId))
     .innerJoin(contents, eq(disciplineContents.contentId, contents.id))
     .innerJoin(disciplines, eq(disciplineContents.disciplineId, disciplines.id))
-    .where(eq(courseDisciplines.courseId, courseId));
+    .where(and(eq(courseDisciplines.courseId, courseId), eq(contents.status, "published"), eq(disciplines.status, "published")));
   const unique = new Map<number, StudyCourseContent>();
   rows.forEach(content => unique.set(content.id, content));
   return Array.from(unique.values()).sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
+}
+
+/** Restringe PDFs enviados à biblioteca a matrículas vigentes vinculadas a aulas publicadas. */
+export async function canAccessStoredContentPdf(userId: number, resourcePath: string): Promise<boolean> {
+  const enrollments = await getUserCourseAccess(userId);
+  for (const enrollment of enrollments) {
+    const contentsForCourse = await listStudyCourseContents(enrollment.courseId);
+    if (contentsForCourse.some(content => content.materialUrl === resourcePath)) return true;
+  }
+  return false;
 }
 
 function serializeContentProgress(content: StudyCourseContent, progress: typeof studyContentProgress.$inferSelect | undefined, latestOpenedAt: Date | null, enrollmentStartedAt: Date | null, isAdmin: boolean) {
@@ -1303,22 +1351,37 @@ export async function getDailyQuickCheck(userId: number, courseId: string) {
   if (!db) throw new Error("Banco de dados indisponível");
   const profile = await ensureStudyProfile(userId);
   const day = currentStudyDay();
-  const allowedContentIds = await getEligibleContentIdsForCourses([courseId]);
-  const questionPool = (await listStudyQuestions()).questions.filter(question => question.contentIds.some(contentId => allowedContentIds.includes(contentId)));
+  const allowedContentIds = new Set(await getEligibleContentIdsForCourses([courseId]));
+  // Checagens utilizam apenas itens publicados, C/E e vinculados aos conteúdos deste curso.
+  const allStudyQuestions = (await listStudyQuestions(userId)).questions.filter(question =>
+    question.questionType === "certo_errado" && typeof question.answer === "boolean"
+      && question.contentIds.some(contentId => allowedContentIds.has(contentId)));
+  const publishedIds = allStudyQuestions.length ? await db.select({ id: questions.id }).from(questions).where(and(
+    eq(questions.status, "published"), inArray(questions.id, allStudyQuestions.map(question => question.id)),
+  )) : [];
+  const publishedSet = new Set(publishedIds.map(row => row.id));
+  const questionPool = allStudyQuestions.filter(question => publishedSet.has(question.id));
   const persistedQuestion = profile.dailyQuickCheckDate === day && profile.dailyQuickCheckCourseId === courseId
     ? questionPool.find(question => String(question.id) === profile.dailyQuickCheckQuestionId)
     : undefined;
   const recentAnswers = await db.select({ questionId: studyAnswers.questionId }).from(studyAnswers).where(eq(studyAnswers.userId, userId)).orderBy(desc(studyAnswers.answeredAt)).limit(20);
   const recentQuestionIds = [...recentAnswers.map(answer => answer.questionId), ...(profile.dailyQuickCheckQuestionId ? [profile.dailyQuickCheckQuestionId] : [])];
-  const question = persistedQuestion ?? selectDailyQuickCheckQuestion({ questions: questionPool, userId, courseId, day, recentQuestionIds });
+  const usedQuestionIds = parseStringArray(profile.usedQuestionIdsJson);
+  const shownQuestionIds = dailyCheckShownIds(courseId, usedQuestionIds);
+  const question = persistedQuestion ?? selectDailyQuickCheckQuestion({ questions: questionPool, userId, courseId, day, recentQuestionIds, shownQuestionIds });
   if (!question) return { date: day, dismissed: false, question: null };
 
-  if (!persistedQuestion) await db.update(studyProfiles).set({
-    dailyQuickCheckDate: day,
-    dailyQuickCheckCourseId: courseId,
-    dailyQuickCheckQuestionId: String(question.id),
-    dailyQuickCheckDismissed: false,
-  }).where(eq(studyProfiles.userId, userId));
+  if (!persistedQuestion) {
+    const freshQuestionsRemain = questionPool.some(candidate => !shownQuestionIds.includes(String(candidate.id)));
+    const nextHistory = recordDailyCheckSelection({ courseId, questionId: question.id, usedQuestionIds, resetCycle: !freshQuestionsRemain });
+    await db.update(studyProfiles).set({
+      dailyQuickCheckDate: day,
+      dailyQuickCheckCourseId: courseId,
+      dailyQuickCheckQuestionId: String(question.id),
+      dailyQuickCheckDismissed: false,
+      usedQuestionIdsJson: JSON.stringify(nextHistory),
+    }).where(eq(studyProfiles.userId, userId));
+  }
 
   return { date: day, dismissed: persistedQuestion ? profile.dailyQuickCheckDismissed : false, question };
 }
@@ -1331,11 +1394,30 @@ export async function dismissDailyQuickCheck(userId: number, courseId: string) {
   return { success: true } as const;
 }
 
-export async function recordAnswer(userId: number, questionId: string, correct: boolean) {
+export async function recordAnswer(userId: number, questionId: string, submittedAnswer: boolean, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+
+  const legacy = questionBank.find(question => question.id === questionId);
+  let expected: boolean;
+  if (legacy) {
+    const enrolled = isAdmin || (await getUserCourseAccess(userId)).some(enrollment => enrollment.courseId === "pf-agente");
+    if (!enrolled) throw new Error("Esta questão não pertence aos seus cursos ativos.");
+    expected = legacy.answer;
+  } else {
+    const persistedId = /^(?:central-)?([1-9][0-9]*)$/.exec(questionId)?.[1];
+    if (!persistedId) throw new Error("Questão não encontrada.");
+    const available = (await listStudyQuestions(userId, isAdmin)).questions.find(question => question.id === Number(persistedId));
+    if (!available || typeof available.answer !== "boolean") throw new Error("Questão não disponível para esta conta.");
+    expected = available.answer;
+  }
+
+  const correct = submittedAnswer === expected;
+  // Registrar tentativas para revisão; recompensa de XP somente na primeira resposta à questão.
+  const previous = await db.select({ id: studyAnswers.id }).from(studyAnswers)
+    .where(and(eq(studyAnswers.userId, userId), eq(studyAnswers.questionId, questionId))).limit(1);
   await db.insert(studyAnswers).values({ userId, questionId, correct });
-  await registerStudyActivity(userId, correct ? 8 : 2);
+  if (!previous.length) await registerStudyActivity(userId, correct ? 8 : 2);
   return getStudyState(userId);
 }
 
@@ -1345,7 +1427,14 @@ export async function listStudyReviewItems(userId: number, status: "pending" | "
   const rows = await db.select().from(studyReviewItems).where(and(eq(studyReviewItems.userId, userId), eq(studyReviewItems.status, status))).orderBy(desc(studyReviewItems.createdAt));
   return rows.flatMap(item => {
     const snapshot = parseStudyReviewSnapshot(item.snapshotJson);
-    return snapshot ? [{ id: item.id, questionKey: item.questionKey, snapshot, status: item.status, createdAt: item.createdAt.toISOString(), reviewedAt: item.reviewedAt?.toISOString() ?? null }] : [];
+    let dueAt = item.createdAt.toISOString();
+    try {
+      const parsed = JSON.parse(item.snapshotJson);
+      if (typeof parsed?.reviewSchedule?.dueAt === "string" && Number.isFinite(Date.parse(parsed.reviewSchedule.dueAt))) dueAt = parsed.reviewSchedule.dueAt;
+    } catch { /* Dados antigos continuam revisáveis. */ }
+    return snapshot ? [{ id: item.id, questionKey: item.questionKey, snapshot, status: item.status,
+      dueAt, due: Date.parse(dueAt) <= Date.now(), createdAt: item.createdAt.toISOString(),
+      reviewedAt: item.reviewedAt?.toISOString() ?? null }] : [];
   });
 }
 
@@ -1370,9 +1459,17 @@ export async function removeStudyReviewItem(userId: number, id: number) {
   return listStudyReviewItems(userId);
 }
 
-export async function completeStudyModule(userId: number, moduleId: string) {
+export async function completeStudyModule(userId: number, moduleId: string, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+  const module = [...completeStudyModules, ...specialLegislationModules].find(item => item.id === moduleId);
+  if (!module) throw new Error("Módulo não pertence à biblioteca pedagógica.");
+  if (!isAdmin) {
+    const activeIds = new Set((await getUserCourseAccess(userId)).map(enrollment => enrollment.courseId));
+    const disciplineId = getDisciplineIdForModule(module);
+    const allowed = disciplineId && contestCatalog.some(contest => activeIds.has(contest.id) && contest.disciplineIds.includes(disciplineId));
+    if (!allowed) throw new Error("Módulo não autorizado para seus cursos.");
+  }
   const existing = await db.select().from(completedModules).where(and(eq(completedModules.userId, userId), eq(completedModules.moduleId, moduleId))).limit(1);
   if (!existing[0]) {
     await db.insert(completedModules).values({ userId, moduleId });
@@ -1381,23 +1478,63 @@ export async function completeStudyModule(userId: number, moduleId: string) {
   return getStudyState(userId);
 }
 
-export async function recordSimulation(userId: number, input: SimulationInput) {
+export async function recordSimulation(userId: number, input: SimulationInput, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+  const submittedIds = input.answers.map(answer => answer.questionId);
+  if (submittedIds.length !== input.questionIds.length ||
+    submittedIds.some((id, index) => id !== input.questionIds[index])) {
+    throw new Error("As respostas não correspondem às questões da tentativa.");
+  }
+  const canUseLegacy = isAdmin || (await getUserCourseAccess(userId)).some(enrollment => enrollment.courseId === "pf-agente");
+  const legacyBank = canUseLegacy ? questionBank.map(question => ({
+    canonicalKey: `legacy-${question.id}`,
+    questionId: question.id,
+    correctAnswer: question.answer,
+    discipline: question.discipline,
+    block: question.block,
+  })) : [];
+
+  const published = (await listStudyQuestions(userId, isAdmin)).questions.filter(question => typeof question.answer === "boolean");
+  const canonical = published.flatMap(question => {
+    const entry = {
+      canonicalKey: `central-${question.id}`,
+      correctAnswer: question.answer as boolean,
+      discipline: question.discipline,
+      block: "I",
+      persistedId: question.id,
+      snapshot: {
+        id: question.id,
+        statement: question.statement,
+        type: question.questionType,
+        answer: question.answer,
+        explanation: question.explanation,
+        discipline: question.discipline,
+        subject: question.subject,
+        difficulty: question.difficulty,
+        source: question.source,
+      },
+    };
+    return [{ ...entry, questionId: `central-${question.id}` }, { ...entry, questionId: String(question.id) }];
+  });
+  const scored = scoreSimulation(input.answers, [...legacyBank, ...canonical]);
+  // Nota, acertos e XP são calculados com o gabarito canônico, nunca com os totais enviados pelo navegador.
   await db.insert(simulationRecords).values({
     id: input.id,
     userId,
-    total: input.total,
-    correct: input.correct,
-    errors: input.errors,
+    total: scored.total,
+    correct: scored.correct,
+    errors: scored.errors,
     elapsedSeconds: input.elapsedSeconds,
-    byDisciplineJson: JSON.stringify(input.byDiscipline),
-    byBlockJson: JSON.stringify(input.byBlock),
+    byDisciplineJson: JSON.stringify(scored.byDiscipline),
+    byBlockJson: JSON.stringify(scored.byBlock),
   });
-  if (input.answers.length) await db.insert(studyAnswers).values(input.answers.map(answer => ({ ...answer, userId })));
-  const persistentAnswers = uniqueSimulationQuestions((input.persistentAnswers ?? []).map(answer => ({ ...answer, id: answer.questionId, status: "published" as const, requiresReview: true })));
-  if (persistentAnswers.length) await db.insert(simulationQuestions).values(persistentAnswers.map((answer, position) => ({ simulationId: input.id, questionId: answer.questionId, position: position + 1, answeredCorrectly: answer.correct, snapshotJson: JSON.stringify(answer.snapshot) })));
-  await registerStudyActivity(userId, input.correct * 8 + 15, input.questionIds);
+  if (scored.answers.length) await db.insert(studyAnswers).values(scored.answers.map(answer => ({ ...answer, userId })));
+  if (scored.persistent.length) await db.insert(simulationQuestions).values(scored.persistent.map((answer, position) => ({
+    simulationId: input.id, questionId: answer.questionId, position: position + 1,
+    answeredCorrectly: answer.correct, snapshotJson: JSON.stringify(answer.snapshot),
+  })));
+  await registerStudyActivity(userId, scored.correct * 8 + 15, submittedIds);
   return getStudyState(userId);
 }
 
@@ -1516,10 +1653,10 @@ export async function createAdministrativeBackup(actorUserId: number) {
   if (bytes > 25 * 1024 * 1024) throw new Error("O backup ultrapassou 25 MB. Solicite uma exportação assistida para evitar um arquivo incompleto.");
   const stamp = exportedAt.toISOString().replace(/[:.]/g, "-");
   const fileName = `nucleo-concursos-backup-${stamp}.json`;
-  const stored = await storagePut(`admin-backups/${actorUserId}/${fileName}`, serialized, "application/json");
+  const stored = await createPrivateBackupDownload(actorUserId, fileName, serialized);
   const recordCount = Object.values(payload.tableCounts).reduce((sum, count) => sum + count, 0);
   await writeAdminAudit(actorUserId, null, "EXPORTACAO_DE_BACKUP", `Exportação lógica gerada com ${recordCount} registros e ${bytes} bytes, sem credenciais de sessão.`);
-  return { fileName, downloadUrl: stored.url, exportedAt: exportedAt.toISOString(), bytes, tableCounts: payload.tableCounts };
+  return { fileName, downloadUrl: stored.downloadUrl, expiresAt: stored.expiresAt, exportedAt: exportedAt.toISOString(), bytes, tableCounts: payload.tableCounts };
 }
 
 export async function updateManagedUser(userId: number, input: { name: string; username: string; email: string; cpf?: string }) {
@@ -1665,6 +1802,19 @@ export async function deleteManagedCourse(actorUserId: number, courseId: string,
   await db.delete(courses).where(eq(courses.id, courseId));
   await writeAdminAudit(actorUserId, null, "EXCLUSAO_DE_CURSO", `Curso ${existing.id} — ${existing.title} excluído; ${links.length} vínculo(s) e ${enrollments.length} matrícula(s) removidos. Disciplinas, conteúdos e questões foram preservados.`);
   return { id: existing.id, title: existing.title, removedLinks: links.length, removedEnrollments: enrollments.length };
+}
+
+/** Marcador persistente de limpeza pré-lançamento: impede que reinícios repovoem o catálogo.
+ * A marca é criada exclusivamente junto com a limpeza transacional, nunca ao iniciar o app.
+ */
+export const EMPTY_CATALOG_AUDIT_ACTION = "LIMPEZA_CATALOGO_PRE_LANCAMENTO";
+
+export async function hasPrelaunchCatalogReset() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db.select({ id: adminAuditLogs.id }).from(adminAuditLogs)
+    .where(eq(adminAuditLogs.action, EMPTY_CATALOG_AUDIT_ACTION)).limit(1);
+  return Boolean(rows[0]);
 }
 
 /** Cria as três matrizes iniciais uma única vez no banco de uma instância nova. */
@@ -1817,7 +1967,7 @@ export async function ensureDefaultKnowledgeBase(actorUserId: number) {
   const contentIdsByDiscipline = new Map<string, number[]>();
   let importedContents = 0;
 
-  for (const module of completeStudyModules) {
+  for (const module of [...completeStudyModules, ...specialLegislationModules]) {
     const disciplineCatalogId = getDisciplineIdForModule(module);
     if (!disciplineCatalogId) continue;
     const title = `${module.code} — ${module.title}`;
@@ -1849,29 +1999,42 @@ export async function ensureDefaultKnowledgeBase(actorUserId: number) {
   const currentDisciplines = await db.select({ id: disciplines.id, shortName: disciplines.shortName }).from(disciplines);
   const disciplineIdsByShortName = new Map(currentDisciplines.map(discipline => [discipline.shortName, discipline.id]));
   const availableCourseIds = new Set((await db.select({ id: courses.id }).from(courses)).map(course => course.id));
+  const existingCourseDisciplineLinks = new Set((await db.select({ courseId: courseDisciplines.courseId, disciplineId: courseDisciplines.disciplineId }).from(courseDisciplines))
+    .map(link => `${link.courseId}:${link.disciplineId}`));
+  const existingDisciplineContentLinks = new Set((await db.select({ disciplineId: disciplineContents.disciplineId, contentId: disciplineContents.contentId }).from(disciplineContents))
+    .map(link => `${link.disciplineId}:${link.contentId}`));
   let importedDisciplines = 0;
 
   for (const discipline of disciplineCatalog) {
     const shortName = discipline.shortName.toUpperCase();
-    if (disciplineIdsByShortName.has(shortName)) continue;
-    const result = await db.insert(disciplines).values({
-      name: discipline.name,
-      shortName,
-      description: discipline.description,
-      status: "published",
-      requiresReview: false,
-      createdByUserId: actorUserId,
-      updatedByUserId: actorUserId,
-    });
-    const disciplineId = Number(result[0].insertId);
-    disciplineIdsByShortName.set(shortName, disciplineId);
-    importedDisciplines += 1;
+    let disciplineId = disciplineIdsByShortName.get(shortName);
+    if (!disciplineId) {
+      const result = await db.insert(disciplines).values({
+        name: discipline.name,
+        shortName,
+        description: discipline.description,
+        status: "published",
+        requiresReview: false,
+        createdByUserId: actorUserId,
+        updatedByUserId: actorUserId,
+      });
+      disciplineId = Number(result[0].insertId);
+      disciplineIdsByShortName.set(shortName, disciplineId);
+      importedDisciplines += 1;
+    }
 
+    // Uma disciplina já existente também precisa receber conteúdos recém-importados.
     for (const contest of contestCatalog.filter(contest => contest.disciplineIds.includes(discipline.id) && availableCourseIds.has(contest.id))) {
+      const linkKey = `${contest.id}:${disciplineId}`;
+      if (existingCourseDisciplineLinks.has(linkKey)) continue;
       await db.insert(courseDisciplines).values({ courseId: contest.id, disciplineId, linkedByUserId: actorUserId });
+      existingCourseDisciplineLinks.add(linkKey);
     }
     for (const contentId of contentIdsByDiscipline.get(discipline.id) ?? []) {
+      const linkKey = `${disciplineId}:${contentId}`;
+      if (existingDisciplineContentLinks.has(linkKey)) continue;
       await db.insert(disciplineContents).values({ disciplineId, contentId, linkedByUserId: actorUserId });
+      existingDisciplineContentLinks.add(linkKey);
     }
   }
 
@@ -2326,26 +2489,54 @@ export async function listManagedQuestions(input: { search?: string; status?: Kn
 }
 
 /** Projeção para alunos: respeita o modo simples e a revisão configurável, sem duplicar a questão por conteúdo. */
-export async function listStudyQuestions() {
+export async function listStudyQuestions(userId: number, isAdmin = false) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const allRows = await db.select().from(questions).orderBy(desc(questions.updatedAt));
-  const rows = uniqueSimulationQuestions(allRows.filter(question => canUseQuestionInSimulation(question)));
-  const studyQuestions = await Promise.all(rows.map(async question => {
-    const linkedContents = await db.select({ id: contents.id, title: contents.title }).from(questionContentLinks).innerJoin(contents, eq(questionContentLinks.contentId, contents.id)).where(eq(questionContentLinks.questionId, question.id));
-    const disciplineNames: string[] = [];
-    for (const content of linkedContents) {
-      const links = await db.select({ name: disciplines.name }).from(disciplineContents).innerJoin(disciplines, eq(disciplineContents.disciplineId, disciplines.id)).where(eq(disciplineContents.contentId, content.id));
-      for (const link of links) if (!disciplineNames.includes(link.name)) disciplineNames.push(link.name);
-    }
-    return {
+  const rows = uniqueSimulationQuestions(allRows.filter(question =>
+    canUseQuestionInSimulation(question) && (question.status === "published" || question.status === "approved")));
+  const activeCourses = isAdmin ? [] : (await getUserCourseAccess(userId)).map(enrollment => enrollment.courseId);
+  const allowedContentIds = isAdmin ? null : new Set(await getEligibleContentIdsForCourses(activeCourses));
+
+  // Antes havia duas consultas por questão/conteúdo (N+1); um conjunto de queries
+  // atende centenas de itens sem sobrecarregar MySQL e o painel do aluno.
+  const links = rows.length ? await db.select({
+    questionId: questionContentLinks.questionId, id: contents.id, title: contents.title,
+  }).from(questionContentLinks).innerJoin(contents, eq(questionContentLinks.contentId, contents.id))
+    .where(and(inArray(questionContentLinks.questionId, rows.map(q=>q.id)), eq(contents.status, "published"))) : [];
+
+  const linkedByQuestion = new Map<number, {id:number;title:string}[]>();
+  const allowedContentSet = new Set<number>();
+  for(const link of links){
+    if(allowedContentIds && !allowedContentIds.has(link.id))continue;
+    const permitted=linkedByQuestion.get(link.questionId)??[];
+    if(!permitted.some(x=>x.id===link.id))permitted.push({id:link.id,title:link.title});
+    linkedByQuestion.set(link.questionId,permitted);
+    allowedContentSet.add(link.id);
+  }
+  const disciplineLinks = allowedContentSet.size ? await db.select({
+    contentId: disciplineContents.contentId, name: disciplines.name,
+  }).from(disciplineContents).innerJoin(disciplines,eq(disciplineContents.disciplineId,disciplines.id))
+    .where(and(inArray(disciplineContents.contentId,Array.from(allowedContentSet)),eq(disciplines.status,"published"))) : [];
+  const disciplinesByContent = new Map<number,string[]>();
+  for(const link of disciplineLinks) {
+    const names=disciplinesByContent.get(link.contentId)??[];
+    if(!names.includes(link.name))names.push(link.name);
+    disciplinesByContent.set(link.contentId,names);
+  }
+  const studyQuestions=rows.flatMap(question=>{
+    const permitted=linkedByQuestion.get(question.id)??[];
+    if(!permitted.length)return [];
+    const disciplineNames=Array.from(new Set(permitted.flatMap(content=>disciplinesByContent.get(content.id)??[])));
+    return [{
       id: question.id, statement: question.statement, questionType: question.questionType,
       options: question.optionsJson ? JSON.parse(question.optionsJson) : [], answer: JSON.parse(question.answerJson),
-      explanation: question.explanation, difficulty: question.difficulty, source: question.source, banca: question.banca, year: question.year,
-      discipline: disciplineNames[0] ?? "Biblioteca central", subject: linkedContents.map(content => content.title).join(" · ") || "Conteúdo geral",
-      contentIds: linkedContents.map(content => content.id),
-    };
-  }));
+      explanation: question.explanation, difficulty: question.difficulty, source: question.source,
+      banca: question.banca, year: question.year, discipline: disciplineNames[0] ?? "Biblioteca central",
+      subject: permitted.map(content=>content.title).join(" · ") || "Conteúdo geral",
+      contentIds: permitted.map(content=>content.id),
+    }];
+  });
   return { requiresReviewMode: requiresExclusiveCentralBank(allRows), questions: studyQuestions };
 }
 
@@ -2403,6 +2594,11 @@ export async function deleteManagedQuestion(actorUserId: number, questionId: num
   if (!existing[0]) throw new Error("Questão não encontrada.");
   const simulationUse = await db.select({ id: simulationQuestions.id }).from(simulationQuestions).where(eq(simulationQuestions.questionId, questionId)).limit(1);
   if (simulationUse[0]) throw new Error("Esta questão já foi usada em um simulado e não pode ser excluída. Mude seu status para INATIVO para preservá-la no histórico.");
+  const dailyOrStudyAnswers = await db.select({ id: studyAnswers.id }).from(studyAnswers).where(or(
+    eq(studyAnswers.questionId, String(questionId)),
+    eq(studyAnswers.questionId, `central-${questionId}`),
+  )).limit(1);
+  if (dailyOrStudyAnswers[0]) throw new Error("Esta questão já foi respondida por um aluno, inclusive na checagem diária. Altere para INATIVO para preservar o histórico e evitar novas exibições.");
 
   await db.delete(reviewQueue).where(and(eq(reviewQueue.itemType, "question"), eq(reviewQueue.itemId, questionId)));
   await db.delete(questionChangelog).where(eq(questionChangelog.questionId, questionId));

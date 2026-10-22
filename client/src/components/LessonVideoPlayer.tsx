@@ -1,4 +1,5 @@
-import { ExternalLink, PlayCircle, ShieldCheck } from "lucide-react";
+import React from "react";
+import { ExternalLink, PlayCircle } from "lucide-react";
 import { resolveLessonVideoSource } from "@/lib/videoPlayer";
 
 type Props = {
@@ -58,10 +59,6 @@ export function LessonVideoPlayer({ url, title, channel, note }: Props) {
         )}
       </div>
 
-      <div className="flex gap-2 p-4 text-[11px] leading-5 text-[#52717d]">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#176a5a]" />
-        <p>O player evita link de download direto e limita os controles do navegador. Para vídeos próprios, use um arquivo MP4, WebM ou OGV em armazenamento controlado; capturas de tela e ferramentas do próprio navegador não podem ser bloqueadas integralmente.</p>
-      </div>
     </section>
   );
 }

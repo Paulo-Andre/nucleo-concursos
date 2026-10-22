@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpenCheck, CheckCircle2, ClipboardCheck, FilePenLine, History, ImagePlus, Layers3, ListChecks, Link2, PlusCircle, Search, Send, XCircle } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, ClipboardCheck, FilePenLine, FileText, History, ImagePlus, Layers3, ListChecks, Link2, PlayCircle, PlusCircle, Search, Send, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { normalizeQuestionOptions, questionOptionLabel } from "@/lib/questionOptions";
 import { newQuestionFormKey, questionCreationSuccessMessage, questionFormValidationError } from "@/lib/questionFormValidation";
-import { countQuestionsByContent, filterLinkOptions, libraryLoadState, reviewEmptyStateMessage, reviewFlowSteps } from "@/lib/adminUiHelpers";
+import { filterLinkOptions, libraryLoadState, reviewEmptyStateMessage, reviewFlowSteps } from "@/lib/adminUiHelpers";
+import { countQuestionTypes, filterQuestionsByType, questionTypeLabel, type QuestionTypeFilter } from "@/lib/questionContentFilters";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentBodyEditor } from "@/components/ContentBodyEditor";
+import { AdminSpreadsheetImportPanel } from "@/components/AdminSpreadsheetImportPanel";
+import { AdminBulkPdfPanel } from "@/components/AdminBulkPdfPanel";
 
 type KnowledgeStatus = "draft" | "review" | "approved" | "published" | "inactive";
 type ContentNoticeKind = "new" | "updated";
@@ -28,7 +31,7 @@ function StatusBadge({ status }: { status: KnowledgeStatus }) {
   return <span className={`inline-flex border px-2 py-1 text-[9px] font-bold tracking-wider ${statusClasses[status]}`}>{statusLabels[status]}</span>;
 }
 
-function readContentImageAsBase64(file: File) {
+function readContentFileAsBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("Não foi possível ler a imagem selecionada."));
@@ -51,7 +54,7 @@ function ContentNoticeControl({ value, onChange }: { value: ContentNoticeKind | 
 }
 
 export function KnowledgeBaseManager({ courses }: { courses: Course[] }) {
-  const [activeTab, setActiveTab] = useState<"questions" | "byContent" | "contents" | "disciplines" | "review">("questions");
+  const [activeTab, setActiveTab] = useState<"questions" | "daily" | "byContent" | "contents" | "disciplines" | "review" | "import" | "pdfs">("questions");
   const [message, setMessage] = useState<string | null>(null);
   const [questionSearch, setQuestionSearch] = useState("");
   const [questionStatus, setQuestionStatus] = useState<KnowledgeStatus | "all">("all");
@@ -79,26 +82,39 @@ export function KnowledgeBaseManager({ courses }: { courses: Course[] }) {
   const contentCreate = trpc.admin.contents.create.useMutation({ onSuccess: complete("Conteúdo criado e auditado."), onError: fail });
   const contentUpdate = trpc.admin.contents.update.useMutation({ onSuccess: complete("Conteúdo atualizado sem perder histórico."), onError: fail });
   const contentImageUpload = trpc.admin.contents.uploadImage.useMutation({ onError: fail });
+  const contentPdfUpload = trpc.admin.contents.uploadPdf.useMutation({ onError: fail });
   const questionCreate = trpc.admin.questions.create.useMutation({ onSuccess: created => complete(questionCreationSuccessMessage(created.id))(), onError: fail });
   const questionUpdate = trpc.admin.questions.update.useMutation({ onSuccess: complete("Questão atualizada; o histórico anterior foi preservado."), onError: fail });
   const questionDelete = trpc.admin.questions.remove.useMutation({ onSuccess: complete("Questão excluída antes de qualquer uso em simulado."), onError: fail });
   const sendContent = trpc.admin.contents.sendToReview.useMutation({ onSuccess: complete("Conteúdo enviado para revisão."), onError: fail });
   const sendQuestion = trpc.admin.questions.sendToReview.useMutation({ onSuccess: complete("Questão enviada para revisão."), onError: fail });
   const decideReview = trpc.admin.review.decide.useMutation({ onSuccess: complete("Decisão de revisão registrada."), onError: fail });
-  const pending = disciplineCreate.isPending || disciplineUpdate.isPending || contentCreate.isPending || contentUpdate.isPending || contentImageUpload.isPending || questionCreate.isPending || questionUpdate.isPending || questionDelete.isPending || sendContent.isPending || sendQuestion.isPending || decideReview.isPending;
+  const pending = disciplineCreate.isPending || disciplineUpdate.isPending || contentCreate.isPending || contentUpdate.isPending || contentImageUpload.isPending || contentPdfUpload.isPending || questionCreate.isPending || questionUpdate.isPending || questionDelete.isPending || sendContent.isPending || sendQuestion.isPending || decideReview.isPending;
   const disciplines = (disciplinesQuery.data ?? []) as Discipline[];
   const contents = (contentsQuery.data ?? []) as Content[];
   const questions = (questionsQuery.data ?? []) as Question[];
   const allQuestions = (allQuestionsQuery.data ?? []) as Question[];
   const reviews = (reviewQuery.data ?? []) as ReviewItem[];
 
-  return <section className="mt-7 border border-[#bcd8d0] bg-[#f5fbf8] p-4 sm:p-5"><div className="flex flex-col gap-3 border-b border-[#c6ded7] pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2"><Layers3 className="h-5 w-5 text-[#0e5a70]"/><p className="eyebrow text-[#176a5a]">BIBLIOTECA CENTRAL</p></div><h3 className="font-display mt-1 text-lg font-bold text-[#173d4a]">Disciplinas, conteúdos, questões e revisão</h3><p className="mt-1 max-w-3xl text-xs leading-5 text-[#567471]">Os cursos fazem vínculos reutilizáveis. Uma questão possui um único identificador, mesmo quando estiver associada a vários conteúdos.</p></div><button onClick={() => setActiveTab("review")} className="inline-flex items-center justify-center gap-2 border border-[#cfb478] bg-[#fff9e9] px-3 py-2 text-xs font-bold text-[#815719]"><ClipboardCheck className="h-4 w-4"/>Revisar (ROOT) <span className="rounded-full bg-[#815719] px-1.5 py-0.5 text-[10px] text-white">{pendingQuery.data ?? 0}</span></button></div><div className="mt-4 flex flex-wrap gap-2">{([{ id: "questions", label: "Todas as questões", icon: ListChecks }, { id: "byContent", label: "Questões por conteúdo", icon: Layers3 }, { id: "contents", label: "Conteúdos", icon: BookOpenCheck }, { id: "disciplines", label: "Disciplinas", icon: Layers3 }, { id: "review", label: "Revisar (ROOT)", icon: ClipboardCheck }] as const).map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-bold ${activeTab === tab.id ? "border-[#0e5a70] bg-[#0e5a70] text-white" : "border-[#b8d3cc] bg-white text-[#24525a]"}`}><tab.icon className="h-3.5 w-3.5"/>{tab.label}{tab.id === "review" && (pendingQuery.data ?? 0) > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${activeTab === tab.id ? "bg-white text-[#0e5a70]" : "bg-[#e3ab54] text-[#593900]"}`}>{pendingQuery.data}</span>}</button>)}</div>{activeTab === "questions" && <QuestionWorkspace contents={contents} contentsLoading={contentsQuery.isLoading} questions={questions} questionsLoading={questionsQuery.isLoading} search={questionSearch} status={questionStatus} pending={pending} focusQuestionId={questionToEditId} onFocusHandled={() => setQuestionToEditId(null)} onSearch={setQuestionSearch} onStatus={setQuestionStatus} onCreate={data => questionCreate.mutateAsync(data)} onUpdate={(id, data) => questionUpdate.mutateAsync({ id, data })} onDelete={id => questionDelete.mutate({ id })} onAddToReview={id => sendQuestion.mutate({ id })}/>} {activeTab === "byContent" && <QuestionsByContent contents={contents} questions={allQuestions} loading={contentsQuery.isLoading || allQuestionsQuery.isLoading} pending={pending} onOpenQuestion={id => { setQuestionToEditId(id); setActiveTab("questions"); }}/>} {activeTab === "contents" && <ContentWorkspace disciplines={disciplines} contents={contents} contentsLoading={contentsQuery.isLoading} pending={pending} onCreate={data => contentCreate.mutate(data)} onUpdate={(id, data) => contentUpdate.mutate({ id, data })} onUploadImage={data => contentImageUpload.mutateAsync(data)} onSend={id => sendContent.mutate({ id })}/>} {activeTab === "disciplines" && <DisciplineWorkspace courses={courses} contents={contents} disciplines={disciplines} pending={pending} onCreate={data => disciplineCreate.mutate(data)} onUpdate={(id, data) => disciplineUpdate.mutate({ id, data })}/>} {activeTab === "review" && <ReviewWorkspace reviews={reviews} search={reviewSearch} type={reviewType} status={reviewStatus} pending={pending} onSearch={setReviewSearch} onType={setReviewType} onStatus={setReviewStatus} onOpenQuestion={id => { setQuestionToEditId(id); setActiveTab("questions"); }} onDecide={(id, decision, notes) => decideReview.mutate({ id, decision, notes })}/>} {message && <p role="status" className="mt-4 border border-[#b7d8c9] bg-white p-3 text-xs font-semibold text-[#17644e]">{message}</p>}</section>;
+  return <section className="mt-7 border border-[#bcd8d0] bg-[#f5fbf8] p-4 sm:p-5"><div className="flex flex-col gap-3 border-b border-[#c6ded7] pb-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2"><Layers3 className="h-5 w-5 text-[#0e5a70]"/><p className="eyebrow text-[#176a5a]">BIBLIOTECA CENTRAL</p></div><h3 className="font-display mt-1 text-lg font-bold text-[#173d4a]">Disciplinas, conteúdos, questões e revisão</h3><p className="mt-1 max-w-3xl text-xs leading-5 text-[#567471]">Os cursos fazem vínculos reutilizáveis. Uma questão possui um único identificador, mesmo quando estiver associada a vários conteúdos.</p></div><button onClick={() => setActiveTab("review")} className="inline-flex items-center justify-center gap-2 border border-[#cfb478] bg-[#fff9e9] px-3 py-2 text-xs font-bold text-[#815719]"><ClipboardCheck className="h-4 w-4"/>Revisar (ROOT) <span className="rounded-full bg-[#815719] px-1.5 py-0.5 text-[10px] text-white">{pendingQuery.data ?? 0}</span></button></div><div className="mt-4 flex flex-wrap gap-2">{([{ id: "questions", label: "Todas as questões", icon: ListChecks }, { id: "daily", label: "Checagem diária", icon: CheckCircle2 }, { id: "byContent", label: "Questões por conteúdo", icon: Layers3 }, { id: "contents", label: "Conteúdos", icon: BookOpenCheck }, { id: "disciplines", label: "Disciplinas", icon: Layers3 }, { id: "review", label: "Revisar (ROOT)", icon: ClipboardCheck }, { id: "import", label: "Importar Excel", icon: FilePenLine }, { id: "pdfs", label: "Importar apostilas", icon: FileText }] as const).map(tab => <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-bold ${activeTab === tab.id ? "border-[#0e5a70] bg-[#0e5a70] text-white" : "border-[#b8d3cc] bg-white text-[#24525a]"}`}><tab.icon className="h-3.5 w-3.5"/>{tab.label}{tab.id === "review" && (pendingQuery.data ?? 0) > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${activeTab === tab.id ? "bg-white text-[#0e5a70]" : "bg-[#e3ab54] text-[#593900]"}`}>{pendingQuery.data}</span>}</button>)}</div>{activeTab === "questions" && <QuestionWorkspace contents={contents} contentsLoading={contentsQuery.isLoading} questions={questions} questionsLoading={questionsQuery.isLoading} search={questionSearch} status={questionStatus} pending={pending} focusQuestionId={questionToEditId} onFocusHandled={() => setQuestionToEditId(null)} onSearch={setQuestionSearch} onStatus={setQuestionStatus} onCreate={data => questionCreate.mutateAsync(data)} onUpdate={(id, data) => questionUpdate.mutateAsync({ id, data })} onDelete={id => questionDelete.mutate({ id })} onAddToReview={id => sendQuestion.mutate({ id })}/>} {activeTab === "daily" && <QuestionWorkspace dailyMode publishedDisciplineIds={disciplines.filter(discipline => discipline.status === "published").map(discipline => discipline.id)} contents={contents} contentsLoading={contentsQuery.isLoading} questions={allQuestions} questionsLoading={allQuestionsQuery.isLoading} search={questionSearch} status={questionStatus} pending={pending} focusQuestionId={questionToEditId} onFocusHandled={() => setQuestionToEditId(null)} onSearch={setQuestionSearch} onStatus={setQuestionStatus} onCreate={data => questionCreate.mutateAsync(data)} onUpdate={(id, data) => questionUpdate.mutateAsync({ id, data })} onDelete={id => questionDelete.mutate({ id })} onAddToReview={id => sendQuestion.mutate({ id })}/>}{activeTab === "byContent" && <QuestionsByContent contents={contents} questions={allQuestions} loading={contentsQuery.isLoading || allQuestionsQuery.isLoading} pending={pending} onOpenQuestion={id => { setQuestionToEditId(id); setActiveTab("questions"); }}/>} {activeTab === "contents" && <ContentWorkspace disciplines={disciplines} contents={contents} contentsLoading={contentsQuery.isLoading} pending={pending} onCreate={data => contentCreate.mutate(data)} onUpdate={(id, data) => contentUpdate.mutate({ id, data })} onUploadImage={data => contentImageUpload.mutateAsync(data)} onUploadPdf={data => contentPdfUpload.mutateAsync(data)} onSend={id => sendContent.mutate({ id })}/>} {activeTab === "disciplines" && <DisciplineWorkspace courses={courses} contents={contents} disciplines={disciplines} pending={pending} onCreate={data => disciplineCreate.mutate(data)} onUpdate={(id, data) => disciplineUpdate.mutate({ id, data })}/>} {activeTab === "import" && <AdminSpreadsheetImportPanel onImported={refresh}/>} {activeTab === "pdfs" && <AdminBulkPdfPanel disciplines={disciplines} onImported={refresh}/>} {activeTab === "review" && <ReviewWorkspace reviews={reviews} search={reviewSearch} type={reviewType} status={reviewStatus} pending={pending} onSearch={setReviewSearch} onType={setReviewType} onStatus={setReviewStatus} onOpenQuestion={id => { setQuestionToEditId(id); setActiveTab("questions"); }} onDecide={(id, decision, notes) => decideReview.mutate({ id, decision, notes })}/>} {message && <p role="status" className="mt-4 border border-[#b7d8c9] bg-white p-3 text-xs font-semibold text-[#17644e]">{message}</p>}</section>;
 }
 
-function QuestionWorkspace({ contents, contentsLoading, questions, questionsLoading, search, status, pending, focusQuestionId, onFocusHandled, onSearch, onStatus, onCreate, onUpdate, onDelete, onAddToReview }: { contents: Content[]; contentsLoading: boolean; questions: Question[]; questionsLoading: boolean; search: string; status: KnowledgeStatus | "all"; pending: boolean; focusQuestionId: number | null; onFocusHandled: () => void; onSearch: (value: string) => void; onStatus: (value: KnowledgeStatus | "all") => void; onCreate: (data: any) => Promise<unknown>; onUpdate: (id: number, data: any) => Promise<unknown>; onDelete: (id: number) => void; onAddToReview: (id: number) => void }) {
+function QuestionWorkspace({ contents, contentsLoading, questions, questionsLoading, search, status, pending, focusQuestionId, onFocusHandled, onSearch, onStatus, onCreate, onUpdate, onDelete, onAddToReview, dailyMode = false, publishedDisciplineIds = [] }: { dailyMode?: boolean; publishedDisciplineIds?: number[]; contents: Content[]; contentsLoading: boolean; questions: Question[]; questionsLoading: boolean; search: string; status: KnowledgeStatus | "all"; pending: boolean; focusQuestionId: number | null; onFocusHandled: () => void; onSearch: (value: string) => void; onStatus: (value: KnowledgeStatus | "all") => void; onCreate: (data: any) => Promise<unknown>; onUpdate: (id: number, data: any) => Promise<unknown>; onDelete: (id: number) => void; onAddToReview: (id: number) => void }) {
   const [editing, setEditing] = useState<Question | null>(null);
   const [newQuestionRevision, setNewQuestionRevision] = useState(0);
-  const questionLoadState = libraryLoadState(questionsLoading, questions.length);
+  const [dailyContentId, setDailyContentId] = useState("");
+  const publishedContents = useMemo(() => contents.filter(content => content.status === "published" && content.disciplineIds.some(id => publishedDisciplineIds.includes(id))), [contents, publishedDisciplineIds]);
+  const contentFilterId = Number(dailyContentId);
+  const displayedQuestions = dailyMode
+    ? questions.filter(question => question.questionType === "certo_errado"
+        && (dailyContentId ? question.contentIds.includes(contentFilterId)
+          : publishedContents.some(content => question.contentIds.includes(content.id))))
+    : questions;
+  const eligibleDailyQuestions = dailyMode
+    ? displayedQuestions.filter(question => question.status === "published"
+        && publishedContents.some(content => question.contentIds.includes(content.id)))
+    : [];
+  const questionLoadState = libraryLoadState(questionsLoading, displayedQuestions.length);
   useEffect(() => {
     if (focusQuestionId === null) return;
     const target = questions.find(question => question.id === focusQuestionId);
@@ -106,11 +122,25 @@ function QuestionWorkspace({ contents, contentsLoading, questions, questionsLoad
     setEditing(target);
     onFocusHandled();
   }, [focusQuestionId, onFocusHandled, questions]);
-  return <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_1.1fr]"><div className="border border-[#cfdfda] bg-white p-4"><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">EDIÇÃO COMPLETA</p><h4 className="font-display mt-1 text-base font-bold text-[#173d4a]">{editing ? `Editar questão #${editing.id}` : "Nova questão"}</h4></div>{editing && <button onClick={() => setEditing(null)} className="text-[11px] font-bold text-[#895a22]">Cancelar edição</button>}</div><QuestionForm key={editing?.id ?? newQuestionFormKey(newQuestionRevision)} question={editing} contents={contents} contentsLoading={contentsLoading} pending={pending} onSubmit={async data => { if (editing) await onUpdate(editing.id, data); else { await onCreate(data); setNewQuestionRevision(value => value + 1); } setEditing(null); }}/></div><div><div className="flex flex-col gap-2 sm:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => onSearch(event.target.value)} placeholder="Pesquisar enunciado" className="h-10 bg-white pl-9 text-xs"/></label><select value={status} onChange={event => onStatus(event.target.value as KnowledgeStatus | "all")} className="h-10 border border-[#cec6b8] bg-white px-3 text-xs"><option value="all">Todos os status</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><p className="mt-2 text-[10px] leading-4 text-[#687c7e]"><b>Todas as questões:</b> pesquise e filtre a lista; depois clique em <b>Editar questão</b> no cartão desejado. Para o ciclo editorial, use <b>Adicionar à revisão ROOT</b>; isso não é a fila privada do aluno.</p><div className="mt-3 max-h-[34rem] space-y-2 overflow-y-auto pr-1">{questionLoadState === "loading" ? <p className="border border-dashed border-[#b9d8cf] bg-[#f1f9f6] p-4 text-xs text-[#176a5a]">Carregando as questões da biblioteca central…</p> : questionLoadState === "empty" ? <p className="border border-dashed border-[#c7beb0] p-4 text-xs text-[#718084]">Nenhuma questão corresponde aos filtros. Altere a busca ou crie a primeira questão persistente ao lado.</p> : questions.map(question => <QuestionCard key={question.id} question={question} pending={pending} onEdit={() => setEditing(question)} onDelete={() => { onDelete(question.id); if (editing?.id === question.id) setEditing(null); }} onAddToReview={() => onAddToReview(question.id)}/>)}</div></div></div>;
+  return <div className="mt-5">
+    {dailyMode && <section aria-label="Gerenciar checagens diárias" className="mb-4 rounded-xl border border-[#9fc6ba] bg-[#eaf6f2] p-4">
+      <h4 className="font-display text-base font-bold text-[#164e48]">Checagem diária por conteúdo</h4>
+      <p className="mt-1 text-xs leading-5 text-[#315d5b]">Cadastre, edite ou exclua itens de Certo / Errado vinculados ao conteúdo. Você pode visualizar também questões rascunho e inativas do conteúdo selecionado. Somente questões PUBLICADAS com disciplina e conteúdo publicados entram na seleção dos alunos matriculados. Para retirar uma questão já utilizada, altere o status para INATIVO.</p>
+      <p className="mt-2 text-xs leading-5 text-[#315d5b]">A pergunta é selecionada individualmente e gira diariamente sem repetição até esgotar o conjunto disponível no curso. É mantida a mesma questão durante o dia; se houver apenas uma elegível, ela precisará se repetir.</p>
+      <label className="mt-3 block text-xs font-bold text-[#254751]">Filtrar e vincular conteúdo
+        <select value={dailyContentId} onChange={event => { setDailyContentId(event.target.value); setEditing(null); }} className="filter-control mt-1.5 w-full">
+          <option value="">Selecione um conteúdo para cadastrar uma checagem</option>
+          {publishedContents.map(content => <option key={content.id} value={String(content.id)}>{content.title}</option>)}
+        </select>
+      </label>
+      {publishedContents.length === 0 && !contentsLoading && <p role="status" className="mt-2 text-xs text-[#934f32]">Ainda não existe conteúdo PUBLICADO vinculado a uma disciplina para receber perguntas.</p>}
+      <p role="status" className="mt-2 text-xs font-semibold text-[#176a5a]">{eligibleDailyQuestions.length} pergunta(s) publicada(s) elegível(is) {dailyContentId ? "neste conteúdo" : "nos conteúdos publicados"}.</p>
+    </section>}
+    <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]"><div className="border border-[#cfdfda] bg-white p-4"><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">EDIÇÃO COMPLETA</p><h4 className="font-display mt-1 text-base font-bold text-[#173d4a]">{editing ? `Editar questão #${editing.id}` : "Nova questão"}</h4></div>{editing && <button onClick={() => setEditing(null)} className="text-[11px] font-bold text-[#895a22]">Cancelar edição</button>}</div><QuestionForm key={editing?.id ?? `${newQuestionFormKey(newQuestionRevision)}-${dailyContentId}`} question={editing} dailyMode={dailyMode} defaultContentId={dailyMode && dailyContentId ? Number(dailyContentId) : undefined} contents={contents} contentsLoading={contentsLoading} pending={pending} onSubmit={async data => { if (dailyMode && !editing && !dailyContentId) throw new Error("Selecione o conteúdo da checagem antes de cadastrar."); if (editing) await onUpdate(editing.id, data); else { await onCreate(data); setNewQuestionRevision(value => value + 1); } setEditing(null); }}/></div><div>{!dailyMode && <div className="flex flex-col gap-2 sm:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => onSearch(event.target.value)} placeholder="Pesquisar enunciado" className="h-10 bg-white pl-9 text-xs"/></label><select value={status} onChange={event => onStatus(event.target.value as KnowledgeStatus | "all")} className="h-10 border border-[#cec6b8] bg-white px-3 text-xs"><option value="all">Todos os status</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>}{!dailyMode && <p className="mt-2 text-[10px] leading-4 text-[#687c7e]"><b>Todas as questões:</b> pesquise e filtre a lista; depois clique em <b>Editar questão</b> no cartão desejado. Para o ciclo editorial, use <b>Adicionar à revisão ROOT</b>; isso não é a fila privada do aluno.</p>}<div className="mt-3 max-h-[34rem] space-y-2 overflow-y-auto pr-1">{questionLoadState === "loading" ? <p className="border border-dashed border-[#b9d8cf] bg-[#f1f9f6] p-4 text-xs text-[#176a5a]">Carregando as questões da biblioteca central…</p> : questionLoadState === "empty" ? <p className="border border-dashed border-[#c7beb0] p-4 text-xs text-[#718084]">Nenhuma questão corresponde aos filtros. Altere a busca ou crie a primeira questão persistente ao lado.</p> : displayedQuestions.map(question => <QuestionCard key={question.id} question={question} pending={pending} onEdit={() => setEditing(question)} onDelete={() => { onDelete(question.id); if (editing?.id === question.id) setEditing(null); }} onAddToReview={() => onAddToReview(question.id)}/>)}</div></div></div></div>;
 }
 
-function QuestionForm({ question, contents, contentsLoading, pending, onSubmit }: { question: Question | null; contents: Content[]; contentsLoading: boolean; pending: boolean; onSubmit: (data: any) => Promise<unknown> }) {
-  const [form, setForm] = useState({ statement: question?.statement ?? "", questionType: question?.questionType ?? "certo_errado", optionsText: question?.options.join("\n") ?? "", answer: question?.answer ?? true, explanation: question?.explanation ?? "", difficulty: question?.difficulty ?? "intermediate", source: question?.source ?? "", banca: question?.banca ?? "", year: question?.year?.toString() ?? "", requiresReview: question?.requiresReview ?? false, status: question?.status ?? "draft", contentIds: question?.contentIds ?? [] as number[] });
+function QuestionForm({ question, contents, contentsLoading, pending, onSubmit, dailyMode = false, defaultContentId }: { question: Question | null; dailyMode?: boolean; defaultContentId?: number; contents: Content[]; contentsLoading: boolean; pending: boolean; onSubmit: (data: any) => Promise<unknown> }) {
+  const [form, setForm] = useState({ statement: question?.statement ?? "", questionType: question?.questionType ?? "certo_errado", optionsText: question?.options.join("\n") ?? "", answer: question?.answer ?? true, explanation: question?.explanation ?? "", difficulty: question?.difficulty ?? (dailyMode ? "basic" : "intermediate"), source: question?.source ?? "", banca: question?.banca ?? "", year: question?.year?.toString() ?? "", requiresReview: question?.requiresReview ?? false, status: question?.status ?? (dailyMode ? "published" : "draft"), contentIds: question?.contentIds ?? (defaultContentId ? [defaultContentId] : [] as number[]) });
   const [contentSearch, setContentSearch] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const options = normalizeQuestionOptions(form.optionsText);
@@ -125,6 +155,8 @@ function QuestionForm({ question, contents, contentsLoading, pending, onSubmit }
       setSubmitError(validationError);
       return;
     }
+    if (dailyMode && !question && !defaultContentId) return setSubmitError("Selecione um conteúdo publicado acima antes de criar a checagem.");
+    if (dailyMode && (form.questionType !== "certo_errado" || !form.contentIds.length)) return setSubmitError("Checagens diárias exigem Certo / Errado e um conteúdo vinculado.");
     setSubmitError(null);
     try {
       await onSubmit({ statement: form.statement, questionType: form.questionType, options, answer: form.answer, explanation: form.explanation || undefined, difficulty: form.difficulty, source: form.source || undefined, banca: form.banca || undefined, year: form.year ? Number(form.year) : null, requiresReview: form.requiresReview, status: form.status, contentIds: form.contentIds });
@@ -132,11 +164,12 @@ function QuestionForm({ question, contents, contentsLoading, pending, onSubmit }
         setForm({ statement: "", questionType: "certo_errado", optionsText: "", answer: true, explanation: "", difficulty: "intermediate", source: "", banca: "", year: "", requiresReview: false, status: "draft", contentIds: [] });
         setContentSearch("");
       }
-    } catch {
-      // A mutação já apresenta a mensagem de erro específica no painel.
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Não foi possível salvar a questão.");
     }
   };
   return <div className="mt-4 space-y-3">
+    {dailyMode && !question && <p className="rounded-lg border border-[#b8d3cc] bg-[#edf7f4] p-3 text-xs leading-5 text-[#315d5b]">Nova checagem: escolha o conteúdo acima. O formulário já prepara uma pergunta Certo/Errado publicada para a rotação diária.</p>}
     <label className="block text-[11px] font-bold">Enunciado<Textarea value={form.statement} onChange={event => updateForm(value => ({ ...value, statement: event.target.value }))} className="mt-1 min-h-28 bg-white text-xs" placeholder="Escreva o enunciado da questão."/></label>
     <div className="grid gap-2 sm:grid-cols-2"><label className="text-[11px] font-bold">Tipo<select value={form.questionType} onChange={event => updateForm(value => ({ ...value, questionType: event.target.value as Question["questionType"], answer: event.target.value === "certo_errado" ? true : "" }))} className="mt-1 h-10 w-full border border-[#cec6b8] bg-white px-2 text-xs"><option value="certo_errado">Certo / Errado</option><option value="multipla_escolha">Múltipla escolha</option></select></label><label className="text-[11px] font-bold">Dificuldade<select value={form.difficulty} onChange={event => updateForm(value => ({ ...value, difficulty: event.target.value as Question["difficulty"] }))} className="mt-1 h-10 w-full border border-[#cec6b8] bg-white px-2 text-xs"><option value="basic">Básica</option><option value="intermediate">Intermediária</option><option value="advanced">Avançada</option></select></label></div>
     {form.questionType === "multipla_escolha" && <label className="block text-[11px] font-bold">Alternativas (uma por linha)<Textarea value={form.optionsText} onChange={event => updateForm(value => ({ ...value, optionsText: event.target.value }))} className="mt-1 min-h-24 bg-white text-xs" placeholder="A) Alternativa A\nB) Alternativa B\nC) Alternativa C"/></label>}
@@ -155,26 +188,104 @@ function QuestionCard({ question, pending, onEdit, onDelete, onAddToReview }: { 
   return <article className="border border-[#d3ded9] bg-white p-3"><div className="flex items-start justify-between gap-2"><p className="line-clamp-2 text-xs font-bold leading-5 text-[#1d4652]">#{question.id} · {question.statement}</p><StatusBadge status={question.status}/></div><p className="mt-2 text-[10px] text-[#718084]">{question.questionType === "certo_errado" ? "CERTO / ERRADO" : "MÚLTIPLA ESCOLHA"} · {question.banca ?? "Sem banca"}{question.year ? ` · ${question.year}` : ""}</p><div className="mt-2 flex flex-wrap gap-1">{question.contents.length ? question.contents.map(content => <span key={content.id} className="border border-[#c7dcd5] bg-[#f1f9f6] px-1.5 py-0.5 text-[9px] text-[#216459]">{content.title}</span>) : <span className="text-[10px] text-[#8a7770]">Sem conteúdo vinculado</span>}</div>{confirmingDeletion ? <div className="mt-3 border border-[#d8afa2] bg-[#fff0ec] p-2"><p className="text-[10px] leading-4 text-[#98462f]">Excluir esta questão definitivamente? Itens já usados em simulados são protegidos e devem ser inativados.</p><div className="mt-2 flex gap-3"><button disabled={pending} onClick={onDelete} className="text-[10px] font-bold text-[#98462f] hover:underline">Confirmar exclusão</button><button disabled={pending} onClick={() => setConfirmingDeletion(false)} className="text-[10px] font-bold text-[#5f706f] hover:underline">Cancelar</button></div></div> : <div className="mt-3 flex flex-wrap gap-3"><button disabled={pending} onClick={onEdit} className="text-[10px] font-bold text-[#0e5a70] hover:underline">Editar questão</button><button disabled={pending || question.status === "review"} onClick={onAddToReview} className="inline-flex items-center gap-1 text-[10px] font-bold text-[#8d611a] hover:underline"><Send className="h-3 w-3"/>Adicionar à revisão ROOT</button><button disabled={pending} onClick={() => setConfirmingDeletion(true)} className="text-[10px] font-bold text-[#98462f] hover:underline">Excluir</button></div>}</article>;
 }
 
+
 function QuestionsByContent({ contents, questions, loading, pending, onOpenQuestion }: { contents: Content[]; questions: Question[]; loading: boolean; pending: boolean; onOpenQuestion: (id: number) => void }) {
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<QuestionTypeFilter>("all");
   const [showEmpty, setShowEmpty] = useState(false);
   const [expandedContentIds, setExpandedContentIds] = useState<Set<number>>(() => new Set());
+
+  const totalCounts = useMemo(() => countQuestionTypes(questions), [questions]);
+  const matchingQuestions = useMemo(() => filterQuestionsByType(questions, typeFilter), [questions, typeFilter]);
   const allGroups = useMemo(() => contents
     .filter(content => `${content.title} ${content.description ?? ""}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
-    .map(content => ({ content, questions: questions.filter(question => question.contentIds.includes(content.id)) })), [contents, questions, search]);
-  const questionCountsByContent = useMemo(() => countQuestionsByContent(questions), [questions]);
-  const groupsWithQuestions = allGroups.filter(group => (questionCountsByContent.get(group.content.id) ?? 0) > 0);
+    .map(content => ({
+      content,
+      questions: matchingQuestions.filter(question => question.contentIds.includes(content.id)),
+    })), [contents, matchingQuestions, search]);
+  const groupsWithQuestions = allGroups.filter(group => group.questions.length > 0);
   const groups = showEmpty ? allGroups : groupsWithQuestions;
+
   const toggleExpanded = (contentId: number, isOpen: boolean) => setExpandedContentIds(current => {
     const next = new Set(current);
     if (isOpen) next.add(contentId); else next.delete(contentId);
     return next;
   });
+
   if (loading) return <div className="mt-5 border border-dashed border-[#b9d8cf] bg-[#f1f9f6] p-4 text-xs text-[#176a5a]">Carregando conteúdos e todas as questões vinculadas da biblioteca central…</div>;
-  return <div className="mt-5"><div className="border border-[#c7ded6] bg-white p-3 text-[11px] leading-5 text-[#45696c]"><b className="text-[#173d4a]">Questões do simulado por conteúdo:</b> há <b className="text-[#176a5a]">{questions.length} questão(ões) na biblioteca</b>, distribuídas em <b className="text-[#176a5a]">{groupsWithQuestions.length} conteúdo(s)</b>. A lista começa pelos conteúdos que já possuem questões, para que todas possam ser conferidas e editadas sem ficarem escondidas entre grupos vazios.</div><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setExpandedContentIds(new Set(groups.map(group => group.content.id)))} className="border border-[#b9d8cf] bg-[#f1f9f6] px-2.5 py-1.5 text-[10px] font-bold text-[#176a5a]">Expandir todas as questões visíveis</button><button type="button" onClick={() => setExpandedContentIds(new Set())} className="border border-[#c9d8d5] bg-white px-2.5 py-1.5 text-[10px] font-bold text-[#45696c]">Recolher grupos</button><button type="button" onClick={() => setShowEmpty(current => !current)} className="border border-[#c9d8d5] bg-white px-2.5 py-1.5 text-[10px] font-bold text-[#45696c]">{showEmpty ? "Ocultar conteúdos sem questões" : `Exibir também ${Math.max(0, allGroups.length - groupsWithQuestions.length)} conteúdo(s) sem questões`}</button></div><label className="relative mt-3 block"><Search className="absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Pesquisar conteúdo para localizar todas as suas questões" className="h-10 bg-white pl-9 text-xs"/></label><div className="mt-3 max-h-[38rem] space-y-2 overflow-y-auto pr-1">{groups.length === 0 ? <p className="border border-dashed border-[#c7beb0] bg-white p-4 text-xs text-[#718084]">Nenhum conteúdo com questões corresponde à busca. Você pode optar por exibir também os conteúdos ainda vazios.</p> : groups.map(({ content, questions: linkedQuestions }) => <details key={content.id} className="border border-[#d3ded9] bg-white" open={expandedContentIds.has(content.id)} onToggle={event => toggleExpanded(content.id, event.currentTarget.open)}><summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3"><span><b className="text-xs text-[#1d4652]">#{content.id} · {content.title}</b><small className="mt-1 block text-[10px] text-[#718084]">{content.disciplineIds.length} disciplina(s) vinculada(s)</small></span><span className="border border-[#c7dcd5] bg-[#f1f9f6] px-2 py-1 text-[10px] font-bold text-[#216459]">{linkedQuestions.length} questão(ões)</span></summary><div className="border-t border-[#e1e8e4] p-3">{linkedQuestions.length === 0 ? <p className="text-[11px] text-[#718084]">Ainda não há questões vinculadas a este conteúdo. Crie uma questão e marque este conteúdo no vínculo N:N.</p> : <div className="space-y-2">{linkedQuestions.map(question => <article key={question.id} className="border border-[#e1e8e4] bg-[#fbfdfc] p-2"><p className="line-clamp-2 text-[11px] font-semibold leading-5 text-[#1d4652]">#{question.id} · {question.statement}</p><div className="mt-2 flex items-center justify-between gap-2"><StatusBadge status={question.status}/><button disabled={pending} onClick={() => onOpenQuestion(question.id)} className="text-[10px] font-bold text-[#0e5a70] hover:underline">Editar questão</button></div></article>)}</div>}</div></details>)}</div></div>;
+
+  return (
+    <section aria-label="Questões por conteúdo" className="mt-5">
+      <div className="rounded-xl border border-[#c7ded6] bg-white p-4 text-xs leading-5 text-[#45696c]">
+        <h4 className="text-sm font-bold text-[#173d4a]">Questões por conteúdo</h4>
+        <p className="mt-1">A biblioteca contém <strong>{totalCounts.total} questões</strong>: <strong>{totalCounts.certoErrado} de Certo / Errado</strong> e <strong>{totalCounts.multiplaEscolha} de Múltipla escolha</strong>. Filtre pelo tipo sem abrir cada pergunta.</p>
+        <p className="mt-1 text-[11px]">A Checagem Diária usa somente questões publicadas do tipo Certo / Errado; o filtro abaixo apenas organiza a visualização e não altera a publicação.</p>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.55fr)]">
+        <label className="block text-xs font-bold text-[#254751]">
+          Pesquisar conteúdo
+          <span className="relative mt-1.5 block"><Search aria-hidden="true" className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Pesquisar pelo título ou descrição" className="h-10 w-full bg-white pl-9 text-xs"/></span>
+        </label>
+        <label className="block text-xs font-bold text-[#254751]">
+          Filtrar pelo tipo de questão
+          <select aria-label="Filtrar pelo tipo de questão" value={typeFilter} onChange={event => setTypeFilter(event.target.value as QuestionTypeFilter)} className="mt-1.5 h-10 w-full rounded-lg border border-[#cec6b8] bg-white px-3 text-xs text-[#173d4a]">
+            <option value="all">Todos os tipos ({totalCounts.total})</option>
+            <option value="certo_errado">Certo / Errado ({totalCounts.certoErrado})</option>
+            <option value="multipla_escolha">Múltipla escolha ({totalCounts.multiplaEscolha})</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span role="status" aria-live="polite" className="mr-auto text-xs font-semibold text-[#315c62]">{matchingQuestions.length} questão(ões) do tipo selecionado · {groupsWithQuestions.length} conteúdo(s) com resultados</span>
+        <button type="button" onClick={() => setExpandedContentIds(new Set(groups.map(group => group.content.id)))} className="rounded-lg border border-[#b9d8cf] bg-[#f1f9f6] px-3 py-2 text-[11px] font-bold text-[#176a5a]">Expandir resultados</button>
+        <button type="button" onClick={() => setExpandedContentIds(new Set())} className="rounded-lg border border-[#c9d8d5] bg-white px-3 py-2 text-[11px] font-bold text-[#45696c]">Recolher todos</button>
+        <button type="button" onClick={() => setShowEmpty(current => !current)} className="rounded-lg border border-[#c9d8d5] bg-white px-3 py-2 text-[11px] font-bold text-[#45696c]">{showEmpty ? "Ocultar conteúdos sem resultado" : "Mostrar conteúdos sem resultado"}</button>
+      </div>
+
+      <div className="mt-3 max-h-[38rem] space-y-2 overflow-y-auto pr-1">
+        {groups.length === 0
+          ? <p role="status" className="rounded-lg border border-dashed border-[#c7beb0] bg-white p-4 text-xs text-[#718084]">Nenhuma questão deste tipo foi encontrada nos conteúdos pesquisados. Experimente outro tipo ou marque “Mostrar conteúdos sem resultado”.</p>
+          : groups.map(({ content, questions: linkedQuestions }) => {
+            const counts = countQuestionTypes(linkedQuestions);
+            return (
+              <details key={content.id} className="rounded-lg border border-[#d3ded9] bg-white" open={expandedContentIds.has(content.id)} onToggle={event => toggleExpanded(content.id, event.currentTarget.open)}>
+                <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 p-3">
+                  <span className="min-w-0 flex-1">
+                    <strong className="block break-words text-xs text-[#1d4652]">#{content.id} · {content.title}</strong>
+                    <span className="mt-1 block text-[10px] text-[#718084]">{content.disciplineIds.length} disciplina(s) vinculada(s)</span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {typeFilter !== "multipla_escolha" && <span className="rounded-md border border-[#a6d0ba] bg-[#eaf8ef] px-2 py-1 text-[10px] font-bold text-[#176347]">{counts.certoErrado} C/E</span>}
+                    {typeFilter !== "certo_errado" && <span className="rounded-md border border-[#b9cee8] bg-[#eef5ff] px-2 py-1 text-[10px] font-bold text-[#245583]">{counts.multiplaEscolha} Múltipla</span>}
+                  </span>
+                </summary>
+                <div className="space-y-2 border-t border-[#e1e8e4] p-3">
+                  {linkedQuestions.length === 0
+                    ? <p className="text-xs text-[#718084]">Nenhuma questão do tipo selecionado está vinculada a este conteúdo.</p>
+                    : linkedQuestions.map(question => (
+                      <article key={question.id} className="rounded-lg border border-[#e1e8e4] bg-[#fbfdfc] p-3">
+                        <div className="flex flex-wrap items-start gap-2">
+                          <span className={question.questionType === "certo_errado" ? "shrink-0 rounded-md border border-[#a6d0ba] bg-[#eaf8ef] px-2 py-1 text-[10px] font-extrabold text-[#176347]" : "shrink-0 rounded-md border border-[#b9cee8] bg-[#eef5ff] px-2 py-1 text-[10px] font-extrabold text-[#245583]"}>{questionTypeLabel(question.questionType)}</span>
+                          <p className="min-w-0 flex-1 text-xs font-semibold leading-5 text-[#1d4652]">#{question.id} · {question.statement}</p>
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                          <StatusBadge status={question.status}/>
+                          <button type="button" disabled={pending} onClick={() => onOpenQuestion(question.id)} className="min-h-10 rounded-lg px-2 text-xs font-bold text-[#0e5a70] hover:bg-[#edf7f4] hover:underline disabled:opacity-50">Editar questão</button>
+                        </div>
+                      </article>
+                    ))}
+                </div>
+              </details>
+            );
+          })}
+      </div>
+    </section>
+  );
 }
 
-function ContentWorkspace({ disciplines, contents, contentsLoading, pending, onCreate, onUpdate, onUploadImage, onSend }: { disciplines: Discipline[]; contents: Content[]; contentsLoading: boolean; pending: boolean; onCreate: (data: any) => void; onUpdate: (id: number, data: any) => void; onUploadImage: (data: { fileName: string; mimeType: "image/jpeg" | "image/png" | "image/webp"; base64: string }) => Promise<{ url: string }>; onSend: (id: number) => void }) {
+function ContentWorkspace({ disciplines, contents, contentsLoading, pending, onCreate, onUpdate, onUploadImage, onUploadPdf, onSend }: { disciplines: Discipline[]; contents: Content[]; contentsLoading: boolean; pending: boolean; onCreate: (data: any) => void; onUpdate: (id: number, data: any) => void; onUploadImage: (data: { fileName: string; mimeType: "image/jpeg" | "image/png" | "image/webp"; base64: string }) => Promise<{ url: string }>; onUploadPdf: (data: { fileName: string; mimeType: "application/pdf"; base64: string }) => Promise<{ url: string }>; onSend: (id: number) => void }) {
   const [editing, setEditing] = useState<any>(null);
   const [search, setSearch] = useState("");
   const [disciplineFilter, setDisciplineFilter] = useState("all");
@@ -185,7 +296,7 @@ function ContentWorkspace({ disciplines, contents, contentsLoading, pending, onC
   const hasFilters = Boolean(search.trim() || disciplineFilter !== "all" || statusFilter !== "all");
   const clearFilters = () => { setSearch(""); setDisciplineFilter("all"); setStatusFilter("all"); };
   const contentLoadState = libraryLoadState(contentsLoading, contents.length);
-  return <div className="mt-5 grid gap-5 xl:grid-cols-[.95fr_1.05fr]"><div className="border border-[#cfdfda] bg-white p-4"><div className="flex items-start justify-between"><div><p className="eyebrow">CONTEÚDO DIDÁTICO</p><h4 className="font-display mt-1 text-base font-bold text-[#173d4a]">{editing ? `Editar conteúdo #${editing.id}` : "Novo conteúdo"}</h4></div>{editing && <button onClick={() => setEditing(null)} className="text-[11px] font-bold text-[#895a22]">Cancelar</button>}</div><ContentFormWithImage key={editing?.id ?? "new-content"} content={editing} disciplines={disciplines} pending={pending} onUploadImage={onUploadImage} onSubmit={data => { if (editing) onUpdate(editing.id, data); else onCreate(data); setEditing(null); }}/></div><div><label className="relative block"><Search className="absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Procurar conteúdo existente para editar" className="h-10 bg-white pl-9 text-xs"/></label><div className="mt-3 grid gap-2 sm:grid-cols-2">
+  return <div className="mt-5 grid gap-5 xl:grid-cols-[.95fr_1.05fr]"><div className="border border-[#cfdfda] bg-white p-4"><div className="flex items-start justify-between"><div><p className="eyebrow">CONTEÚDO DIDÁTICO</p><h4 className="font-display mt-1 text-base font-bold text-[#173d4a]">{editing ? `Editar conteúdo #${editing.id}` : "Novo conteúdo"}</h4></div>{editing && <button onClick={() => setEditing(null)} className="text-[11px] font-bold text-[#895a22]">Cancelar</button>}</div><ContentFormWithImage key={editing?.id ?? "new-content"} content={editing} disciplines={disciplines} pending={pending} onUploadImage={onUploadImage} onUploadPdf={onUploadPdf} onSubmit={data => { if (editing) onUpdate(editing.id, data); else onCreate(data); setEditing(null); }}/></div><div><label className="relative block"><Search className="absolute left-3 top-3 h-4 w-4 text-[#6e8589]"/><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Procurar conteúdo existente para editar" className="h-10 bg-white pl-9 text-xs"/></label><div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-xs font-semibold text-[#254751]">Filtrar por disciplina
           <select value={disciplineFilter} onChange={event => setDisciplineFilter(event.target.value)} className="filter-control mt-1.5">
             <option value="all">Todas as disciplinas</option>
@@ -210,15 +321,35 @@ function ContentEditorCard({ content, pending, onEdit, onSend }: { content: Cont
   return <article className="overflow-hidden rounded-xl border border-[#d5e1dc] bg-[#fffdfb] transition-colors hover:border-[#76afa6]"><div className="flex gap-3 p-3">{content.coverImageUrl ? <img src={content.coverImageUrl} alt="" className="h-20 w-24 shrink-0 object-cover"/> : <div className="flex h-20 w-24 shrink-0 items-center justify-center bg-[#edf5f2] text-[#62908a]"><ImagePlus className="h-5 w-5"/></div>}<div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><p className="text-[10px] font-bold tracking-wider text-[#176a5a]">CONTEÚDO #{content.id}</p><p className="mt-0.5 text-xs font-bold text-[#1d4652]">{content.title}</p></div><StatusBadge status={content.status}/></div><p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[#718084]">{content.cardText || content.description || "Sem texto de card."}</p></div></div><div className="border-t border-[#e1e8e4] px-3 py-2"><div className="grid gap-2 sm:grid-cols-2">{content.objective && <p className="text-[10px] leading-4 text-[#45696c]"><b>Objetivo:</b> {content.objective}</p>}{content.description && <p className="text-[10px] leading-4 text-[#718084]"><b>Resumo:</b> {content.description}</p>}</div>{content.body && <p className="mt-2 line-clamp-2 text-[10px] leading-4 text-[#687c7e]"><b>Texto do conteúdo:</b> {content.body}</p>}<p className="mt-2 text-[10px] text-[#718084]">{content.disciplineIds.length ? `${content.disciplineIds.length} disciplina(s) vinculada(s)` : "Ainda sem disciplina vinculada"}</p>{(content.videoUrl || content.materialUrl) && <div className="mt-2 flex flex-wrap gap-2">{content.videoUrl && <a href={content.videoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 border border-[#b9d8cf] bg-[#f1f9f6] px-2 py-1 text-[10px] font-bold text-[#176a5a]"><Link2 className="h-3 w-3"/>{content.videoLabel || "Vídeo complementar"}</a>}{content.materialUrl && <a href={content.materialUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 border border-[#c8d6e2] bg-[#f3f8fc] px-2 py-1 text-[10px] font-bold text-[#225d7e]"><Link2 className="h-3 w-3"/>{content.materialLabel || "Material complementar"}</a>}</div>}<div className="mt-3 flex gap-3"><button disabled={pending} onClick={onEdit} className="text-[10px] font-bold text-[#0e5a70] hover:underline">Editar</button><button disabled={pending || content.status === "review"} onClick={onSend} className="inline-flex items-center gap-1 text-[10px] font-bold text-[#8d611a] hover:underline"><Send className="h-3 w-3"/>Enviar para revisão</button><ContentHistory contentId={content.id}/></div></div></article>;
 }
 
-function ContentFormWithImage({ content, disciplines, pending, onUploadImage, onSubmit }: { content: Content | null; disciplines: Discipline[]; pending: boolean; onUploadImage: (data: { fileName: string; mimeType: "image/jpeg" | "image/png" | "image/webp"; base64: string }) => Promise<{ url: string }>; onSubmit: (data: any) => void }) {
+function ContentFormWithImage({ content, disciplines, pending, onUploadImage, onUploadPdf, onSubmit }: { content: Content | null; disciplines: Discipline[]; pending: boolean; onUploadImage: (data: { fileName: string; mimeType: "image/jpeg" | "image/png" | "image/webp"; base64: string }) => Promise<{ url: string }>; onUploadPdf: (data: { fileName: string; mimeType: "application/pdf"; base64: string }) => Promise<{ url: string }>; onSubmit: (data: any) => void }) {
   const [form, setForm] = useState({ title: content?.title ?? "", objective: content?.objective ?? "", description: content?.description ?? "", cardText: content?.cardText ?? "", body: content?.body ?? "", coverImageUrl: content?.coverImageUrl ?? "", videoUrl: content?.videoUrl ?? "", videoLabel: content?.videoLabel ?? "", materialUrl: content?.materialUrl ?? "", materialLabel: content?.materialLabel ?? "", noticeKind: content?.noticeKind ?? null as ContentNoticeKind | null, requiresReview: content?.requiresReview ?? false, status: content?.status ?? "draft", disciplineIds: content?.disciplineIds ?? [] as number[] });
   const [disciplineSearch, setDisciplineSearch] = useState("");
   const [imageMessage, setImageMessage] = useState("");
+  const [pdfMessage, setPdfMessage] = useState("");
   const visibleDisciplines = useMemo(() => filterLinkOptions(disciplines, disciplineSearch, discipline => `${discipline.name} ${discipline.shortName}`), [disciplines, disciplineSearch]);
   const selectImage = async (file?: File) => {
     if (!file) return;
     if (!(["image/jpeg", "image/png", "image/webp"] as string[]).includes(file.type) || file.size > 4 * 1024 * 1024) { setImageMessage("Selecione JPG, PNG ou WEBP com até 4 MB."); return; }
-    try { setImageMessage("Enviando imagem…"); const url = await onUploadImage({ fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", base64: await readContentImageAsBase64(file) }); setForm(value => ({ ...value, coverImageUrl: url.url })); setImageMessage("Imagem pronta para salvar no card."); } catch { setImageMessage("Não foi possível enviar a imagem. Tente novamente."); }
+    try { setImageMessage("Enviando imagem…"); const url = await onUploadImage({ fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp", base64: await readContentFileAsBase64(file) }); setForm(value => ({ ...value, coverImageUrl: url.url })); setImageMessage("Imagem pronta para salvar no card."); } catch { setImageMessage("Não foi possível enviar a imagem. Tente novamente."); }
+  };
+  const selectPdf = async (file?: File) => {
+    if (!file) return;
+    if (file.type !== "application/pdf" || file.size > 10 * 1024 * 1024) {
+      setPdfMessage("Selecione um documento PDF válido com até 10 MB.");
+      return;
+    }
+    try {
+      setPdfMessage("Enviando PDF…");
+      const uploaded = await onUploadPdf({ fileName: file.name, mimeType: "application/pdf", base64: await readContentFileAsBase64(file) });
+      setForm(current => ({
+        ...current,
+        materialUrl: uploaded.url,
+        materialLabel: current.materialLabel || file.name.replace(/\.pdf$/i, "").slice(0, 160),
+      }));
+      setPdfMessage("PDF enviado. Salve o conteúdo para disponibilizar o download aos alunos.");
+    } catch {
+      setPdfMessage("Não foi possível enviar o PDF. Tente novamente.");
+    }
   };
   return <div className="mt-4 space-y-3">
     <Input value={form.title} onChange={event => setForm(value => ({ ...value, title: event.target.value }))} placeholder="Título do conteúdo" className="h-10 bg-white text-xs"/>
@@ -227,7 +358,33 @@ function ContentFormWithImage({ content, disciplines, pending, onUploadImage, on
     <Textarea value={form.cardText} onChange={event => setForm(value => ({ ...value, cardText: event.target.value }))} placeholder="Texto curto do card (exibido na vitrine)" className="min-h-16 bg-white text-xs"/>
     <label className="block border border-dashed border-[#b9d8cf] bg-[#f7fbf9] p-3 text-[11px] font-bold text-[#1d4652]">Imagem opcional do card<input type="file" accept="image/jpeg,image/png,image/webp" className="mt-2 block w-full text-[10px] font-normal" onChange={event => void selectImage(event.target.files?.[0])}/><span className="mt-1 block font-normal text-[#687c7e]">JPG, PNG ou WEBP, até 4 MB. A imagem mantém o recorte proporcional do card.</span>{imageMessage && <span className="mt-1 block font-normal text-[#176a5a]">{imageMessage}</span>}{form.coverImageUrl && <div className="mt-2 flex items-center gap-2"><img src={form.coverImageUrl} alt="Prévia da imagem do conteúdo" className="h-16 w-20 object-cover"/><button type="button" onClick={() => setForm(value => ({ ...value, coverImageUrl: "" }))} className="text-[10px] font-bold text-[#895a22] hover:underline">Remover imagem</button></div>}</label>
     <ContentBodyEditor value={form.body} onChange={body => setForm(value => ({ ...value, body }))}/>
-    <div className="grid gap-2 sm:grid-cols-2"><Input value={form.videoLabel} onChange={event => setForm(value => ({ ...value, videoLabel: event.target.value }))} placeholder="Rótulo do vídeo" className="h-10 bg-white text-xs"/><Input value={form.videoUrl} onChange={event => setForm(value => ({ ...value, videoUrl: event.target.value }))} placeholder="https://… vídeo complementar" className="h-10 bg-white text-xs"/><Input value={form.materialLabel} onChange={event => setForm(value => ({ ...value, materialLabel: event.target.value }))} placeholder="Rótulo do material" className="h-10 bg-white text-xs"/><Input value={form.materialUrl} onChange={event => setForm(value => ({ ...value, materialUrl: event.target.value }))} placeholder="https://… material complementar" className="h-10 bg-white text-xs"/></div>
+    <div className="grid gap-3 lg:grid-cols-2">
+      <section aria-label="Vídeo opcional da aula" className="rounded-xl border border-[#bdd7e8] bg-[#eff7fc] p-3">
+        <div className="mb-3 flex items-center gap-2"><PlayCircle className="h-5 w-5 text-[#0e5a70]" aria-hidden="true"/><h5 className="text-sm font-extrabold text-[#10485c]">Vídeo da aula (opcional)</h5></div>
+        <label className="block text-xs font-bold text-[#254751]">Link para reproduzir o vídeo
+          <Input type="url" value={form.videoUrl} onChange={event => setForm(value => ({ ...value, videoUrl: event.target.value }))} placeholder="https://www.youtube.com/watch?v=..." className="mt-1 h-10 bg-white text-xs"/>
+        </label>
+        <label className="mt-3 block text-xs font-bold text-[#254751]">Título exibido ao aluno
+          <Input value={form.videoLabel} onChange={event => setForm(value => ({ ...value, videoLabel: event.target.value }))} placeholder="Ex.: Videoaula sobre responsabilidade civil" className="mt-1 h-10 bg-white text-xs"/>
+        </label>
+        <p className="mt-2 text-[11px] leading-5 text-[#516e7c]">Aceita YouTube, links diretos MP4, WebM e OGV. O aluno terá um botão de reprodução.</p>
+      </section>
+      <section aria-label="PDF opcional da aula" className="rounded-xl border border-[#e2d2b3] bg-[#fff9ef] p-3">
+        <div className="mb-3 flex items-center gap-2"><FileText className="h-5 w-5 text-[#906522]" aria-hidden="true"/><h5 className="text-sm font-extrabold text-[#76521c]">PDF da aula (opcional)</h5></div>
+        <label className="block text-xs font-bold text-[#68532e]">Enviar arquivo PDF do computador
+          <input type="file" accept=".pdf,application/pdf" disabled={pending} onChange={event => void selectPdf(event.target.files?.[0])} className="mt-1 block w-full rounded-lg border border-[#decda9] bg-white p-2 text-xs font-normal disabled:opacity-60"/>
+        </label>
+        {pdfMessage && <p role="status" className="mt-2 text-xs font-semibold text-[#79561d]">{pdfMessage}</p>}
+        <label className="mt-3 block text-xs font-bold text-[#68532e]">Ou informar link direto do PDF
+          <Input type="url" value={form.materialUrl} onChange={event => setForm(value => ({ ...value, materialUrl: event.target.value }))} placeholder="https://exemplo.com/apostila.pdf" className="mt-1 h-10 bg-white text-xs"/>
+        </label>
+        <label className="mt-3 block text-xs font-bold text-[#68532e]">Nome do documento
+          <Input value={form.materialLabel} onChange={event => setForm(value => ({ ...value, materialLabel: event.target.value }))} placeholder="Ex.: Apostila da aula (PDF)" className="mt-1 h-10 bg-white text-xs"/>
+        </label>
+        <p className="mt-2 text-[11px] leading-5 text-[#725e3f]">O aluno verá opções para visualizar e baixar o PDF. Para garantir um arquivo de download, prefira enviar o PDF por aqui.</p>
+        {form.materialUrl && <button type="button" className="mt-2 text-xs font-bold text-[#995527] underline" onClick={() => setForm(current => ({ ...current, materialUrl: "", materialLabel: "" }))}>Remover documento</button>}
+      </section>
+    </div>
     <label className="block text-[11px] font-bold">Disciplinas já existentes para vincular (N:N)<Input value={disciplineSearch} onChange={event => setDisciplineSearch(event.target.value)} placeholder="Pesquisar disciplina existente" className="mt-1 h-9 bg-white text-xs"/><ToggleList values={form.disciplineIds} onChange={disciplineIds => setForm(value => ({ ...value, disciplineIds }))} options={visibleDisciplines.map(discipline => ({ id: discipline.id, label: discipline.name, caption: discipline.shortName }))} empty={disciplines.length ? "Nenhuma disciplina corresponde à busca." : "Cadastre uma disciplina antes de vinculá-la."}/></label>
     <ContentNoticeControl value={form.noticeKind} onChange={noticeKind => setForm(value => ({ ...value, noticeKind }))}/>
     <div className="grid gap-2 sm:grid-cols-2"><label className="flex items-center gap-2 border border-[#d6d0c5] bg-[#fafaf7] p-2 text-[11px] font-bold"><input type="checkbox" checked={form.requiresReview} onChange={event => setForm(value => ({ ...value, requiresReview: event.target.checked }))} className="accent-[#0e5a70]"/>Exigir revisão</label><select value={form.status} onChange={event => setForm(value => ({ ...value, status: event.target.value as KnowledgeStatus }))} className="h-10 border border-[#cec6b8] bg-white px-2 text-xs">{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>

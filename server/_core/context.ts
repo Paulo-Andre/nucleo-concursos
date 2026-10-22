@@ -1,4 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import type { Request } from "express";
 import type { User } from "../../drizzle/schema";
 import { parse as parseCookieHeader } from "cookie";
 import { getUserFromSessionHash } from "../db";
@@ -10,24 +11,18 @@ export type TrpcContext = {
   user: User | null;
 };
 
-export async function createContext(
-  opts: CreateExpressContextOptions
-): Promise<TrpcContext> {
-  let user: User | null = null;
-
+export async function resolveSessionUser(req: Pick<Request, "headers">): Promise<User | null> {
   try {
-    const cookies = parseCookieHeader(opts.req.headers.cookie ?? "");
-    const localToken = cookies[LOCAL_SESSION_COOKIE];
-    if (localToken) user = await getUserFromSessionHash(hashSessionToken(localToken)) ?? null;
-    if (user?.isBlocked) user = null;
+    const cookies = parseCookieHeader(req.headers.cookie ?? "");
+    const token = cookies[LOCAL_SESSION_COOKIE];
+    if (!token) return null;
+    const user = await getUserFromSessionHash(hashSessionToken(token)) ?? null;
+    return user?.isBlocked ? null : user;
   } catch {
-    // Authentication is optional for public procedures.
-    user = null;
+    return null;
   }
+}
 
-  return {
-    req: opts.req,
-    res: opts.res,
-    user,
-  };
+export async function createContext(opts: CreateExpressContextOptions): Promise<TrpcContext> {
+  return { req: opts.req, res: opts.res, user: await resolveSessionUser(opts.req) };
 }

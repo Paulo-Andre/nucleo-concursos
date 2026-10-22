@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { GlobalContactLinks } from "@/components/GlobalContactLinks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatAccessError } from "@/lib/accessErrorMessages";
 
 type AccessMode = "login" | "register" | "forgot" | "reset";
 type AccessGateProps = { onAuthenticated: (hadActiveSession: boolean) => void; initialMode?: AccessMode; onBackToStorefront?: () => void; onGoHome?: () => void; onViewPackages?: () => void; selectedPlanPending?: boolean };
@@ -43,9 +44,12 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
     setMessage(null);
     setMessageTone(null);
     try {
-      if (mode === "login") await login.mutateAsync({ identifier: form.identifier, password: form.password });
-      else if (mode === "register") {
+      if (mode === "login") {
+        await login.mutateAsync({ identifier: form.identifier, password: form.password });
+      } else if (mode === "register") {
         if (!hasValidCpfDigits(form.cpf)) { setMessageTone("error"); setMessage("Informe um CPF válido."); return; }
+        if (form.password.length < 8) { setMessageTone("error"); setMessage("Crie uma senha com pelo menos 8 caracteres."); return; }
+        if (form.password !== form.confirmation) { setMessageTone("error"); setMessage("As senhas informadas não coincidem."); return; }
         await register.mutateAsync({ name: form.name, username: form.username, email: form.email, cpf: form.cpf, password: form.password, passwordConfirmation: form.confirmation });
       } else if (mode === "forgot") {
         await requestReset.mutateAsync({ email: form.email });
@@ -53,15 +57,17 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
         setMessage("Se este e-mail estiver cadastrado, enviaremos um link de recuperação. Verifique também a caixa de spam.");
       } else {
         if (!resetToken) { setMessageTone("error"); setMessage("Este link de redefinição está incompleto. Solicite um novo e-mail."); return; }
+        if (form.resetPassword.length < 8) { setMessageTone("error"); setMessage("A nova senha deve ter pelo menos 8 caracteres."); return; }
+        if (form.resetPassword !== form.resetConfirmation) { setMessageTone("error"); setMessage("As senhas informadas não coincidem."); return; }
         await resetPassword.mutateAsync({ token: resetToken, newPassword: form.resetPassword, confirmation: form.resetConfirmation });
         setMessageTone("success");
         setMessage("Senha redefinida. Você já pode entrar com a nova senha.");
         window.history.replaceState({}, "", window.location.pathname);
         setMode("login");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessageTone("error");
-      setMessage(error?.message || "Não foi possível concluir a operação.");
+      setMessage(formatAccessError(error, mode));
     }
   }
 
@@ -89,7 +95,7 @@ export default function AccessGate({ onAuthenticated, initialMode = "login", onB
           {mode === "register" && <><label className="block text-sm font-bold">Senha<Input type="password" value={form.password} onChange={event => update("password", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-sm font-bold">Confirme a senha<Input type="password" value={form.confirmation} onChange={event => update("confirmation", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label></>}
           {mode === "forgot" && <label className="block text-sm font-bold">E-mail cadastrado<Input type="email" value={form.email} onChange={event => update("email", event.target.value)} autoComplete="email" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label>}
           {mode === "reset" && <><p className="rounded-xl border border-[#b9d6cb] bg-[#edf8f4] px-3 py-2 text-xs leading-5 text-[#17644e]"><KeyRound className="mr-1 inline h-4 w-4" />Use uma senha de pelo menos 8 caracteres. Ao confirmar, seus acessos ativos serão encerrados por segurança.</p><label className="block text-sm font-bold">Nova senha<Input type="password" value={form.resetPassword} onChange={event => update("resetPassword", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label><label className="block text-sm font-bold">Confirme a nova senha<Input type="password" value={form.resetConfirmation} onChange={event => update("resetConfirmation", event.target.value)} autoComplete="new-password" className="mt-1.5 h-11 border-[#cfc8b8] bg-white" required /></label></>}
-          {message && <p role={messageTone === "error" ? "alert" : "status"} className={`rounded-lg border px-4 py-3 text-sm font-medium leading-6 ${messageTone === "error" ? "border-[#b7503a]/40 bg-[#fff2ee] text-[#8f311f]" : "border-[#a8d8c0] bg-[#e7f6ed] text-[#17644e]"}`}>{message}</p>}
+          {message && <p role={messageTone === "error" ? "alert" : "status"} aria-live="polite" className={`rounded-lg border px-4 py-3 text-sm font-medium leading-6 ${messageTone === "error" ? "border-[#b7503a]/40 bg-[#fff2ee] text-[#8f311f]" : "border-[#a8d8c0] bg-[#e7f6ed] text-[#17644e]"}`}>{message}</p>}
           <Button type="submit" disabled={pending} className="mt-2 h-11 w-full bg-[#0e5a70] font-bold text-white hover:bg-[#09495b]">{pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{mode === "login" ? "Entrar na plataforma" : mode === "register" ? "Criar conta e entrar" : mode === "forgot" ? <><Mail className="mr-2 h-4 w-4" />Enviar link de recuperação</> : "Salvar nova senha"}</Button>
         </form>
         <p className="mt-6 text-xs leading-5 text-[#6f7775]">Para proteger sua conta, os links de recuperação são individuais, expiram em uma hora e não revelam se um e-mail está cadastrado.</p>
