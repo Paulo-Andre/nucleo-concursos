@@ -49,7 +49,7 @@ export function RichContentBody({ body }: { body: string }) {
   const blocks = parseRichContentBody(body);
   if (!blocks.some(block => block.type === "formula")) {
     return <article className="lesson-article min-w-0" aria-label="Texto da aula">
-      <Streamdown mode="static" controls={false} components={lessonComponents}>
+      <Streamdown controls={false} components={lessonComponents}>
         {normalizeLessonMarkdown(body)}
       </Streamdown>
     </article>;
@@ -60,7 +60,7 @@ export function RichContentBody({ body }: { body: string }) {
       ? <div key={index} className="lesson-formula overflow-x-auto rounded-xl border border-[#8dbfb2] bg-[#edf8f4] px-4 py-5 text-center text-[#174f45]">
           <BlockMath math={block.formula} errorColor="#a3472c" />
         </div>
-      : <Streamdown key={index} mode="static" controls={false} components={lessonComponents}>
+      : <Streamdown key={index} controls={false} components={lessonComponents}>
           {normalizeLessonMarkdown(block.text)}
         </Streamdown>)}
   </article>;
