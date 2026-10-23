@@ -646,10 +646,10 @@ export const appRouter = router({
       })).mutation(({ input, ctx }) => confirmBulkPdfAssociation(ctx.user.id, input)),
     }),
     spreadsheets: router({
-      preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000)}))
-        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,0,true)),
-      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),expectedCount:z.number().int().min(1).max(1000)}))
-        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,input.expectedCount,false)),
+      preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),mode:z.enum(["create","upsert"]).default("create")}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,0,true,input.mode)),
+      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),mode:z.enum(["create","upsert"]).default("create"),expectedCount:z.number().int().min(1).max(1000),expectedUpdates:z.number().int().min(0).max(1000).optional()}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,input.expectedCount,false,input.mode,input.expectedUpdates)),
     }),
     questions: router({
       list: adminProcedure.input(z.object({ search: z.string().trim().max(200).optional(), status: knowledgeStatusSchema.optional(), contentId: entityIdSchema.optional() })).query(({ input }) => listManagedQuestions(input)),
