@@ -1,6 +1,5 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { previewDisciplineContentCleanup, cleanupDisciplineContents } from "./libraryBulkDelete";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -600,12 +599,6 @@ export const appRouter = router({
       create: adminProcedure.input(disciplineSchema).mutation(({ input, ctx }) => createManagedDiscipline(ctx.user.id, input)),
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: disciplineSchema })).mutation(({ input, ctx }) => updateManagedDiscipline(ctx.user.id, input.id, input.data)),
       deletionImpact: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input }) => getManagedDisciplineDeletionImpact(input.id)),
-      contentCleanupPreview: adminProcedure.input(z.object({id:entityIdSchema}))
-        .mutation(({input})=>previewDisciplineContentCleanup(input.id)),
-      contentCleanupConfirm: adminProcedure.input(z.object({
-        disciplineId:entityIdSchema,mode:z.enum(["unlink","delete_exclusive"]),
-        confirmation:z.string().min(5).max(100),previewToken:z.string().regex(/^[a-f0-9]{64}$/),
-      })).mutation(({input,ctx})=>cleanupDisciplineContents(ctx.user.id,input)),
       remove: adminProcedure.input(z.object({ id: entityIdSchema, confirmation: z.string().max(48) })).mutation(({ input, ctx }) => deleteManagedDiscipline(ctx.user.id, input.id, input.confirmation)),
       clearContentsImpact: adminProcedure.input(z.object({id:entityIdSchema}))
         .mutation(({input})=>getManagedDisciplineContentClearImpact(input.id)),
