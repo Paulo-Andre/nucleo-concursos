@@ -15,7 +15,7 @@ type KnowledgeStatus = "draft" | "review" | "approved" | "published" | "inactive
 type ContentNoticeKind = "new" | "updated";
 type RemovalImpact = {kind:"content"|"discipline";id:number;label:string;confirmation:string;canDelete:boolean;courseLinks?:number;contentLinks?:number;disciplineLinks?:number;questionLinks?:number;studentProgress?:number;studentRoadmaps:number};
 type ClearDisciplineImpact = {id:number;name:string;shortName:string;total:number;exclusive:number;shared:number;protected:number;questionLinks:number;canClear:boolean};
-type ClearDisciplineQuestionsImpact = {id:number;name:string;shortName:string;total:number;removable:number;shared:number;protected:number;canClear:boolean;signature:string};
+type ClearDisciplineQuestionsImpact = {id:number;name:string;shortName:string;courseCount:number;total:number;removable:number;shared:number;protected:number;canClear:boolean;signature:string};
 type Course = { id: string; title: string; track: string };
 type Discipline = { id: number; name: string; shortName: string; description: string | null; status: KnowledgeStatus; requiresReview: boolean; courseIds: string[]; contentIds: number[] };
 type Content = { id: number; title: string; objective: string | null; description: string | null; cardText: string | null; body: string | null; coverImageUrl: string | null; videoUrl: string | null; videoLabel: string | null; materialUrl: string | null; materialLabel: string | null; noticeKind: ContentNoticeKind | null; status: KnowledgeStatus; requiresReview: boolean; disciplineIds: number[] };
@@ -183,7 +183,7 @@ function ClearDisciplineQuestionsDialog({impact,typed,onTyped,pending,onCancel,o
         <h4 id="clear-questions-title" className="text-lg font-bold">Excluir questões desta disciplina?</h4></div>
       <p className="mt-3 text-sm font-semibold text-[#173d4a]">{impact.name} ({impact.shortName})</p>
       <div className="mt-3 rounded-lg border border-[#e9d9d0] bg-[#fff9f6] p-3 text-xs leading-6 text-[#70463d]">
-        <p><b>{impact.total}</b> questões encontradas nos conteúdos desta disciplina.</p>
+        <p><b>{impact.total}</b> questões encontradas nos conteúdos desta disciplina, compartilhada por <b>{impact.courseCount}</b> curso(s). A exclusão afetará todos esses cursos.</p>
         <p><b>{impact.removable}</b> questões exclusivas e ainda não utilizadas serão excluídas definitivamente.</p>
         <p><b>{impact.shared}</b> questões compartilhadas com outras disciplinas serão preservadas.</p>
         <p><b>{impact.protected}</b> questões usadas em respostas, revisões, simulados ou competições serão preservadas.</p>
