@@ -122,6 +122,7 @@ import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 import { sendPasswordResetEmail } from "./email";
 import { importSpreadsheet } from "./spreadsheetImport";
 import { previewBulkPdfAssociation, confirmBulkPdfAssociation, listBulkPdfAssociations, moveBulkPdfAssociation } from "./bulkPdfAssociation";
+import {getManagedDisciplineQuestionsClearImpact,clearManagedDisciplineQuestions} from "./disciplineQuestionClear";
 import { createFlashcard, rateFlashcard, removeFlashcard, listFlashcards, getLearningDiagnostic, listErrorNotebook, classifyStudyError, rateQuestionReview } from "./studyCoach";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
@@ -675,6 +676,13 @@ export const appRouter = router({
       create: adminProcedure.input(questionSchema).mutation(({ input, ctx }) => createManagedQuestion(ctx.user.id, input)),
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: questionSchema })).mutation(({ input, ctx }) => updateManagedQuestion(ctx.user.id, input.id, input.data)),
       remove: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => deleteManagedQuestion(ctx.user.id, input.id)),
+      clearByDisciplineImpact: adminProcedure.input(z.object({disciplineId:entityIdSchema}))
+        .mutation(({input})=>getManagedDisciplineQuestionsClearImpact(input.disciplineId)),
+      clearByDiscipline: adminProcedure.input(z.object({
+        disciplineId:entityIdSchema,confirmation:z.string().trim().min(8).max(90),
+        signature:z.string().regex(/^[a-f0-9]{64}$/),
+      })).mutation(({input,ctx})=>clearManagedDisciplineQuestions(
+        ctx.user.id,input.disciplineId,input.confirmation,input.signature)),
       changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listQuestionChangelog(input.id)),
       sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "question", input.id)),
     }),
