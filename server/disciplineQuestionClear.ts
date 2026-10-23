@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import {
-  adminAuditLogs, competitionAnswers, competitionRounds, disciplineContents, disciplines,
+  adminAuditLogs, competitionAnswers, competitionRounds, courseDisciplines, disciplineContents, disciplines,
   questionChangelog, questionContentLinks, questions, reviewQueue, simulationQuestions,
   studyAnswers, studyReviewItems,
 } from "../drizzle/schema";
@@ -64,6 +64,9 @@ async function analyze(store:Store,disciplineId:number) {
     id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName,
   }).from(disciplines).where(eq(disciplines.id,disciplineId)).limit(1))[0];
   if(!discipline)throw new Error("Disciplina não encontrada.");
+  const linkedCourses=await store.select({courseId:courseDisciplines.courseId})
+    .from(courseDisciplines).where(eq(courseDisciplines.disciplineId,disciplineId));
+  const courseCount=linkedCourses.length;
   const contentRows=await store.select({contentId:disciplineContents.contentId})
     .from(disciplineContents).where(eq(disciplineContents.disciplineId,disciplineId));
   const contentIds=Array.from(new Set<number>(contentRows.map((row:any)=>row.contentId)));
@@ -72,7 +75,7 @@ async function analyze(store:Store,disciplineId:number) {
   }).from(questionContentLinks).where(inArray(questionContentLinks.contentId,batch)));
   const candidateIds=Array.from(new Set<number>(candidateLinks.map((row:any)=>row.questionId))).sort((a,b)=>a-b);
   if(!candidateIds.length){
-    return {...discipline,total:0,removable:0,shared:0,protected:0,canClear:false,
+    return {...discipline,courseCount,total:0,removable:0,shared:0,protected:0,canClear:false,
       signature:"none",eligibleIds:[] as number[],protectedIds:[] as number[],sharedIds:[] as number[]};
   }
   const linked=await selected(candidateIds,(batch)=>store.select({
@@ -109,7 +112,7 @@ async function analyze(store:Store,disciplineId:number) {
     linked:linked.slice().sort((a:any,b:any)=>a.questionId-b.questionId||a.contentId-b.contentId),
     memberships:disciplinesForContents.slice().sort((a:any,b:any)=>a.contentId-b.contentId||a.disciplineId-b.disciplineId),
   })).digest("hex");
-  return {...discipline,total:candidateIds.length,removable:eligibleIds.length,
+  return {...discipline,courseCount,total:candidateIds.length,removable:eligibleIds.length,
     shared:sharedIds.length,protected:protectedIds.length,
     canClear:eligibleIds.length>0,signature,eligibleIds,protectedIds,sharedIds};
 }
