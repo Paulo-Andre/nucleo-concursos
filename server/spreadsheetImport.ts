@@ -165,8 +165,8 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
      if(!previous)throw new Error("Aula existente desapareceu durante a importação. Nenhuma alteração será gravada.");
      // Atualizar preservando ID, progresso, vínculos de questões e mídias que não foram fornecidas na planilha.
      await tx.update(contents).set({
-      title:r.title,objective:r.objective||null,description:r.description||null,cardText:r.cardText||null,
-      body:r.body||null,coverImageUrl:r.coverImageUrl||previous.coverImageUrl,
+      title:r.title,objective:r.objective||previous.objective,description:r.description||previous.description,cardText:r.cardText||previous.cardText,
+      body:r.body||previous.body,coverImageUrl:r.coverImageUrl||previous.coverImageUrl,
       videoUrl:r.videoUrl||previous.videoUrl,videoLabel:r.videoLabel||previous.videoLabel,
       materialUrl:r.materialUrl||previous.materialUrl,materialLabel:r.materialLabel||previous.materialLabel,
       noticeKind:r.noticeKind,noticeActivatedAt:r.noticeKind?new Date():null,
