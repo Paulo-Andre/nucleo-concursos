@@ -6,7 +6,7 @@ import { readSpreadsheet } from "./spreadsheetReader";
 export type ImportKind = "contents" | "questions";
 type Status = "draft" | "review" | "approved" | "published" | "inactive";
 type ContentRow = {
-  line:number;title:string;objective:string;description:string;cardText:string;body:string;
+  line:number;title:string;objective:string;description:string;cardText:string;body:string;existingId?:number;
   disciplineIds:number[];status:Status;requiresReview:boolean;noticeKind:null|"new"|"updated";
   coverImageUrl:string;videoUrl:string;videoLabel:string;materialUrl:string;materialLabel:string;
 };
@@ -15,7 +15,7 @@ type QuestionRow = {
   answer:boolean|string;explanation:string;difficulty:"basic"|"intermediate"|"advanced";
   source:string;banca:string;year:number|null;contentIds:number[];status:Status;requiresReview:boolean;
 };
-type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];preview:{line:number;label:string;status:Status}[]};
+type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];toCreate:number;toUpdate:number;preview:{line:number;label:string;status:Status;action:"create"|"update";existingId?:number}[]};
 type Input = {kind:ImportKind;fileName:string;base64:string};
 const statuses = new Set(["draft","review","approved","published","inactive"]);
 const difficulties = new Set(["basic","intermediate","advanced"]);
@@ -61,7 +61,8 @@ function readYear(raw:string):number|null {
  return n;
 }
 
-export async function prepareSpreadsheetImport(input:Input):Promise<Parsed> {
+export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert"="create"):Promise<Parsed> {
+ if(mode==="upsert"&&input.kind!=="contents")throw new Error("Atualização de registros existentes está disponível somente para conteúdos/aulas.");
  const db=await getDb();if(!db)throw new Error("Banco indisponível.");
  const sheet=readSpreadsheet(input.fileName,input.base64);
  if(sheet.length>MAX_SPREADSHEET_IMPORT_ROWS)throw new Error(`A planilha possui ${sheet.length} registros preenchidos. O máximo é ${MAX_SPREADSHEET_IMPORT_ROWS} por arquivo. Divida em lotes menores.`);
@@ -74,8 +75,14 @@ export async function prepareSpreadsheetImport(input:Input):Promise<Parsed> {
  const dByName=new Map(ds.flatMap(x=>[[normalize(x.name),x.id],[normalize(x.shortName),x.id]] as [string,number][]));
  const cById=new Map(cs.map(x=>[x.id,x]));
  const cByName=new Map(cs.map(x=>[normalize(x.title),x.id]));
+ const contentMatches=new Map<string,number[]>();
+ for(const content of cs){
+  const key=normalize(content.title);
+  contentMatches.set(key,[...(contentMatches.get(key)||[]),content.id]);
+ }
  const existing=new Set(input.kind==="contents"?cs.map(x=>normalize(x.title)):qs.map(x=>normalize(x.statement)));
- const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],preview:[]};
+ const inFile=new Set<string>();
+ const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],toCreate:0,toUpdate:0,preview:[]};
  for(const entry of sheet){
   const row=entry.values;
   const label=input.kind==="contents"?row.titulo:row.enunciado;
@@ -126,26 +133,60 @@ export async function prepareSpreadsheetImport(input:Input):Promise<Parsed> {
       requiresReview:boolean(row.exigir_revisao||"")};
    }
    const key=normalize(label);
-   if(existing.has(key))throw new Error("Registro duplicado no banco ou no próprio arquivo.");
-   existing.add(key);
+   if(inFile.has(key))throw new Error("Registro duplicado no próprio arquivo.");
+   inFile.add(key);
+   if(input.kind==="contents"&&mode==="upsert"){
+    const matches=contentMatches.get(key)??[];
+    if(matches.length>1)throw new Error("Há mais de um conteúdo no banco com este título. Resolva a ambiguidade antes de atualizar.");
+    if(matches.length===1)(item as ContentRow).existingId=matches[0];
+   }else if(existing.has(key))throw new Error("Registro duplicado no banco.");
+   const existingId=input.kind==="contents"?(item as ContentRow).existingId:undefined;
+   if(existingId)parsed.toUpdate++;else parsed.toCreate++;
    parsed.data.push(item);
-   parsed.preview.push({line:entry.line,label:label.slice(0,140),status:item.status});
+   parsed.preview.push({line:entry.line,label:label.slice(0,140),status:item.status,action:existingId?"update":"create",existingId});
   }catch(error){parsed.errorMessages.push(`Linha ${entry.line}: ${error instanceof Error?error.message:"Dados inválidos"}`);}
  }
  if(!parsed.data.length&&!parsed.errorMessages.length)parsed.errorMessages.push("Nenhuma linha válida encontrada.");
  return parsed;
 }
 
-export async function importSpreadsheet(actorUserId:number,input:Input,expectedCount:number,checkOnly:boolean) {
- const prepared=await prepareSpreadsheetImport(input);
- if(checkOnly||prepared.errorMessages.length) return {valid:!prepared.errorMessages.length,count:prepared.data.length,errors:prepared.errorMessages,preview:prepared.preview.slice(0,30),created:0};
- if(prepared.data.length!==expectedCount)throw new Error("O arquivo mudou desde a prévia. Revise e confirme novamente.");
+export async function importSpreadsheet(actorUserId:number,input:Input,expectedCount:number,checkOnly:boolean,mode:"create"|"upsert"="create",expectedUpdates?:number) {
+ const prepared=await prepareSpreadsheetImport(input,mode);
+ if(checkOnly||prepared.errorMessages.length) return {valid:!prepared.errorMessages.length,count:prepared.data.length,errors:prepared.errorMessages,preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,created:0,updated:0};
+ if(prepared.data.length!==expectedCount||(expectedUpdates!==undefined&&prepared.toUpdate!==expectedUpdates))throw new Error("Os registros mudaram desde a prévia. Revise e confirme novamente.");
  const db=await getDb();if(!db)throw new Error("Banco indisponível.");
  // Todas as criações, relações e logs são uma operação ACID. Uma falha cancela todo o lote.
  await db.transaction(async tx=>{
   for(const row of prepared.data){
    if(prepared.kind==="contents"){
     const r=row as ContentRow;
+    if(r.existingId){
+     const previous=(await tx.select().from(contents).where(eq(contents.id,r.existingId)).limit(1))[0];
+     if(!previous)throw new Error("Aula existente desapareceu durante a importação. Nenhuma alteração será gravada.");
+     // Atualizar preservando ID, progresso, vínculos de questões e mídias que não foram fornecidas na planilha.
+     await tx.update(contents).set({
+      title:r.title,objective:r.objective||null,description:r.description||null,cardText:r.cardText||null,
+      body:r.body||null,coverImageUrl:r.coverImageUrl||previous.coverImageUrl,
+      videoUrl:r.videoUrl||previous.videoUrl,videoLabel:r.videoLabel||previous.videoLabel,
+      materialUrl:r.materialUrl||previous.materialUrl,materialLabel:r.materialLabel||previous.materialLabel,
+      noticeKind:r.noticeKind,noticeActivatedAt:r.noticeKind?new Date():null,
+      requiresReview:r.requiresReview,status:r.status,updatedByUserId:actorUserId,
+     }).where(eq(contents.id,r.existingId));
+     const priorLinks=await tx.select().from(disciplineContents).where(eq(disciplineContents.contentId,r.existingId));
+     for(const link of priorLinks){
+      if(!r.disciplineIds.includes(link.disciplineId))await tx.delete(disciplineContents).where(eq(disciplineContents.id,link.id));
+     }
+     for(const disciplineId of r.disciplineIds){
+      if(!priorLinks.some(link=>link.disciplineId===disciplineId))
+       await tx.insert(disciplineContents).values({disciplineId,contentId:r.existingId,linkedByUserId:actorUserId});
+     }
+     await tx.insert(contentChangelog).values({
+      contentId:r.existingId,actorUserId,changedField:"spreadsheet_update",
+      oldValue:JSON.stringify({title:previous.title,status:previous.status,disciplineIds:priorLinks.map(link=>link.disciplineId)}),
+      newValue:JSON.stringify({title:r.title,status:r.status,disciplineIds:r.disciplineIds}),
+     });
+     continue;
+    }
     const inserted=await tx.insert(contents).values({
       title:r.title,objective:r.objective||null,description:r.description||null,cardText:r.cardText||null,
       body:r.body||null,coverImageUrl:r.coverImageUrl||null,videoUrl:r.videoUrl||null,videoLabel:r.videoLabel||null,
@@ -172,7 +213,7 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
     if(r.status==="review")await tx.insert(reviewQueue).values({itemType:"question",itemId:id,status:"pending",submittedByUserId:actorUserId});
    }
   }
-  await tx.insert(adminAuditLogs).values({actorUserId,action:"IMPORTACAO_EM_LOTE",detail:`Importados ${prepared.data.length} registros do tipo ${input.kind} a partir de arquivo Excel/CSV.`});
+  await tx.insert(adminAuditLogs).values({actorUserId,action:"IMPORTACAO_EM_LOTE",detail:`Planilha ${input.kind}: ${prepared.toCreate} novos e ${prepared.toUpdate} conteúdos atualizados sem alteração dos IDs.`});
  });
- return {valid:true,count:prepared.data.length,errors:[],preview:prepared.preview.slice(0,30),created:prepared.data.length};
+ return {valid:true,count:prepared.data.length,errors:[],preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,created:prepared.toCreate,updated:prepared.toUpdate};
 }
