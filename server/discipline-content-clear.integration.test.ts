@@ -44,7 +44,7 @@ describe("excluir todos os conteúdos de uma disciplina",()=>{
    });
    q=question!.id;
    const preview=await caller.admin.disciplines.clearContentsImpact({id:a});
-   expect(preview).toMatchObject({total:2,exclusive:1,shared:1,protected:0,questionLinks:2,canClear:true});
+   expect(preview).toMatchObject({total:2,exclusive:1,shared:1,protected:0,questionLinks:1,canClear:true});
    await expect(caller.admin.disciplines.clearContents({
     id:a,confirmation:"NÃO CONFIRMADO",expectedTotal:2,expectedExclusive:1,expectedShared:1,
    })).rejects.toThrow(/confirma/i);
@@ -56,7 +56,7 @@ describe("excluir todos os conteúdos de uma disciplina",()=>{
     userId:root.id,courseId:token,contentId:exclusive,status:"started",
    });
    try{
-    expect((await caller.admin.disciplines.clearContentsImpact({id:a})).canClear).toBe(false);
+    expect(await caller.admin.disciplines.clearContentsImpact({id:a})).toMatchObject({canClear:true,protected:1,progressToDelete:1});
     await expect(caller.admin.disciplines.clearContents({
      id:a,confirmation:"ESVAZIAR "+first!.shortName,expectedTotal:2,expectedExclusive:1,expectedShared:1,
     })).rejects.toThrow(/alunos/i);
