@@ -28,6 +28,27 @@ describe("identificação segura de PDFs para o Excel de Português", () => {
     expect(lessonNumberFromPdfName("PCMG_Aula_45.pdf")).toBe(45);
   });
 
+  it("reconhece títulos do banco com prefixos e códigos PT-M01-A01 sem aceitar capítulos isolados", () => {
+    expect(lessonNumberFromContentTitle("Português PCMG | Aula 01 — Parte 01")).toBe(1);
+    expect(lessonNumberFromContentTitle("Língua Portuguesa - Aula 25 - Classe de palavras")).toBe(25);
+    expect(lessonNumberFromContentTitle("PT-M01-A07 - Recursos fonológicos")).toBe(7);
+    expect(lessonNumberFromContentTitle("PCMG - Aula 44 - Regência verbal")).toBe(44);
+    expect(lessonNumberFromContentTitle("PCMG Literatura - Aula 01")).toBeNull();
+    expect(lessonNumberFromContentTitle("Capítulo 01 da Aula 01")).toBeNull();
+    const mapped=mapPdfFilesToContents({
+      files:[{fileName:"PT_Aula_01.pdf"},{fileName:"PT_Aula_07.pdf"}],
+      contents:[
+        {id:1,title:"Português PCMG | Aula 01 — Parte 01",materialUrl:null},
+        {id:7,title:"PT-M01-A07 - Recursos fonológicos",materialUrl:null},
+        {id:9,title:"Apostila sem número de aula reconhecível",materialUrl:null},
+      ],replaceExisting:false,
+    });
+    expect(mapped.totalAssociations).toBe(2);
+    expect(mapped.identifiedContents).toBe(2);
+    expect(mapped.unidentifiedCount).toBe(1);
+    expect(mapped.unidentifiedTitleExamples).toEqual(["Apostila sem número de aula reconhecível"]);
+  });
+
   it("reconhece os 104 títulos de partes PCMG como uma das 45 aulas", () => {
     const prefixed = [
       { id: 101, title: "PCMG Português - Aula 01 - Parte 01 - INTERPRETAÇÃO", materialUrl: null },
