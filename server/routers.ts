@@ -20,6 +20,8 @@ import {
   deleteManagedDiscipline,
   getManagedContentDeletionImpact,
   getManagedDisciplineDeletionImpact,
+  getManagedDisciplineContentClearImpact,
+  clearManagedDisciplineContents,
   createLocalUser,
   createPasswordResetToken,
   deleteManagedCourse,
@@ -597,6 +599,15 @@ export const appRouter = router({
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: disciplineSchema })).mutation(({ input, ctx }) => updateManagedDiscipline(ctx.user.id, input.id, input.data)),
       deletionImpact: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input }) => getManagedDisciplineDeletionImpact(input.id)),
       remove: adminProcedure.input(z.object({ id: entityIdSchema, confirmation: z.string().max(48) })).mutation(({ input, ctx }) => deleteManagedDiscipline(ctx.user.id, input.id, input.confirmation)),
+      clearContentsImpact: adminProcedure.input(z.object({id:entityIdSchema}))
+        .mutation(({input})=>getManagedDisciplineContentClearImpact(input.id)),
+      clearContents: adminProcedure.input(z.object({
+        id:entityIdSchema,confirmation:z.string().min(8).max(60),
+        expectedTotal:z.number().int().min(1),expectedExclusive:z.number().int().min(0),
+        expectedShared:z.number().int().min(0),
+      })).mutation(({input,ctx})=>clearManagedDisciplineContents(
+        ctx.user.id,input.id,input.confirmation,input.expectedTotal,input.expectedExclusive,input.expectedShared)),
+
     }),
     contents: router({
       list: adminProcedure.query(() => listManagedContents()),
