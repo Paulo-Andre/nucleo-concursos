@@ -606,8 +606,13 @@ export const appRouter = router({
         id:entityIdSchema,confirmation:z.string().min(8).max(60),
         expectedTotal:z.number().int().min(1),expectedExclusive:z.number().int().min(0),
         expectedShared:z.number().int().min(0),
+        forceUsed:z.boolean().default(false),backupConfirmed:z.boolean().default(false),
+        expectedProtected:z.number().int().min(0).optional(),
+        expectedProgressToDelete:z.number().int().min(0).optional(),
+        expectedRoadmapsToDelete:z.number().int().min(0).optional(),
       })).mutation(({input,ctx})=>clearManagedDisciplineContents(
-        ctx.user.id,input.id,input.confirmation,input.expectedTotal,input.expectedExclusive,input.expectedShared)),
+        ctx.user.id,input.id,input.confirmation,input.expectedTotal,input.expectedExclusive,input.expectedShared,
+        input.forceUsed,input.backupConfirmed,input.expectedProtected,input.expectedProgressToDelete,input.expectedRoadmapsToDelete)),
 
     }),
     contents: router({
