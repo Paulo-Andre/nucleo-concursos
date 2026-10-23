@@ -2748,6 +2748,9 @@ export async function deleteManagedQuestion(actorUserId: number, questionId: num
   if (!db) throw new Error("Banco de dados indisponível");
   const existing = await db.select({ id: questions.id, statement: questions.statement }).from(questions).where(eq(questions.id, questionId)).limit(1);
   if (!existing[0]) throw new Error("Questão não encontrada.");
+  const { getUsedCentralQuestionIds } = await import("./disciplineQuestionClear");
+  if ((await getUsedCentralQuestionIds(db, [questionId])).has(questionId))
+    throw new Error("Esta questão já aparece no histórico de alunos, revisões, simulados ou competições. Marque-a como INATIVA em vez de excluí-la.");
   const simulationUse = await db.select({ id: simulationQuestions.id }).from(simulationQuestions).where(eq(simulationQuestions.questionId, questionId)).limit(1);
   if (simulationUse[0]) throw new Error("Esta questão já foi usada em um simulado e não pode ser excluída. Mude seu status para INATIVO para preservá-la no histórico.");
   const dailyOrStudyAnswers = await db.select({ id: studyAnswers.id }).from(studyAnswers).where(or(
