@@ -162,7 +162,13 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
     {result && <section className="rounded-xl border border-[#c9dfd5] bg-[#f3faf7] p-4" aria-label="Conferência de associação das apostilas">
       <h5 className="flex items-center gap-2 text-sm font-bold text-[#17644e]"><CheckCircle2 className="h-4 w-4"/>Conferir aula de cada apostila antes de enviar</h5>
       <p className="mt-2 text-xs leading-5">Veja o nome do arquivo, a aula de destino e todos os conteúdos associados. Se precisar corrigir, escolha outra aula e clique em <strong>Revalidar alterações</strong> antes de confirmar.</p>
-      <p className="mt-2 text-xs leading-5"><strong>{result.totalFiles} apostila(s)</strong> · <strong>{result.totalAssociations} conteúdo(s) para associar</strong> · {result.totalContentsInDiscipline} conteúdo(s) na disciplina.</p>
+      <p className="mt-2 text-xs leading-5"><strong>{result.totalFiles} apostila(s)</strong> · <strong>{result.totalAssociations} conteúdo(s) para associar</strong> · {result.identifiedContents} de {result.totalContentsInDiscipline} conteúdos com aula identificada.</p>
+      {result.unidentifiedCount > 0 && <details className="mt-3 rounded-lg border border-[#e5c692] bg-[#fff8e9] p-3 text-xs">
+       <summary className="cursor-pointer font-bold text-[#8b5a22]">{result.unidentifiedCount} conteúdo(s) sem número de aula reconhecido — conferir títulos</summary>
+       <p className="mt-2">O sistema não usa números de capítulo como número de aula. Confira se cada título inclui Aula 01, Aula 02 etc. ou PT-M01-A01.</p>
+       <ul className="mt-2 list-disc space-y-1 pl-4">{result.unidentifiedTitleExamples.map((title,i)=><li key={i} className="break-words">{title}</li>)}</ul>
+      </details>}
+      {!result.availableLessons.length && <p role="alert" className="mt-3 rounded-lg border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-800">Nenhuma aula identificada nos títulos cadastrados para esta disciplina. Os PDFs não serão enviados. Confira os exemplos acima e a versão instalada do sistema.</p>}
       <div className="mt-3 max-h-[35rem] space-y-3 overflow-y-auto">
         {result.mappings.map(entry => <div key={entry.fileName} className="rounded-lg border border-[#d0e0da] bg-white p-3">
           <p className="break-all text-xs font-bold text-[#173d4a]">{entry.fileName}</p>
@@ -172,6 +178,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
                 value={targetLessons[entry.fileName] ?? entry.lesson}
                 onChange={event => { setTargetLessons(current => ({ ...current, [entry.fileName]: Number(event.target.value) })); setNeedsRevalidation(true); setSuccess(""); }}
                 className="filter-control mt-1 w-full">
+                {!result.availableLessons.length && <option value="">Nenhuma aula reconhecida</option>}
                 {result.availableLessons.map(lesson => <option value={lesson.lesson} key={lesson.lesson}>Aula {String(lesson.lesson).padStart(2, "0")} — {lesson.contentCount} conteúdo(s)</option>)}
               </select>
             </label>

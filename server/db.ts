@@ -2367,6 +2367,153 @@ export async function updateManagedDiscipline(actorUserId: number, disciplineId:
   return getManagedDisciplineById(disciplineId);
 }
 
+/** Análise de impacto antes da exclusão definitiva. Não remove conteúdos nem questões compartilhadas. */
+export async function getManagedDisciplineDeletionImpact(disciplineId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await getManagedDisciplineById(disciplineId);
+  if (!existing) throw new Error("Disciplina não encontrada.");
+  const [courseLinks, contentLinks, roadmaps] = await Promise.all([
+    db.select({ id: courseDisciplines.id }).from(courseDisciplines).where(eq(courseDisciplines.disciplineId, disciplineId)),
+    db.select({ id: disciplineContents.id }).from(disciplineContents).where(eq(disciplineContents.disciplineId, disciplineId)),
+    db.select({ id: studyRoadmapItems.id }).from(studyRoadmapItems).where(eq(studyRoadmapItems.disciplineId, disciplineId)),
+  ]);
+  return { id: existing.id, name: existing.name, shortName: existing.shortName,
+    courseLinks: courseLinks.length, contentLinks: contentLinks.length, studentRoadmaps: roadmaps.length,
+    canDelete: roadmaps.length === 0 };
+}
+
+/** Exclusão definitiva da disciplina e somente dos vínculos; conteúdos e questões continuam na biblioteca.
+ * Não exclui disciplina de um roteiro estudantil para não criar referências órfãs.
+ */
+export async function deleteManagedDiscipline(actorUserId: number, disciplineId: number, confirmation: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  return db.transaction(async tx => {
+    const existing = (await tx.select().from(disciplines).where(eq(disciplines.id, disciplineId)).limit(1))[0];
+    if (!existing) throw new Error("Disciplina não encontrada.");
+    if (confirmation !== existing.shortName) throw new Error("Digite exatamente a sigla da disciplina para confirmar a exclusão.");
+    const roadmaps = await tx.select({ id: studyRoadmapItems.id }).from(studyRoadmapItems).where(eq(studyRoadmapItems.disciplineId, disciplineId)).limit(1);
+    if (roadmaps.length) throw new Error("Esta disciplina está em roteiros de alunos. Para preservar os dados, altere o status para INATIVO ou remova os roteiros antes de excluí-la.");
+    const courses = await tx.select({ id: courseDisciplines.id }).from(courseDisciplines).where(eq(courseDisciplines.disciplineId, disciplineId));
+    const linked = await tx.select({ id: disciplineContents.id }).from(disciplineContents).where(eq(disciplineContents.disciplineId, disciplineId));
+    await tx.delete(courseDisciplines).where(eq(courseDisciplines.disciplineId, disciplineId));
+    await tx.delete(disciplineContents).where(eq(disciplineContents.disciplineId, disciplineId));
+    await tx.delete(disciplines).where(eq(disciplines.id, disciplineId));
+    await tx.insert(adminAuditLogs).values({actorUserId,action:"EXCLUSAO_DE_DISCIPLINA",detail:`Disciplina ${existing.shortName} (#${disciplineId}) excluída; ${courses.length} cursos e ${linked.length} conteúdos desvinculados. Conteúdos e questões foram preservados.`});
+    return {id:disciplineId,name:existing.name,removedCourseLinks:courses.length,removedContentLinks:linked.length};
+  });
+}
+
+/**
+ * Prévia da exclusão em lote. Conteúdos compartilhados são desvinculados, mas preservados.
+ * Para conteúdos exclusivos, o modo de exclusão forçada pode remover progresso e roteiros.
+ */
+export async function getManagedDisciplineContentClearImpact(disciplineId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const discipline = await db.select({id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName})
+    .from(disciplines).where(eq(disciplines.id,disciplineId)).limit(1);
+  if(!discipline[0]) throw new Error("Disciplina não encontrada.");
+  const links = await db.select({contentId:disciplineContents.contentId})
+    .from(disciplineContents).where(eq(disciplineContents.disciplineId,disciplineId));
+  const ids = links.map(link=>link.contentId);
+  const empty={id:disciplineId,name:discipline[0].name,shortName:discipline[0].shortName,
+    total:0,exclusive:0,shared:0,protected:0,questionLinks:0,
+    progressToDelete:0,roadmapsToDelete:0,canClear:false};
+  if(!ids.length)return empty;
+  const [allLinks, progress, roadmaps, questionLinks] = await Promise.all([
+    db.select({contentId:disciplineContents.contentId,disciplineId:disciplineContents.disciplineId})
+      .from(disciplineContents).where(inArray(disciplineContents.contentId,ids)),
+    db.select({contentId:studyContentProgress.contentId}).from(studyContentProgress)
+      .where(inArray(studyContentProgress.contentId,ids)),
+    db.select({contentId:studyRoadmapItems.contentId,disciplineId:studyRoadmapItems.disciplineId})
+      .from(studyRoadmapItems).where(inArray(studyRoadmapItems.contentId,ids)),
+    db.select({contentId:questionContentLinks.contentId}).from(questionContentLinks)
+      .where(inArray(questionContentLinks.contentId,ids)),
+  ]);
+  const shared = ids.filter(id=>allLinks.some(link=>link.contentId===id&&link.disciplineId!==disciplineId));
+  const exclusive = ids.filter(id=>!shared.includes(id));
+  const removedRoadmaps=roadmaps.filter(row=>exclusive.includes(row.contentId)||row.disciplineId===disciplineId);
+  const removedProgress=progress.filter(row=>exclusive.includes(row.contentId));
+  const protectedIds=new Set([...removedProgress.map(row=>row.contentId),...removedRoadmaps.map(row=>row.contentId)]);
+  return {...empty,total:ids.length,exclusive:exclusive.length,shared:shared.length,
+    protected:protectedIds.size,questionLinks:questionLinks.filter(row=>exclusive.includes(row.contentId)).length,
+    progressToDelete:removedProgress.length,roadmapsToDelete:removedRoadmaps.length,canClear:true};
+}
+
+/**
+ * Esvazia a disciplina sem excluí-la. Protege o histórico no modo normal; no modo forçado
+ * EXIGE aviso, confirmação explícita do backup e contagem validada.
+ * Exclusivos: apaga conteúdo, progresso e roteiros. Compartilhados: somente desvincula
+ * e remove roteiros desta disciplina; mantém o progresso e outras associações.
+ * Questões são preservadas, mas vínculos com aulas definitivamente excluídas são removidos.
+ * Todo o lote é uma transação: erro aborta todas as alterações.
+ */
+export async function clearManagedDisciplineContents(
+ actorUserId:number, disciplineId:number, confirmation:string, expectedTotal:number,
+ expectedExclusive:number, expectedShared:number,forceUsed=false,backupConfirmed=false,
+ expectedProtected?:number,expectedProgressToDelete?:number,expectedRoadmapsToDelete?:number
+) {
+  const db=await getDb();if(!db)throw new Error("Banco de dados indisponível");
+  return db.transaction(async tx=>{
+    const d=(await tx.select({id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName})
+      .from(disciplines).where(eq(disciplines.id,disciplineId)).limit(1))[0];
+    if(!d)throw new Error("Disciplina não encontrada.");
+    const selected=await tx.select({id:disciplineContents.id,contentId:disciplineContents.contentId})
+      .from(disciplineContents).where(eq(disciplineContents.disciplineId,disciplineId));
+    const ids=selected.map(link=>link.contentId);
+    if(!ids.length)throw new Error("A disciplina não possui conteúdos.");
+    const allLinks=await tx.select({contentId:disciplineContents.contentId,disciplineId:disciplineContents.disciplineId})
+      .from(disciplineContents).where(inArray(disciplineContents.contentId,ids));
+    const sharedIds=ids.filter(id=>allLinks.some(link=>link.contentId===id&&link.disciplineId!==disciplineId));
+    const exclusiveIds=ids.filter(id=>!sharedIds.includes(id));
+    if(ids.length!==expectedTotal||exclusiveIds.length!==expectedExclusive||sharedIds.length!==expectedShared)
+      throw new Error("Os vínculos mudaram desde a prévia. Atualize a análise antes de confirmar.");
+    const [progress,roadmaps]=await Promise.all([
+      tx.select({id:studyContentProgress.id,contentId:studyContentProgress.contentId})
+        .from(studyContentProgress).where(inArray(studyContentProgress.contentId,ids)),
+      tx.select({id:studyRoadmapItems.id,contentId:studyRoadmapItems.contentId,disciplineId:studyRoadmapItems.disciplineId})
+        .from(studyRoadmapItems).where(inArray(studyRoadmapItems.contentId,ids)),
+    ]);
+    const removedProgress=progress.filter(row=>exclusiveIds.includes(row.contentId));
+    const removedRoadmaps=roadmaps.filter(row=>exclusiveIds.includes(row.contentId)||row.disciplineId===disciplineId);
+    const protectedIds=new Set([...removedProgress.map(row=>row.contentId),...removedRoadmaps.map(row=>row.contentId)]);
+    if(expectedProtected!==undefined&&expectedProtected!==protectedIds.size
+      ||expectedProgressToDelete!==undefined&&expectedProgressToDelete!==removedProgress.length
+      ||expectedRoadmapsToDelete!==undefined&&expectedRoadmapsToDelete!==removedRoadmaps.length)
+      throw new Error("O uso destas aulas por alunos mudou desde a prévia. Reabra a confirmação antes de excluir.");
+    if(protectedIds.size>0&&!forceUsed)
+      throw new Error("Há progresso ou roteiros de alunos. Use o modo de exclusão forçada após ler o aviso e conferir o backup.");
+    if(forceUsed&&!backupConfirmed)
+      throw new Error("Confirme que realizou backup do banco antes de excluir aulas utilizadas por alunos.");
+    const expectedConfirmation=forceUsed
+      ?`APAGAR ${ids.length} AULAS ${d.shortName}`
+      :`ESVAZIAR ${d.shortName}`;
+    if(confirmation!==expectedConfirmation)throw new Error("Digite exatamente a confirmação de exclusão exibida na tela.");
+    const questionLinks=exclusiveIds.length
+      ?await tx.select({id:questionContentLinks.id}).from(questionContentLinks)
+        .where(inArray(questionContentLinks.contentId,exclusiveIds)):[];
+    // Roteiros associados à disciplina deixam de apontar para conteúdos desvinculados.
+    if(removedRoadmaps.length)await tx.delete(studyRoadmapItems)
+      .where(inArray(studyRoadmapItems.id,removedRoadmaps.map(row=>row.id)));
+    // Somente o progresso de conteúdos efetivamente excluídos é descartado.
+    if(removedProgress.length)await tx.delete(studyContentProgress)
+      .where(inArray(studyContentProgress.id,removedProgress.map(row=>row.id)));
+    await tx.delete(disciplineContents).where(eq(disciplineContents.disciplineId,disciplineId));
+    if(exclusiveIds.length){
+      await tx.delete(questionContentLinks).where(inArray(questionContentLinks.contentId,exclusiveIds));
+      await tx.delete(reviewQueue).where(and(eq(reviewQueue.itemType,"content"),inArray(reviewQueue.itemId,exclusiveIds)));
+      await tx.delete(contentChangelog).where(inArray(contentChangelog.contentId,exclusiveIds));
+      await tx.delete(contents).where(inArray(contents.id,exclusiveIds));
+    }
+    await tx.insert(adminAuditLogs).values({actorUserId,action:forceUsed?"LIMPEZA_FORCADA_CONTEUDOS_DISCIPLINA":"LIMPEZA_CONTEUDOS_DISCIPLINA",
+      detail:`Disciplina ${d.shortName} (#${d.id}): ${ids.length} aulas desvinculadas, ${exclusiveIds.length} exclusivas apagadas, ${sharedIds.length} compartilhadas preservadas, ${removedProgress.length} registros de progresso apagados, ${removedRoadmaps.length} roteiros apagados, ${questionLinks.length} vínculos de questões removidos. Questões e disciplina preservadas; modo forçado: ${forceUsed?"SIM":"NÃO"}; backup confirmado pelo administrador: ${backupConfirmed?"SIM":"NÃO"}.`});
+    return {id:disciplineId,total:ids.length,deleted:exclusiveIds.length,unlinkedShared:sharedIds.length,
+      unlinkedQuestions:questionLinks.length,deletedProgress:removedProgress.length,deletedRoadmaps:removedRoadmaps.length};
+  });
+}
+
 export async function syncCourseDisciplineLinks(actorUserId: number, disciplineId: number, courseIds: string[]) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -2453,6 +2600,46 @@ export async function updateManagedContent(actorUserId: number, contentId: numbe
   await writeAdminAudit(actorUserId, null, "ATUALIZACAO_DE_CONTEUDO", `Conteúdo ${contentId} atualizado.`);
   if (input.status === "review") await ensureItemInReviewQueue(actorUserId, "content", contentId);
   return getManagedContentById(contentId);
+}
+
+/** Calcula impactos: a exclusão é recusada se já existe progresso ou roteiro de aluno. */
+export async function getManagedContentDeletionImpact(contentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const existing = await getManagedContentById(contentId);
+  if (!existing) throw new Error("Conteúdo não encontrado.");
+  const [disciplineLinks, questionLinks, progress, roadmaps] = await Promise.all([
+    db.select({id:disciplineContents.id}).from(disciplineContents).where(eq(disciplineContents.contentId,contentId)),
+    db.select({id:questionContentLinks.id}).from(questionContentLinks).where(eq(questionContentLinks.contentId,contentId)),
+    db.select({id:studyContentProgress.id}).from(studyContentProgress).where(eq(studyContentProgress.contentId,contentId)),
+    db.select({id:studyRoadmapItems.id}).from(studyRoadmapItems).where(eq(studyRoadmapItems.contentId,contentId)),
+  ]);
+  return {id:existing.id,title:existing.title,disciplineLinks:disciplineLinks.length,
+    questionLinks:questionLinks.length,studentProgress:progress.length,studentRoadmaps:roadmaps.length,
+    canDelete:progress.length===0&&roadmaps.length===0};
+}
+
+/** Exclui conteúdo sem apagar questões nem progresso. Se alunos já o usaram, bloquear e recomendar INATIVO. */
+export async function deleteManagedContent(actorUserId:number,contentId:number,confirmation:string) {
+  const db=await getDb();
+  if(!db)throw new Error("Banco de dados indisponível");
+  return db.transaction(async tx=>{
+    const existing=(await tx.select().from(contents).where(eq(contents.id,contentId)).limit(1))[0];
+    if(!existing)throw new Error("Conteúdo não encontrado.");
+    if(confirmation!==existing.title)throw new Error("Digite exatamente o título do conteúdo para confirmar a exclusão.");
+    const progress=await tx.select({id:studyContentProgress.id}).from(studyContentProgress).where(eq(studyContentProgress.contentId,contentId)).limit(1);
+    const roadmaps=await tx.select({id:studyRoadmapItems.id}).from(studyRoadmapItems).where(eq(studyRoadmapItems.contentId,contentId)).limit(1);
+    if(progress.length||roadmaps.length)throw new Error("O conteúdo já possui progresso ou roteiro de aluno. Para preservar o histórico, altere o status para INATIVO em vez de excluir.");
+    const disciplineLinks=await tx.select({id:disciplineContents.id}).from(disciplineContents).where(eq(disciplineContents.contentId,contentId));
+    const questionLinks=await tx.select({id:questionContentLinks.id}).from(questionContentLinks).where(eq(questionContentLinks.contentId,contentId));
+    await tx.delete(reviewQueue).where(and(eq(reviewQueue.itemType,"content"),eq(reviewQueue.itemId,contentId)));
+    await tx.delete(contentChangelog).where(eq(contentChangelog.contentId,contentId));
+    await tx.delete(questionContentLinks).where(eq(questionContentLinks.contentId,contentId));
+    await tx.delete(disciplineContents).where(eq(disciplineContents.contentId,contentId));
+    await tx.delete(contents).where(eq(contents.id,contentId));
+    await tx.insert(adminAuditLogs).values({actorUserId,action:"EXCLUSAO_DE_CONTEUDO",detail:`Conteúdo #${contentId} (${existing.title}) excluído; ${disciplineLinks.length} disciplinas e ${questionLinks.length} questões desvinculadas. Nenhuma questão foi excluída.`});
+    return {id:contentId,title:existing.title,removedDisciplineLinks:disciplineLinks.length,removedQuestionLinks:questionLinks.length};
+  });
 }
 
 export async function syncContentDisciplineLinks(actorUserId: number, contentId: number, disciplineIds: number[]) {
@@ -2592,6 +2779,9 @@ export async function deleteManagedQuestion(actorUserId: number, questionId: num
   if (!db) throw new Error("Banco de dados indisponível");
   const existing = await db.select({ id: questions.id, statement: questions.statement }).from(questions).where(eq(questions.id, questionId)).limit(1);
   if (!existing[0]) throw new Error("Questão não encontrada.");
+  const { getUsedCentralQuestionIds } = await import("./disciplineQuestionClear");
+  if ((await getUsedCentralQuestionIds(db, [questionId])).has(questionId))
+    throw new Error("Esta questão já aparece no histórico de alunos, revisões, simulados ou competições. Marque-a como INATIVA em vez de excluí-la.");
   const simulationUse = await db.select({ id: simulationQuestions.id }).from(simulationQuestions).where(eq(simulationQuestions.questionId, questionId)).limit(1);
   if (simulationUse[0]) throw new Error("Esta questão já foi usada em um simulado e não pode ser excluída. Mude seu status para INATIVO para preservá-la no histórico.");
   const dailyOrStudyAnswers = await db.select({ id: studyAnswers.id }).from(studyAnswers).where(or(

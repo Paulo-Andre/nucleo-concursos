@@ -51,6 +51,34 @@ describe("importação Excel/CSV na biblioteca ROOT",()=>{
    ids.questions.push(q.id);
    expect(q.answerJson).toBe("true");
    expect((await db.select().from(questionContentLinks).where(eq(questionContentLinks.questionId,q.id))).map(item=>item.contentId)).toEqual([found.id]);
+
+   // Atualização por título deve preservar o ID, os PDFs, as associações e a questão vinculada.
+   const secondName=token+" nova aula";
+   const correctedCsv=["titulo;disciplina_ids;status;corpo;material_url",
+    `${contentName};${disciplineId};published;Teoria integral substituída;`,
+    `${secondName};${disciplineId};published;Nova aula completa;`].join("\n")+"\n";
+   const correction={kind:"contents" as const,fileName:"conteudos-corrigidos.csv",base64:Buffer.from(correctedCsv).toString("base64")};
+   const correctionPreview=await importSpreadsheet(root.id,correction,0,true,"upsert");
+   expect(correctionPreview).toMatchObject({valid:true,count:2,toCreate:1,toUpdate:1,created:0,updated:0});
+   expect(correctionPreview.preview[0]).toMatchObject({action:"update",existingId:found.id});
+   const correctionResult=await importSpreadsheet(root.id,correction,2,false,"upsert",1);
+   expect(correctionResult).toMatchObject({created:1,updated:1});
+   const updated=(await db.select().from(contents).where(eq(contents.title,contentName)))[0];
+   expect(updated).toMatchObject({
+    id:found.id,status:"published",body:"Teoria integral substituída",
+    materialUrl:"https://exemplo.invalid/apostila.pdf",videoUrl:"https://exemplo.invalid/video",
+   });
+   const second=(await db.select().from(contents).where(eq(contents.title,secondName)))[0];
+   expect(second).toBeTruthy();
+   ids.contents.push(second.id);
+   expect((await db.select().from(questionContentLinks).where(eq(questionContentLinks.questionId,q.id))).map(item=>item.contentId)).toEqual([found.id]);
+   expect((await db.select().from(disciplineContents).where(eq(disciplineContents.contentId,found.id))).map(item=>item.disciplineId)).toEqual([disciplineId]);
+   expect(await importSpreadsheet(root.id,correction,0,true,"upsert")).toMatchObject({valid:true,toCreate:0,toUpdate:2});
+   expect((await importSpreadsheet(root.id,correction,0,true,"create")).valid).toBe(false);
+
+   const repeated=[`titulo;disciplina_ids;status`,`${contentName};${disciplineId};published`,`${contentName.toUpperCase()};${disciplineId};published`].join("\n");
+   const repeatedData={kind:"contents" as const,fileName:"duplicadas.csv",base64:Buffer.from(repeated).toString("base64")};
+   expect((await importSpreadsheet(root.id,repeatedData,0,true,"upsert")).valid).toBe(false);
   }finally{
    if(ids.questions.length){
     await db.delete(questionContentLinks).where(inArray(questionContentLinks.questionId,ids.questions));

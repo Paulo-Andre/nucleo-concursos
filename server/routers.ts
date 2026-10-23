@@ -16,6 +16,12 @@ import {
   createManagedDiscipline,
   createManagedQuestion,
   deleteManagedQuestion,
+  deleteManagedContent,
+  deleteManagedDiscipline,
+  getManagedContentDeletionImpact,
+  getManagedDisciplineDeletionImpact,
+  getManagedDisciplineContentClearImpact,
+  clearManagedDisciplineContents,
   createLocalUser,
   createPasswordResetToken,
   deleteManagedCourse,
@@ -116,6 +122,7 @@ import { matchesAccountDeletionConfirmation } from "./accountDeletion";
 import { sendPasswordResetEmail } from "./email";
 import { importSpreadsheet } from "./spreadsheetImport";
 import { previewBulkPdfAssociation, confirmBulkPdfAssociation, listBulkPdfAssociations, moveBulkPdfAssociation } from "./bulkPdfAssociation";
+import {getManagedDisciplineQuestionsClearImpact,clearManagedDisciplineQuestions} from "./disciplineQuestionClear";
 import { createFlashcard, rateFlashcard, removeFlashcard, listFlashcards, getLearningDiagnostic, listErrorNotebook, classifyStudyError, rateQuestionReview } from "./studyCoach";
 
 const usernameSchema = z.string().trim().toLowerCase().min(3, "Use ao menos 3 caracteres.").max(48).regex(/^[a-z0-9._-]+$/, "Use apenas letras minúsculas, números, ponto, hífen ou sublinhado.");
@@ -591,6 +598,22 @@ export const appRouter = router({
       list: adminProcedure.query(() => listManagedDisciplines()),
       create: adminProcedure.input(disciplineSchema).mutation(({ input, ctx }) => createManagedDiscipline(ctx.user.id, input)),
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: disciplineSchema })).mutation(({ input, ctx }) => updateManagedDiscipline(ctx.user.id, input.id, input.data)),
+      deletionImpact: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input }) => getManagedDisciplineDeletionImpact(input.id)),
+      remove: adminProcedure.input(z.object({ id: entityIdSchema, confirmation: z.string().max(48) })).mutation(({ input, ctx }) => deleteManagedDiscipline(ctx.user.id, input.id, input.confirmation)),
+      clearContentsImpact: adminProcedure.input(z.object({id:entityIdSchema}))
+        .mutation(({input})=>getManagedDisciplineContentClearImpact(input.id)),
+      clearContents: adminProcedure.input(z.object({
+        id:entityIdSchema,confirmation:z.string().min(8).max(60),
+        expectedTotal:z.number().int().min(1),expectedExclusive:z.number().int().min(0),
+        expectedShared:z.number().int().min(0),
+        forceUsed:z.boolean().default(false),backupConfirmed:z.boolean().default(false),
+        expectedProtected:z.number().int().min(0).optional(),
+        expectedProgressToDelete:z.number().int().min(0).optional(),
+        expectedRoadmapsToDelete:z.number().int().min(0).optional(),
+      })).mutation(({input,ctx})=>clearManagedDisciplineContents(
+        ctx.user.id,input.id,input.confirmation,input.expectedTotal,input.expectedExclusive,input.expectedShared,
+        input.forceUsed,input.backupConfirmed,input.expectedProtected,input.expectedProgressToDelete,input.expectedRoadmapsToDelete)),
+
     }),
     contents: router({
       list: adminProcedure.query(() => listManagedContents()),
@@ -613,6 +636,8 @@ export const appRouter = router({
       }),
       create: adminProcedure.input(contentSchema).mutation(({ input, ctx }) => createManagedContent(ctx.user.id, input)),
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: contentSchema })).mutation(({ input, ctx }) => updateManagedContent(ctx.user.id, input.id, input.data)),
+      deletionImpact: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input }) => getManagedContentDeletionImpact(input.id)),
+      remove: adminProcedure.input(z.object({ id: entityIdSchema, confirmation: z.string().max(220) })).mutation(({ input, ctx }) => deleteManagedContent(ctx.user.id, input.id, input.confirmation)),
       changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listContentChangelog(input.id)),
       sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "content", input.id)),
     }),
@@ -646,16 +671,23 @@ export const appRouter = router({
       })).mutation(({ input, ctx }) => confirmBulkPdfAssociation(ctx.user.id, input)),
     }),
     spreadsheets: router({
-      preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000)}))
-        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,0,true)),
-      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),expectedCount:z.number().int().min(1).max(1000)}))
-        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,input.expectedCount,false)),
+      preview: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),mode:z.enum(["create","upsert"]).default("create")}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,0,true,input.mode)),
+      confirm: adminProcedure.input(z.object({kind:z.enum(["contents","questions"]),fileName:z.string().trim().min(3).max(160),base64:z.string().min(4).max(4_200_000),mode:z.enum(["create","upsert"]).default("create"),expectedCount:z.number().int().min(1).max(1000),expectedUpdates:z.number().int().min(0).max(1000).optional()}))
+        .mutation(({input,ctx})=>importSpreadsheet(ctx.user.id,input,input.expectedCount,false,input.mode,input.expectedUpdates)),
     }),
     questions: router({
       list: adminProcedure.input(z.object({ search: z.string().trim().max(200).optional(), status: knowledgeStatusSchema.optional(), contentId: entityIdSchema.optional() })).query(({ input }) => listManagedQuestions(input)),
       create: adminProcedure.input(questionSchema).mutation(({ input, ctx }) => createManagedQuestion(ctx.user.id, input)),
       update: adminProcedure.input(z.object({ id: entityIdSchema, data: questionSchema })).mutation(({ input, ctx }) => updateManagedQuestion(ctx.user.id, input.id, input.data)),
       remove: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => deleteManagedQuestion(ctx.user.id, input.id)),
+      clearByDisciplineImpact: adminProcedure.input(z.object({disciplineId:entityIdSchema}))
+        .mutation(({input})=>getManagedDisciplineQuestionsClearImpact(input.disciplineId)),
+      clearByDiscipline: adminProcedure.input(z.object({
+        disciplineId:entityIdSchema,confirmation:z.string().trim().min(8).max(90),
+        signature:z.string().regex(/^[a-f0-9]{64}$/),
+      })).mutation(({input,ctx})=>clearManagedDisciplineQuestions(
+        ctx.user.id,input.disciplineId,input.confirmation,input.signature)),
       changelog: adminProcedure.input(z.object({ id: entityIdSchema })).query(({ input }) => listQuestionChangelog(input.id)),
       sendToReview: adminProcedure.input(z.object({ id: entityIdSchema })).mutation(({ input, ctx }) => submitForReview(ctx.user.id, "question", input.id)),
     }),

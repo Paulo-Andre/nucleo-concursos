@@ -16,9 +16,50 @@ describe("identificação segura de PDFs para o Excel de Português", () => {
     expect(lessonNumberFromContentTitle(contents[2].title)).toBe(2);
     expect(lessonNumberFromContentTitle(contents[3].title)).toBe(3);
     expect(lessonNumberFromContentTitle(contents[5].title)).toBe(45);
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 - Parte 01 - INTERPRETAÇÃO")).toBe(1);
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 45 - Parte 02 - REVISÃO FINAL")).toBe(45);
+    expect(lessonNumberFromContentTitle("PCMG Língua Portuguesa - Aula 14 - Parte 01")).toBe(14);
+    expect(lessonNumberFromContentTitle("PCMG Literatura - Aula 01 - Parte 01")).toBeNull();
+    expect(lessonNumberFromContentTitle("Capítulo 01 da Aula 01")).toBeNull();
     expect(lessonNumberFromContentTitle("Revisão geral")).toBeNull();
     expect(lessonNumberFromPdfName("PT_Aula_01.pdf")).toBe(1);
     expect(lessonNumberFromPdfName("PT_Aula_45.PDF")).toBe(45);
+    expect(lessonNumberFromPdfName("PCMG_Aula_01.pdf")).toBe(1);
+    expect(lessonNumberFromPdfName("PCMG_Aula_45.pdf")).toBe(45);
+  });
+
+  it("reconhece títulos do banco com prefixos e códigos PT-M01-A01 sem aceitar capítulos isolados", () => {
+    expect(lessonNumberFromContentTitle("Português PCMG | Aula 01 — Parte 01")).toBe(1);
+    expect(lessonNumberFromContentTitle("Língua Portuguesa - Aula 25 - Classe de palavras")).toBe(25);
+    expect(lessonNumberFromContentTitle("PT-M01-A07 - Recursos fonológicos")).toBe(7);
+    expect(lessonNumberFromContentTitle("PCMG - Aula 44 - Regência verbal")).toBe(44);
+    expect(lessonNumberFromContentTitle("PCMG Literatura - Aula 01")).toBeNull();
+    expect(lessonNumberFromContentTitle("Capítulo 01 da Aula 01")).toBeNull();
+    const mapped=mapPdfFilesToContents({
+      files:[{fileName:"PT_Aula_01.pdf"},{fileName:"PT_Aula_07.pdf"}],
+      contents:[
+        {id:1,title:"Português PCMG | Aula 01 — Parte 01",materialUrl:null},
+        {id:7,title:"PT-M01-A07 - Recursos fonológicos",materialUrl:null},
+        {id:9,title:"Apostila sem número de aula reconhecível",materialUrl:null},
+      ],replaceExisting:false,
+    });
+    expect(mapped.totalAssociations).toBe(2);
+    expect(mapped.identifiedContents).toBe(2);
+    expect(mapped.unidentifiedCount).toBe(1);
+    expect(mapped.unidentifiedTitleExamples).toEqual(["Apostila sem número de aula reconhecível"]);
+  });
+
+  it("reconhece os 104 títulos de partes PCMG como uma das 45 aulas", () => {
+    const prefixed = [
+      { id: 101, title: "PCMG Português - Aula 01 - Parte 01 - INTERPRETAÇÃO", materialUrl: null },
+      { id: 102, title: "PCMG Português - Aula 01 - Parte 02 - INTERPRETAÇÃO", materialUrl: null },
+      { id: 103, title: "PCMG Português - Aula 02 - Parte 01 - NARRAÇÃO", materialUrl: null },
+    ];
+    const result = mapPdfFilesToContents({ files: [{ fileName: "PT_Aula_01.pdf" }, { fileName: "PCMG_Aula_02.pdf" }], contents: prefixed, replaceExisting: false });
+    expect(result.unmatched).toEqual([]);
+    expect(result.totalAssociations).toBe(3);
+    expect(result.mappings[0].contentIds).toEqual([101,102]);
+    expect(result.mappings[1].contentIds).toEqual([103]);
   });
 
   it("associa um PDF a todas as subdivisões da aula correspondente", () => {

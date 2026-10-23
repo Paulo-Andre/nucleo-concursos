@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - feat/ux-acessibilidade-jornada-aluno
+      - fix/qa-seguranca-aprendizagem-20261019
   workflow_dispatch:
 
 concurrency:
