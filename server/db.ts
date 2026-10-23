@@ -2405,6 +2405,84 @@ export async function deleteManagedDiscipline(actorUserId: number, disciplineId:
   });
 }
 
+/**
+ * Prévia da limpeza integral de uma disciplina, mantendo a própria disciplina.
+ * Aulas compartilhadas são somente desvinculadas; exclusivas são removidas do banco.
+ * Uso por alunos bloqueia toda a operação, sem limpeza parcial.
+ */
+export async function getManagedDisciplineContentClearImpact(disciplineId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const discipline = await db.select({id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName})
+    .from(disciplines).where(eq(disciplines.id,disciplineId)).limit(1);
+  if(!discipline[0]) throw new Error("Disciplina não encontrada.");
+  const links = await db.select({contentId:disciplineContents.contentId}).from(disciplineContents).where(eq(disciplineContents.disciplineId,disciplineId));
+  const ids = links.map(link=>link.contentId);
+  if(!ids.length)return {id:disciplineId,name:discipline[0].name,shortName:discipline[0].shortName,
+    total:0,exclusive:0,shared:0,protected:0,questionLinks:0,canClear:false};
+  const [allLinks, progress, roadmaps, questionLinks] = await Promise.all([
+    db.select({contentId:disciplineContents.contentId,disciplineId:disciplineContents.disciplineId})
+      .from(disciplineContents).where(inArray(disciplineContents.contentId,ids)),
+    db.select({contentId:studyContentProgress.contentId}).from(studyContentProgress).where(inArray(studyContentProgress.contentId,ids)),
+    db.select({contentId:studyRoadmapItems.contentId}).from(studyRoadmapItems).where(inArray(studyRoadmapItems.contentId,ids)),
+    db.select({contentId:questionContentLinks.contentId}).from(questionContentLinks).where(inArray(questionContentLinks.contentId,ids)),
+  ]);
+  const shared = ids.filter(id=>allLinks.some(link=>link.contentId===id&&link.disciplineId!==disciplineId));
+  const protectedIds = new Set([...progress.map(row=>row.contentId),...roadmaps.map(row=>row.contentId)]);
+  return {id:disciplineId,name:discipline[0].name,shortName:discipline[0].shortName,
+    total:ids.length,exclusive:ids.length-shared.length,shared:shared.length,
+    protected:protectedIds.size,questionLinks:questionLinks.length,canClear:protectedIds.size===0};
+}
+
+/**
+ * Esvazia uma disciplina sem excluí-la, em transação única.
+ * Para conteúdos compartilhados: só desvincula a disciplina selecionada.
+ * Para conteúdos exclusivos: remove conteúdo e associações; mantém questões cadastradas.
+ * Se houver progresso/roteiro de qualquer aula, recusa TODA a operação.
+ */
+export async function clearManagedDisciplineContents(
+ actorUserId:number, disciplineId:number, confirmation:string, expectedTotal:number,
+ expectedExclusive:number, expectedShared:number
+) {
+  const db=await getDb();if(!db)throw new Error("Banco de dados indisponível");
+  return db.transaction(async tx=>{
+    const d=(await tx.select({id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName})
+      .from(disciplines).where(eq(disciplines.id,disciplineId)).limit(1))[0];
+    if(!d)throw new Error("Disciplina não encontrada.");
+    if(confirmation!==`ESVAZIAR ${d.shortName}`)throw new Error("Digite a confirmação exata exibida na tela.");
+    const selected=await tx.select({id:disciplineContents.id,contentId:disciplineContents.contentId})
+      .from(disciplineContents).where(eq(disciplineContents.disciplineId,disciplineId));
+    const ids=selected.map(link=>link.contentId);
+    if(!ids.length)throw new Error("A disciplina não possui conteúdos.");
+    const allLinks=await tx.select({contentId:disciplineContents.contentId,disciplineId:disciplineContents.disciplineId})
+      .from(disciplineContents).where(inArray(disciplineContents.contentId,ids));
+    const sharedIds=ids.filter(id=>allLinks.some(link=>link.contentId===id&&link.disciplineId!==disciplineId));
+    const exclusiveIds=ids.filter(id=>!sharedIds.includes(id));
+    if(ids.length!==expectedTotal||exclusiveIds.length!==expectedExclusive||sharedIds.length!==expectedShared)
+      throw new Error("Os vínculos mudaram desde a prévia. Atualize a análise antes de confirmar.");
+    const progress=await tx.select({id:studyContentProgress.id})
+      .from(studyContentProgress).where(inArray(studyContentProgress.contentId,ids)).limit(1);
+    const roadmaps=await tx.select({id:studyRoadmapItems.id})
+      .from(studyRoadmapItems).where(inArray(studyRoadmapItems.contentId,ids)).limit(1);
+    if(progress.length||roadmaps.length)
+      throw new Error("Há conteúdos usados ou planejados por alunos. Nenhuma aula foi removida. Marque-os como INATIVOS ou reorganize os roteiros antes de excluir.");
+    const questionLinks=exclusiveIds.length
+      ?await tx.select({id:questionContentLinks.id}).from(questionContentLinks)
+        .where(inArray(questionContentLinks.contentId,exclusiveIds)):[];
+    // Apaga apenas as referências da disciplina selecionada para TODOS os conteúdos.
+    await tx.delete(disciplineContents).where(eq(disciplineContents.disciplineId,disciplineId));
+    if(exclusiveIds.length){
+      await tx.delete(questionContentLinks).where(inArray(questionContentLinks.contentId,exclusiveIds));
+      await tx.delete(reviewQueue).where(and(eq(reviewQueue.itemType,"content"),inArray(reviewQueue.itemId,exclusiveIds)));
+      await tx.delete(contentChangelog).where(inArray(contentChangelog.contentId,exclusiveIds));
+      await tx.delete(contents).where(inArray(contents.id,exclusiveIds));
+    }
+    await tx.insert(adminAuditLogs).values({actorUserId,action:"LIMPEZA_CONTEUDOS_DISCIPLINA",
+      detail:`Disciplina ${d.shortName} (#${d.id}): ${ids.length} associações removidas, ${exclusiveIds.length} conteúdos exclusivos excluídos, ${sharedIds.length} conteúdos compartilhados preservados e desvinculados, ${questionLinks.length} vínculos de questões removidos. Questões e disciplina mantidas.`});
+    return {id:disciplineId,total:ids.length,deleted:exclusiveIds.length,unlinkedShared:sharedIds.length,unlinkedQuestions:questionLinks.length};
+  });
+}
+
 export async function syncCourseDisciplineLinks(actorUserId: number, disciplineId: number, courseIds: string[]) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
