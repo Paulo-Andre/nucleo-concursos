@@ -6,8 +6,18 @@ export type PdfMappingContent = { id: number; title: string; materialUrl: string
 export type PdfMappingFile = { fileName: string; url?: string; targetLesson?: number };
 
 export function lessonNumberFromContentTitle(title: string): number | null {
-  const match = /^\s*(?:pcmg\s+(?:portugu[eê]s|l[ií]ngua portuguesa)\s*[-–—.:]\s*)?aula\s+0*(\d{1,3})(?=\s|[-–—.:]|$)/i.exec(title);
-  const n = match ? Number(match[1]) : NaN;
+  // Os títulos da Biblioteca Central variam: "Aula 01", "PCMG Português - Aula 01",
+  // "Português PCMG | Aula 01" e códigos editoriais "PT-M01-A01".
+  // Só reconhecer identificadores explícitos de aula; NÃO interpretar números de capítulo.
+  const plain = title.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const fromCode = /^(?:\[)?PT[-_ ]?M\d{1,3}[-_ ]?A0*(\d{1,3})(?!\d)/i.exec(plain);
+  const fromStart = /^Aula[\s_-]*0*(\d{1,3})(?!\d)/i.exec(plain);
+  const fromPrefix = /^(?:(?:PCMG|PC[-_ ]?MG)[\s_-]*)?(?:Lingua[\s_-]+Portuguesa|Portugues)(?:[\s\S]{0,100}?)\bAula[\s_-]*0*(\d{1,3})(?!\d)/i.exec(plain);
+  // Títulos do tipo "PCMG - Aula 02" são aceitos apenas quando
+  // a disciplina já foi escolhida: o filtro de disciplina é feito no servidor.
+  const fromPCMG = /^(?:PCMG|PC[-_ ]?MG)[\s:_—–|-]+Aula[\s_-]*0*(\d{1,3})(?!\d)/i.exec(plain);
+  const matched = fromCode || fromStart || fromPrefix || fromPCMG;
+  const n = matched ? Number(matched[1]) : NaN;
   return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
 }
 export function lessonNumberFromPdfName(fileName: string): number | null {
@@ -45,5 +55,8 @@ export function mapPdfFilesToContents(input: {
   const availableLessons = Array.from(new Set(input.contents.map(item => lessonNumberFromContentTitle(item.title)).filter((lesson): lesson is number => lesson !== null)))
     .sort((a, b) => a - b)
     .map(lesson => ({ lesson, contentCount: input.contents.filter(item => lessonNumberFromContentTitle(item.title) === lesson).length }));
-  return { mappings, unmatched: unmatched.map(item => item.fileName), totalAssociations, totalFiles: mappings.length, availableLessons };
+  const unidentifiedTitles = input.contents.filter(row => lessonNumberFromContentTitle(row.title) === null).map(row => row.title);
+  return { mappings, unmatched: unmatched.map(item => item.fileName), totalAssociations, totalFiles: mappings.length,
+    availableLessons, identifiedContents: input.contents.length - unidentifiedTitles.length,
+    unidentifiedCount: unidentifiedTitles.length, unidentifiedTitleExamples: unidentifiedTitles.slice(0, 12) };
 }
