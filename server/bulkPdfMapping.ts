@@ -1,18 +1,18 @@
-/** Correspondência explícita entre os nomes de PDFs PT_Aula_01.pdf e títulos
- * "Aula 01 - ..." da planilha de importação de conteúdos.
+/** Correspondência explícita entre PDFs PT_Aula_01.pdf / PCMG_Aula_01.pdf e títulos
+ * "Aula 01 - ..." / "PCMG Português - Aula 01 - Parte 01 - ...".
  * Escopo de disciplina obrigatório: não associa matérias distintas com Aula 01.
  */
 export type PdfMappingContent = { id: number; title: string; materialUrl: string | null };
 export type PdfMappingFile = { fileName: string; url?: string; targetLesson?: number };
 
 export function lessonNumberFromContentTitle(title: string): number | null {
-  const match = /^\s*aula\s+0*(\d{1,3})(?=\s|[-–—.:]|$)/i.exec(title);
+  const match = /^\s*(?:pcmg\s+(?:portugu[eê]s|l[ií]ngua portuguesa)\s*[-–—.:]\s*)?aula\s+0*(\d{1,3})(?=\s|[-–—.:]|$)/i.exec(title);
   const n = match ? Number(match[1]) : NaN;
   return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
 }
 export function lessonNumberFromPdfName(fileName: string): number | null {
   // Exige formato completo, evitando anexar "Aula 01 - gabarito.pdf" sem querer.
-  const match = /^(?:(?:pt|port|portugues)[_-])?aula[_\s-]*0*(\d{1,3})\.pdf$/i.exec(fileName.trim());
+  const match = /^(?:(?:pt|port|portugues|pcmg)[_-])?aula[_\s-]*0*(\d{1,3})\.pdf$/i.exec(fileName.trim());
   const n = match ? Number(match[1]) : NaN;
   return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
 }
@@ -26,7 +26,7 @@ export function mapPdfFilesToContents(input: {
   const mappings = input.files.map(file => {
     const inferredLesson = lessonNumberFromPdfName(file.fileName);
     const lesson = file.targetLesson ?? inferredLesson;
-    if (lesson === null || !Number.isInteger(lesson) || lesson < 1 || lesson > 999) throw new Error(`Nome de PDF não reconhecido: ${file.fileName}. Utilize PT_Aula_01.pdf, PT_Aula_02.pdf, etc.`);
+    if (lesson === null || !Number.isInteger(lesson) || lesson < 1 || lesson > 999) throw new Error(`Nome de PDF não reconhecido: ${file.fileName}. Utilize PT_Aula_01.pdf ou PCMG_Aula_01.pdf, etc.`);
     if (seen.has(lesson)) throw new Error(`Mais de um PDF para a Aula ${lesson}. Deixe apenas uma versão por aula.`);
     seen.add(lesson);
     const matched = input.contents.filter(row => lessonNumberFromContentTitle(row.title) === lesson);
