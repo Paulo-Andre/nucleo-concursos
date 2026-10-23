@@ -140,7 +140,8 @@ export async function clearManagedDisciplineQuestions(
       throw new Error("O banco mudou desde a prévia. Abra a análise novamente antes de excluir.");
     if(!inspection.eligibleIds.length)
       throw new Error("Não existem questões exclusivas sem uso que possam ser excluídas.");
-    for(const ids of chunks(inspection.eligibleIds)){
+    const deletableIds: number[] = inspection.eligibleIds.map((id: number) => id);
+    for(const ids of chunks<number>(deletableIds)){
       await tx.delete(reviewQueue).where(and(eq(reviewQueue.itemType,"question"),inArray(reviewQueue.itemId,ids)));
       await tx.delete(questionChangelog).where(inArray(questionChangelog.questionId,ids));
       await tx.delete(questionContentLinks).where(inArray(questionContentLinks.questionId,ids));
