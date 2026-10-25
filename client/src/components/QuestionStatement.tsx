@@ -10,7 +10,7 @@ export function splitQuestionStatement(raw: string, questionType?: "certo_errado
   if (questionType === "certo_errado" && !match) {
     // C/E frequentemente apresenta um trecho e, na frase seguinte, uma
     // afirmação gramatical a julgar. Se não houver divisão segura, preserva tudo.
-    const assertion = /^(.{12,320}?[.!?])\s+((?:Há\s+(?:concordância|emprego|uso|erro|correção|inadequação)|A\s+(?:concordância|construção|expressão|oração|forma|frase)|O\s+(?:emprego|uso|verbo|termo|sujeito|predicado)|Nesse\s+(?:caso|trecho)|Nessa\s+(?:oração|frase))\b[^?]{8,500}[.!])$/i.exec(statement);
+    const assertion = /^(.{12,600}[.!])\s+((?:Há\s+(?:concordância|emprego|uso|erro|correção|inadequação)|A\s+(?:concordância|construção|expressão|oração|forma|frase)|O\s+(?:emprego|uso|verbo|termo|sujeito|predicado|pronome)|Nesse\s+(?:caso|trecho)|Nessa\s+(?:oração|frase))\b[^?]{8,500}[.!])$/i.exec(statement);
     if (assertion && !/\?/.test(assertion[1])) return { code, context: assertion[1], question: assertion[2] };
   }
   if (!match || /\?/.test(match[1]) || (match[2].match(/\?/g)?.length ?? 0) !== 1) {
@@ -24,7 +24,7 @@ export function QuestionStatement({ statement, compact = false, questionType }: 
   return <div className={compact ? "space-y-2" : "space-y-4"}>
     {parts.code && <p className="text-[10px] font-semibold tracking-wide text-[#52717d]">QUESTÃO · {parts.code}</p>}
     {parts.context && <div className="rounded-xl border-l-4 border-[#8bc7bc] bg-[#eef6f3] p-3 sm:p-4">
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#47726f]">{questionType === "certo_errado" ? "Leia a oração" : "Leia o trecho"}</p>
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#47726f]">{questionType === "certo_errado" ? "Leia o texto" : "Leia o trecho"}</p>
       <p className={compact ? "text-sm leading-6 text-[#254650]" : "text-base leading-7 text-[#254650]"}>“{parts.context}”</p>
     </div>}
     {parts.context && questionType === "certo_errado" && <p className="text-[10px] font-bold uppercase tracking-wider text-[#47726f]">Julgue a afirmação</p>}
