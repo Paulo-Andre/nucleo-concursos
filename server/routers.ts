@@ -254,6 +254,7 @@ const disciplineSchema = z.object({
 });
 const questionSchema = z.object({
   statement: z.string().trim().min(12, "Informe o enunciado da questão.").max(20000),
+  passage: z.string().trim().max(12000).optional(),
   questionType: questionTypeSchema,
   options: z.array(z.string().trim().min(1).max(1000)).max(10).default([]),
   answer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]),
