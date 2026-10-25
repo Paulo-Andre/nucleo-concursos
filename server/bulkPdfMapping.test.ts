@@ -17,6 +17,10 @@ describe("identificação segura de PDFs para o Excel de Português", () => {
     expect(lessonNumberFromContentTitle(contents[3].title)).toBe(3);
     expect(lessonNumberFromContentTitle(contents[5].title)).toBe(45);
     expect(lessonNumberFromContentTitle("Revisão geral")).toBeNull();
+    expect(lessonNumberFromContentTitle("Português — Aula 01 - Interpretação")).toBe(1);
+    expect(lessonNumberFromContentTitle("Módulo 2 | Aula 45: Revisão")).toBe(45);
+    expect(lessonNumberFromContentTitle("Aula 01 e Aula 02")).toBeNull();
+    expect(lessonNumberFromContentTitle("PT-M01-A01 — Revisão")).toBeNull();
     expect(lessonNumberFromPdfName("PT_Aula_01.pdf")).toBe(1);
     expect(lessonNumberFromPdfName("PT_Aula_45.PDF")).toBe(45);
   });
