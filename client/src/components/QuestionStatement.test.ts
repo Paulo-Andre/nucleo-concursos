@@ -20,6 +20,17 @@ describe("apresentação de questões", () => {
     const original = "O gestor falou. Qual é a regra? Como ela funciona?";
     expect(splitQuestionStatement(original).context).toBeNull();
   });
+  it("separa oração e afirmação em questão de certo ou errado", () => {
+    expect(splitQuestionStatement("Os pareceres foi encaminhado ontem. Há concordância correta entre sujeito e locução verbal.", "certo_errado")).toEqual({
+      code: null,
+      context: "Os pareceres foi encaminhado ontem.",
+      question: "Há concordância correta entre sujeito e locução verbal.",
+    });
+  });
+  it("preserva um item de C/E que não pode ser separado com segurança", () => {
+    const original = "A concordância verbal deve seguir o núcleo do sujeito.";
+    expect(splitQuestionStatement(original, "certo_errado")).toEqual({code: null, context: null, question: original});
+  });
   it("não separa uma pergunta sem cenário", () => {
     const result = splitQuestionStatement("Qual é o sujeito da oração?");
     expect(result.context).toBeNull();
