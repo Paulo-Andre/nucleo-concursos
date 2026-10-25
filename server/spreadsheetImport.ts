@@ -13,10 +13,10 @@ type ContentRow = {
 type QuestionRow = {
   line:number;statement:string;questionType:"certo_errado"|"multipla_escolha";options:string[];
   answer:boolean|string;explanation:string;difficulty:"basic"|"intermediate"|"advanced";
-  source:string;banca:string;year:number|null;contentIds:number[];status:Status;requiresReview:boolean;
+  source:string;banca:string;year:number|null;contentIds:number[];fallbackDisciplineId?:number;status:Status;requiresReview:boolean;
 };
 type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];toCreate:number;toUpdate:number;preview:{line:number;label:string;status:Status;action:"create"|"update";existingId?:number}[]};
-type Input = {kind:ImportKind;fileName:string;base64:string};
+type Input = {kind:ImportKind;fileName:string;base64:string;fallbackDisciplineId?:number};
 const statuses = new Set(["draft","review","approved","published","inactive"]);
 
 export const MAX_SPREADSHEET_IMPORT_ROWS = 1000;
@@ -139,11 +139,39 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
       answer=options[index];
     }
     const diff=normalizeQuestionDifficulty(row.dificuldade||"");
-    const contentIds=references(row.conteudo_ids||"",row.conteudos||"",cById,cByName,"conteúdo");
+    const fallbackDisciplineId=input.fallbackDisciplineId;
+    if(fallbackDisciplineId!==undefined && !dById.has(fallbackDisciplineId))throw new Error("Disciplina selecionada não encontrada no cadastro.");
+    const lessonReference=(row.aula_referencia||row.aula_sugerida_nao_importar||"").trim();
+    let contentIds:number[];
+    if((row.conteudo_ids||"").trim()||(row.conteudos||"").trim()){
+      contentIds=references(row.conteudo_ids||"",row.conteudos||"",cById,cByName,"conteúdo");
+    }else if(lessonReference){
+      // Uma referência de aula resolve apenas conteúdos com título inequívoco
+      // do curso informado, sem inventar IDs nem recorrer à primeira correspondência.
+      const courseReference=(row.curso_referencia||"").trim();
+      if(!courseReference)throw new Error("Informe curso_referencia ao usar aula_referencia, para evitar vínculo em curso incorreto.");
+      const lessonNumber=/^(?:aula\s*)?(\d{1,3})$/i.exec(lessonReference)?.[1];
+      if(!lessonNumber)throw new Error("aula_referencia deve conter apenas Aula NN (ex.: Aula 07).");
+      const courseTokens=normalize(courseReference).split(/\s+/).filter(Boolean);
+      const found=cs.filter(content=>{
+        const title=normalize(content.title);
+        const parts=title.split(/\s+[-–—]\s+/);
+        if(parts.length<2)return false;
+        const prefix=parts[0];
+        if(!courseTokens.every(token=>prefix.split(/\s+/).includes(token)))return false;
+        const actual=/\baula\s*0*(\d{1,3})\b/i.exec(title)?.[1];
+        return actual!==undefined && Number(actual)===Number(lessonNumber);
+      });
+      if(!found.length && fallbackDisciplineId===undefined)throw new Error("Nenhum conteúdo do curso e aula informados foi encontrado. Confira curso_referencia e aula_referencia.");
+      contentIds=Array.from(new Set(found.map(content=>content.id)));
+    }else{
+      if(fallbackDisciplineId===undefined)throw new Error("Vincule um conteúdo por ID/nome ou escolha uma disciplina para questões sem aula.");
+      contentIds=[];
+    }
     item={line:entry.line,statement:label.trim(),questionType:questionType as QuestionRow["questionType"],
       options,answer,explanation:text(row,"comentario",12000),
       difficulty:diff as QuestionRow["difficulty"],source:text(row,"fonte",240),
-      banca:text(row,"banca",120),year:readYear(row.ano||""),contentIds,status:status(row.status||""),
+      banca:text(row,"banca",120),year:readYear(row.ano||""),contentIds,fallbackDisciplineId:contentIds.length?undefined:fallbackDisciplineId,status:status(row.status||""),
       requiresReview:boolean(row.exigir_revisao||"")};
    }
    const key=normalize(label);
@@ -222,7 +250,29 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
       createdByUserId:actorUserId,updatedByUserId:actorUserId,
     });
     const id=Number(inserted[0].insertId);
-    await tx.insert(questionContentLinks).values(r.contentIds.map(contentId=>({questionId:id,contentId,linkedByUserId:actorUserId})));
+    let resolvedContentIds=r.contentIds;
+    if(!resolvedContentIds.length){
+      if(!r.fallbackDisciplineId)throw new Error("Disciplina obrigatória para questão avulsa.");
+      const disc=(await tx.select().from(disciplines).where(eq(disciplines.id,r.fallbackDisciplineId)).limit(1))[0];
+      if(!disc)throw new Error("Disciplina não encontrada durante a importação.");
+      // O esquema atual utiliza vínculos questão -> conteúdo -> disciplina.
+      // Mantém uma seção única por disciplina, sem inventar associação pedagógica à aula.
+      const bucketTitle=`Questões avulsas — ${disc.name}`;
+      const existingBuckets=await tx.select({id:contents.id}).from(contents)
+        .innerJoin(disciplineContents,eq(disciplineContents.contentId,contents.id))
+        .where(and(eq(contents.title,bucketTitle),eq(disciplineContents.disciplineId,disc.id))).limit(1);
+      let bucketId=existingBuckets[0]?.id;
+      if(!bucketId){
+        const created=await tx.insert(contents).values({
+          title:bucketTitle,description:"Agrupamento de questões importadas sem aula específica.",
+          status:"published",requiresReview:false,createdByUserId:actorUserId,updatedByUserId:actorUserId,
+        });
+        bucketId=Number(created[0].insertId);
+        await tx.insert(disciplineContents).values({disciplineId:disc.id,contentId:bucketId,linkedByUserId:actorUserId});
+      }
+      resolvedContentIds=[bucketId];
+    }
+    await tx.insert(questionContentLinks).values(resolvedContentIds.map(contentId=>({questionId:id,contentId,linkedByUserId:actorUserId})));
     await tx.insert(questionChangelog).values({questionId:id,actorUserId,changedField:"created",newValue:JSON.stringify({statement:r.statement})});
     if(r.status==="review")await tx.insert(reviewQueue).values({itemType:"question",itemId:id,status:"pending",submittedByUserId:actorUserId});
    }
