@@ -96,7 +96,8 @@ type SimulationInput = {
 
 export type StudyReviewSnapshot = {
   statement: string;
-  answer: boolean;
+  answer: boolean | string;
+  options?: string[];
   explanation: string;
   discipline: string;
   subject: string;
@@ -150,8 +151,8 @@ function parseMetric(raw: string) {
 function parseStudyReviewSnapshot(raw: string): StudyReviewSnapshot | null {
   try {
     const parsed = JSON.parse(raw) as Partial<StudyReviewSnapshot>;
-    if (!parsed || typeof parsed !== "object" || typeof parsed.statement !== "string" || typeof parsed.answer !== "boolean" || typeof parsed.explanation !== "string" || typeof parsed.discipline !== "string" || typeof parsed.subject !== "string") return null;
-    return { statement: parsed.statement, answer: parsed.answer, explanation: parsed.explanation, discipline: parsed.discipline, subject: parsed.subject, ...(typeof parsed.source === "string" ? { source: parsed.source } : {}) };
+    if (!parsed || typeof parsed !== "object" || typeof parsed.statement !== "string" || (typeof parsed.answer !== "boolean" && typeof parsed.answer !== "string") || typeof parsed.explanation !== "string" || typeof parsed.discipline !== "string" || typeof parsed.subject !== "string") return null;
+    return { statement: parsed.statement, answer: parsed.answer, ...(Array.isArray(parsed.options) && parsed.options.every(option => typeof option === "string") ? { options: parsed.options } : {}), explanation: parsed.explanation, discipline: parsed.discipline, subject: parsed.subject, ...(typeof parsed.source === "string" ? { source: parsed.source } : {}) };
   } catch {
     return null;
   }
