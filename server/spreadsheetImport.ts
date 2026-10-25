@@ -27,7 +27,7 @@ export function normalizeQuestionDifficulty(raw:string):QuestionRow["difficulty"
  if(!value)return "intermediate";
  const aliases:Record<string,QuestionRow["difficulty"]>={
   basic:"basic",basico:"basic",basica:"basic",facil:"basic",
-  intermediate:"intermediate",intermediario:"intermediate",intermediaria:"intermediate",
+  intermediate:"intermediate",medium:"intermediate",intermediario:"intermediate",intermediaria:"intermediate",
   medio:"intermediate",media:"intermediate",
   advanced:"advanced",avancado:"advanced",avancada:"advanced",dificil:"advanced",
  };
