@@ -10,7 +10,7 @@ export function splitQuestionStatement(raw: string, questionType?: "certo_errado
   if (questionType === "certo_errado" && !match) {
     // C/E frequentemente apresenta um trecho e, na frase seguinte, uma
     // afirmação gramatical a julgar. Se não houver divisão segura, preserva tudo.
-    const assertion = /^(.{12,600}[.!])\s+((?:Há\s+(?:concordância|emprego|uso|erro|correção|inadequação)|A\s+(?:concordância|construção|expressão|oração|forma|frase)|O\s+(?:emprego|uso|verbo|termo|sujeito|predicado|pronome)|Nesse\s+(?:caso|trecho)|Nessa\s+(?:oração|frase)|No\s+contexto,?)\b[^?]{8,500}[.!])$/i.exec(statement);
+    const assertion = /^(.{12,600}[.!])\s+((?:Há\s+(?:concordância|emprego|uso|erro|correção|inadequação)|A\s+(?:concordância|construção|expressão|oração|forma|frase)|O\s+(?:emprego|uso|verbo|termo|sujeito|predicado|pronome)|Nesse\s+(?:caso|trecho)|Nessa\s+(?:oração|frase)|No\s+contexto)\b[^?]{8,500}[.!])$/i.exec(statement);
     if (assertion && !/\?/.test(assertion[1])) return { code, context: assertion[1], question: assertion[2] };
   }
   if (!match || /\?/.test(match[1]) || (match[2].match(/\?/g)?.length ?? 0) !== 1) {
