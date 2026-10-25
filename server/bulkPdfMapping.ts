@@ -6,18 +6,17 @@ export type PdfMappingContent = { id: number; title: string; materialUrl: string
 export type PdfMappingFile = { fileName: string; url?: string; targetLesson?: number };
 
 export function lessonNumberFromContentTitle(title: string): number | null {
-  // Reconhece "Aula 01" no início ou depois de um prefixo textual explícito.
-  // Recusa títulos que citam mais de uma aula, para não associar equivocadamente.
-  // Não interpreta códigos como M01-A01 como números de aula.
   const normalized = title.trim();
-  // Prefixos estruturais permitidos; não confundir referências a uma aula no texto.
-  const candidate = /^(?:(?:portugu[eê]s|língua portuguesa|módulo\s*\d+)\s*[:|–—-]\s*)?(aula\s*0*\d{1,3}(?=\s|[-–—.:|]|$))/i.exec(normalized);
-  if (!candidate) return null;
-  const matches = Array.from(normalized.matchAll(/\baula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/gi));
-  if (matches.length !== 1) return null;
-  const match = matches[0];
-  const n = match ? Number(match[1]) : NaN;
-  return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
+  // O cadastro PCMG usa "PCMG Português - Aula 01 - Parte 01 - AULA 01 - ...".
+  // Aceitamos somente prefixos estruturados e exigimos que todas as referências
+  // explícitas a aulas usem o MESMO número; "Parte 01" não é número de aula.
+  const prefix = /^(?:(?:(?:pcmg\s+)?(?:portugu[eê]s|língua portuguesa)|módulo\s*\d+)\s*[:|–—-]\s*)?aula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/i.exec(normalized);
+  if (!prefix) return null;
+  const lesson = Number(prefix[1]);
+  if (!Number.isInteger(lesson) || lesson < 1 || lesson > 999) return null;
+  const references = Array.from(normalized.matchAll(/\baula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/gi));
+  if (references.some(match => Number(match[1]) !== lesson)) return null;
+  return lesson;
 }
 export function lessonNumberFromPdfName(fileName: string): number | null {
   // Exige formato completo, evitando anexar "Aula 01 - gabarito.pdf" sem querer.
