@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 type Kind="contents"|"questions";
 const templates:Record<Kind,string[]> = {
  contents:["titulo","objetivo","descricao","resumo_card","corpo","disciplina_ids","disciplinas","status","exigir_revisao","aviso","capa_url","video_url","video_rotulo","material_url","material_rotulo"],
- questions:["enunciado","tipo","alternativa_a","alternativa_b","alternativa_c","alternativa_d","alternativa_e","resposta","comentario","dificuldade","banca","ano","fonte","conteudo_ids","conteudos","status","exigir_revisao"],
+ questions:["enunciado","texto_base","tipo","alternativa_a","alternativa_b","alternativa_c","alternativa_d","alternativa_e","resposta","comentario","dificuldade","banca","ano","fonte","conteudo_ids","conteudos","status","exigir_revisao"],
 };
 export function AdminSpreadsheetImportPanel({onImported}:{onImported:()=>Promise<void>}) {
  const [kind,setKind]=useState<Kind>("contents");
