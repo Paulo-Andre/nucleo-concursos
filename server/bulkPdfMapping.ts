@@ -6,7 +6,12 @@ export type PdfMappingContent = { id: number; title: string; materialUrl: string
 export type PdfMappingFile = { fileName: string; url?: string; targetLesson?: number };
 
 export function lessonNumberFromContentTitle(title: string): number | null {
-  const match = /^\s*aula\s+0*(\d{1,3})(?=\s|[-–—.:]|$)/i.exec(title);
+  // Reconhece "Aula 01" no início ou depois de um prefixo textual explícito.
+  // Recusa títulos que citam mais de uma aula, para não associar equivocadamente.
+  // Não interpreta códigos como M01-A01 como números de aula.
+  const matches = Array.from(title.matchAll(/(?:^|[\s:|–—-])aula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/gi));
+  if (matches.length !== 1) return null;
+  const match = matches[0];
   const n = match ? Number(match[1]) : NaN;
   return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
 }
