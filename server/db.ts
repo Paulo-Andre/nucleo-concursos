@@ -637,6 +637,7 @@ function toCompetitionQuestion(question: typeof questions.$inferSelect): Competi
   return {
     id: question.id,
     statement: question.statement,
+    passage: question.passage,
     questionType: question.questionType,
     options: parseCompetitionOptions(question.optionsJson),
     difficulty: question.difficulty,
@@ -1507,6 +1508,7 @@ export async function recordSimulation(userId: number, input: SimulationInput, i
       snapshot: {
         id: question.id,
         statement: question.statement,
+        passage: question.passage,
         type: question.questionType,
         answer: question.answer,
         explanation: question.explanation,
@@ -2258,6 +2260,7 @@ type ContentInput = {
 
 export type ManagedQuestionInput = {
   statement: string;
+  passage?: string | null;
   questionType: QuestionType;
   options: string[];
   answer: boolean | string;
@@ -2717,7 +2720,7 @@ export async function listStudyQuestions(userId: number, isAdmin = false) {
     if(!permitted.length)return [];
     const disciplineNames=Array.from(new Set(permitted.flatMap(content=>disciplinesByContent.get(content.id)??[])));
     return [{
-      id: question.id, statement: question.statement, questionType: question.questionType,
+      id: question.id, statement: question.statement, passage: question.passage, questionType: question.questionType,
       options: question.optionsJson ? JSON.parse(question.optionsJson) : [], answer: JSON.parse(question.answerJson),
       explanation: question.explanation, difficulty: question.difficulty, source: question.source,
       banca: question.banca, year: question.year, discipline: disciplineNames[0] ?? "Biblioteca central",
@@ -2737,7 +2740,7 @@ export async function createManagedQuestion(actorUserId: number, input: ManagedQ
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const result = await db.insert(questions).values({
-    statement: input.statement.trim(), questionType: input.questionType, optionsJson: input.questionType === "multipla_escolha" ? JSON.stringify(input.options) : null,
+    statement: input.statement.trim(), passage: normalizeOptional(input.passage), questionType: input.questionType, optionsJson: input.questionType === "multipla_escolha" ? JSON.stringify(input.options) : null,
     answerJson: JSON.stringify(input.answer), explanation: normalizeOptional(input.explanation), difficulty: input.difficulty,
     source: normalizeOptional(input.source), banca: normalizeOptional(input.banca), year: input.year ?? null,
     requiresReview: input.requiresReview, status: input.status === "review" ? "draft" : (input.status ?? "draft"), createdByUserId: actorUserId, updatedByUserId: actorUserId,
@@ -2759,7 +2762,7 @@ export async function updateManagedQuestion(actorUserId: number, questionId: num
   const previous = existing[0];
   if (!previous) throw new Error("Questão não encontrada.");
   const next = {
-    statement: input.statement.trim(), questionType: input.questionType, optionsJson: input.questionType === "multipla_escolha" ? JSON.stringify(input.options) : null,
+    statement: input.statement.trim(), passage: normalizeOptional(input.passage), questionType: input.questionType, optionsJson: input.questionType === "multipla_escolha" ? JSON.stringify(input.options) : null,
     answerJson: JSON.stringify(input.answer), explanation: normalizeOptional(input.explanation), difficulty: input.difficulty,
     source: normalizeOptional(input.source), banca: normalizeOptional(input.banca), year: input.year ?? null,
     requiresReview: input.requiresReview, status: input.status ?? previous.status,
