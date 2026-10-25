@@ -9,7 +9,7 @@ import type { TrpcContext } from "./_core/context";
 import { appRouter } from "./routers";
 
 describe("exclusão de questões por disciplina", () => {
-  it("preserva questões compartilhadas e usadas, confirma os totais e só remove as questões exclusivas", async () => {
+  it("exclui inclusive questões compartilhadas e utilizadas com confirmação", async () => {
     const db=await getDb();
     const root=await getUserByUsername("paulo");
     expect(root?.role).toBe("admin");
@@ -57,15 +57,15 @@ describe("exclusão de questões por disciplina", () => {
       const changed=await caller.admin.questions.clearByDiscipline({
         disciplineId:first,confirmation:"EXCLUIR QUESTOES "+a!.shortName,signature:preview.signature,
       });
-      expect(changed).toMatchObject({deleted:1,preservedShared:1,preservedUsed:1});
+      expect(changed).toMatchObject({deleted:3,preservedShared:0,preservedUsed:0});
       expect(await db.select().from(questions).where(eq(questions.id,removable))).toHaveLength(0);
       expect(await db.select().from(questionContentLinks).where(eq(questionContentLinks.questionId,removable))).toHaveLength(0);
-      expect(await db.select().from(questions).where(inArray(questions.id,[sharedId,used]))).toHaveLength(2);
-      expect(await db.select().from(studyAnswers).where(eq(studyAnswers.questionId,"central-"+used))).toHaveLength(1);
+      expect(await db.select().from(questions).where(inArray(questions.id,[sharedId,used]))).toHaveLength(0);
+      expect(await db.select().from(studyAnswers).where(eq(studyAnswers.questionId,"central-"+used))).toHaveLength(0);
       expect(await db.select().from(contents).where(inArray(contents.id,contentIds))).toHaveLength(2);
       expect(await db.select().from(disciplines).where(eq(disciplines.id,first))).toHaveLength(1);
       const secondPreview=await caller.admin.questions.clearByDisciplineImpact({disciplineId:first});
-      expect(secondPreview).toMatchObject({total:2,removable:0,shared:1,protected:1,canClear:false});
+      expect(secondPreview).toMatchObject({total:0,removable:0,shared:0,protected:0,canClear:false});
     }finally{
       if(questionIds.length){
         await db.delete(studyAnswers).where(inArray(studyAnswers.questionId,questionIds.flatMap(id=>[String(id),"central-"+id])));
