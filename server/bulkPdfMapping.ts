@@ -9,7 +9,11 @@ export function lessonNumberFromContentTitle(title: string): number | null {
   // Reconhece "Aula 01" no início ou depois de um prefixo textual explícito.
   // Recusa títulos que citam mais de uma aula, para não associar equivocadamente.
   // Não interpreta códigos como M01-A01 como números de aula.
-  const matches = Array.from(title.matchAll(/(?:^|[\s:|–—-])aula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/gi));
+  const normalized = title.trim();
+  // Prefixos estruturais permitidos; não confundir referências a uma aula no texto.
+  const candidate = /^(?:(?:portugu[eê]s|língua portuguesa|módulo\s*\d+)\s*[:|–—-]\s*)?(aula\s*0*\d{1,3}(?=\s|[-–—.:|]|$))/i.exec(normalized);
+  if (!candidate) return null;
+  const matches = Array.from(normalized.matchAll(/\baula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/gi));
   if (matches.length !== 1) return null;
   const match = matches[0];
   const n = match ? Number(match[1]) : NaN;
