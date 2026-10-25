@@ -101,7 +101,7 @@ export function KnowledgeBaseManager({ courses }: { courses: Course[] }) {
   const questionsImpact = trpc.admin.questions.clearByDisciplineImpact.useMutation({onError:fail});
   const questionsClear = trpc.admin.questions.clearByDiscipline.useMutation({
     onSuccess:async result=>{setClearQuestionsImpact(null);setClearQuestionsTyped("");
-      await complete("Questões excluídas: "+result.deleted+". Preservadas: "+result.preservedShared+" compartilhadas e "+result.preservedUsed+" utilizadas por alunos.")();
+      await complete("Exclusão definitiva concluída: "+result.deleted+" questões removidas, incluindo compartilhadas e já utilizadas.")();
     },onError:fail,
   });
   const contentCreate = trpc.admin.contents.create.useMutation({ onSuccess: complete("Conteúdo criado e auditado."), onError: fail });
@@ -192,18 +192,18 @@ function ClearDisciplineQuestionsDialog({impact,typed,onTyped,pending,onCancel,o
       <p className="mt-3 text-sm font-semibold text-[#173d4a]">{impact.name} ({impact.shortName})</p>
       <div className="mt-3 rounded-lg border border-[#e9d9d0] bg-[#fff9f6] p-3 text-xs leading-6 text-[#70463d]">
         <p><b>{impact.total}</b> questões encontradas nos conteúdos desta disciplina, compartilhada por <b>{impact.courseCount}</b> curso(s). A exclusão afetará todos esses cursos.</p>
-        <p><b>{impact.removable}</b> questões exclusivas e ainda não utilizadas serão excluídas definitivamente.</p>
-        <p><b>{impact.shared}</b> questões compartilhadas com outras disciplinas serão preservadas.</p>
-        <p><b>{impact.protected}</b> questões usadas em respostas, revisões, simulados ou competições serão preservadas.</p>
+        <p><b>{impact.total}</b> questões serão excluídas definitivamente, independentemente dos vínculos ou do histórico de uso.</p>
+        <p><b>{impact.shared}</b> questões compartilhadas também serão removidas das outras disciplinas.</p>
+        <p><b>{impact.protected}</b> questões já utilizadas também serão excluídas, juntamente com suas respostas e referências históricas.</p>
       </div>
-      <p className="mt-2 text-xs leading-5 text-[#52666f]">A operação não apaga aulas nem a disciplina. As questões preservadas permanecem acessíveis conforme seus vínculos. Faça backup do banco antes de excluir.</p>
-      {!impact.canClear?<p role="alert" className="mt-3 rounded border border-[#e5b6a8] bg-[#fff0ec] p-3 text-xs font-bold text-[#924131]">Nenhuma questão pode ser excluída com segurança. Questões compartilhadas ou utilizadas devem ser mantidas ou marcadas INATIVAS individualmente.</p>:
+      <p className="mt-2 text-xs leading-5 text-[#52666f]">A operação mantém cursos, disciplinas e aulas, mas remove definitivamente as questões selecionadas e os registros relacionados. Indicadores de desempenho anteriores podem mudar. Faça backup do banco antes de excluir.</p>
+      {!impact.canClear?<p role="alert" className="mt-3 rounded border border-[#e5b6a8] bg-[#fff0ec] p-3 text-xs font-bold text-[#924131]">Nenhuma questão está vinculada aos conteúdos desta disciplina.</p>:
         <label className="mt-4 block text-xs font-semibold text-[#254751]">Digite exatamente <strong className="break-all text-[#9d4438]">{confirmation}</strong> para confirmar:
           <Input value={typed} onChange={event=>onTyped(event.target.value)} className="mt-2 bg-white"/>
         </label>}
       <div className="mt-5 flex flex-wrap justify-end gap-2">
         <button type="button" disabled={pending} onClick={onCancel} className="rounded border border-[#b7d1c8] bg-white px-4 py-2 text-xs font-bold text-[#365a62]">Cancelar</button>
-        {impact.canClear&&<button type="button" disabled={pending||typed!==confirmation} onClick={onConfirm} className="inline-flex items-center gap-2 rounded border border-[#ac554c] bg-[#9e3c36] px-4 py-2 text-xs font-bold text-white disabled:opacity-40"><Trash2 className="h-3.5 w-3.5"/>Excluir {impact.removable} questões</button>}
+        {impact.canClear&&<button type="button" disabled={pending||typed!==confirmation} onClick={onConfirm} className="inline-flex items-center gap-2 rounded border border-[#ac554c] bg-[#9e3c36] px-4 py-2 text-xs font-bold text-white disabled:opacity-40"><Trash2 className="h-3.5 w-3.5"/>Excluir definitivamente {impact.total} questões</button>}
       </div>
     </section>
   </div>;
