@@ -6,7 +6,7 @@ export function splitQuestionStatement(raw: string) {
   const statement = codeMatch ? input.slice(codeMatch[0].length).trim() : input;
   // Somente separa frases curtas seguidas de pergunta explícita. Não divide
   // automaticamente textos extensos, questões com várias perguntas ou citações.
-  const match = /^(.{12,320}?[.!?])\s+(Qual\b[^]*\?)$/i.exec(statement);
+  const match = /^(.{12,320}?[.!?])\s+((?:(?:No contexto|Nesse contexto|Nessa situação|Com base (?:no|na) (?:texto|trecho|oração)|Considerando (?:o|a) (?:texto|trecho|oração)),?\s+)?(?:Qual|Quais|Que|Como|Por que|Em qual|Assinale|Identifique|Indique)\b[^]*\?)$/i.exec(statement);
   if (!match || /\?/.test(match[1]) || (match[2].match(/\?/g)?.length ?? 0) !== 1) {
     return { code, context: null as string | null, question: statement };
   }
@@ -18,8 +18,8 @@ export function QuestionStatement({ statement, compact = false }: { statement: s
   return <div className={compact ? "space-y-2" : "space-y-4"}>
     {parts.code && <p className="text-[10px] font-semibold tracking-wide text-[#52717d]">QUESTÃO · {parts.code}</p>}
     {parts.context && <div className="rounded-xl border-l-4 border-[#8bc7bc] bg-[#eef6f3] p-3 sm:p-4">
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#47726f]">Situação apresentada</p>
-      <p className={compact ? "text-sm leading-6 text-[#254650]" : "text-base leading-7 text-[#254650]"}>{parts.context}</p>
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#47726f]">Leia o trecho</p>
+      <p className={compact ? "text-sm leading-6 text-[#254650]" : "text-base leading-7 text-[#254650]"}>“{parts.context}”</p>
     </div>}
     <p className={compact ? "text-sm font-semibold leading-6 text-[#1c3945]" : "font-display text-xl font-bold leading-9 text-[#1c3945] sm:text-2xl"}>{parts.question}</p>
   </div>;
