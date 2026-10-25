@@ -25,6 +25,26 @@ describe("identificação segura de PDFs para o Excel de Português", () => {
     expect(lessonNumberFromPdfName("PT_Aula_45.PDF")).toBe(45);
   });
 
+  it("reconhece os títulos reais da importação PCMG com partes e menções repetidas", () => {
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 - Parte 01 - AULA 01 - INTERPRETAÇÃO")).toBe(1);
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 07 - Parte 02 - AULA 07 - Aula 07")).toBe(7);
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 45 - Parte 02 - AULA 45 - REGÊNCIA NOMINAL")).toBe(45);
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 09 - Parte 02 - Continuação dos estudos")).toBe(9);
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 - Parte 02 - AULA 02 - Conteúdo incorreto")).toBeNull();
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 e Aula 02")).toBeNull();
+    const result = mapPdfFilesToContents({
+      files: [{ fileName: "PT_Aula_01.pdf" }, { fileName: "PT_Aula_45.pdf" }],
+      contents: [
+        { id: 597, title: "PCMG Português - Aula 01 - Parte 01 - AULA 01 - INTERPRETAÇÃO", materialUrl: null },
+        { id: 598, title: "PCMG Português - Aula 01 - Parte 02 - AULA 01 - INTERPRETAÇÃO", materialUrl: null },
+        { id: 700, title: "PCMG Português - Aula 45 - Parte 02 - AULA 45 - REGÊNCIA NOMINAL", materialUrl: null },
+      ], replaceExisting: false,
+    });
+    expect(result.unmatched).toEqual([]);
+    expect(result.totalAssociations).toBe(3);
+    expect(result.availableLessons.map(item => item.lesson)).toEqual([1, 45]);
+  });
+
   it("associa um PDF a todas as subdivisões da aula correspondente", () => {
     const result = mapPdfFilesToContents({
       files: [{ fileName: "PT_Aula_01.pdf" }, { fileName: "PT_Aula_03.pdf" }],
