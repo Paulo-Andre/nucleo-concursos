@@ -7,9 +7,8 @@ import {
 } from "../drizzle/schema";
 import { getDb } from "./db";
 
-/** O banco não tem uma coluna disciplinaId na questão: a disciplina é deduzida
- * exclusivamente de questionContentLinks -> disciplineContents.
- * Questões reutilizadas em outras disciplinas jamais são apagadas em lote.
+/** A disciplina é identificada pelos vínculos questão → conteúdo → disciplina.
+ * Exclusão administrativa total remove a questão e TODOS os vínculos, inclusive os compartilhados.
  */
 type Store = any;
 const chunks = <T,>(values:T[],size=500) =>
@@ -114,7 +113,7 @@ async function analyze(store:Store,disciplineId:number) {
   })).digest("hex");
   return {...discipline,courseCount,total:candidateIds.length,removable:eligibleIds.length,
     shared:sharedIds.length,protected:protectedIds.length,
-    canClear:eligibleIds.length>0,signature,eligibleIds,protectedIds,sharedIds};
+    canClear:candidateIds.length>0,signature,eligibleIds,protectedIds,sharedIds};
 }
 
 export async function getManagedDisciplineQuestionsClearImpact(disciplineId:number) {
@@ -124,8 +123,9 @@ export async function getManagedDisciplineQuestionsClearImpact(disciplineId:numb
   return impact;
 }
 
-/** Exclui definitivamente apenas questões exclusivas não usadas. Restantes são preservadas.
- * Prévia, confirmação e contagens são revalidadas no início da transação.
+/** Exclui todas as questões associadas à disciplina, mesmo compartilhadas ou utilizadas.
+ * O histórico referente às questões excluídas também é removido, sem apagar cursos ou aulas.
+ * Todas as alterações são atômicas, com prévia revalidada e registro de auditoria.
  */
 export async function clearManagedDisciplineQuestions(
   actorUserId:number,disciplineId:number,confirmation:string,signature:string,
@@ -138,10 +138,26 @@ export async function clearManagedDisciplineQuestions(
       throw new Error("Digite exatamente a confirmação exibida na tela.");
     if(inspection.signature!==signature)
       throw new Error("O banco mudou desde a prévia. Abra a análise novamente antes de excluir.");
-    if(!inspection.eligibleIds.length)
-      throw new Error("Não existem questões exclusivas sem uso que possam ser excluídas.");
-    const deletableIds: number[] = inspection.eligibleIds.map((id: number) => id);
+    if(!inspection.total)
+      throw new Error("Não existem questões nesta disciplina.");
+    const deletableIds:number[] = [...inspection.eligibleIds,...inspection.protectedIds,...inspection.sharedIds].sort((a,b)=>a-b);
+    const keySet = new Set(deletableIds.map(id=>String(id)));
+    const rounds = await tx.select({id:competitionRounds.id,questionIdsJson:competitionRounds.questionIdsJson}).from(competitionRounds);
+    // Nunca deixar IDs eliminados em rodadas competitivas. JSON desconhecido bloqueia a transação.
+    for(const round of rounds){
+      let parsed:unknown;
+      try{parsed=JSON.parse(round.questionIdsJson);}catch{throw new Error("Rodada competitiva com JSON inválido: corrija antes de excluir.");}
+      if(!Array.isArray(parsed))throw new Error("Formato inesperado de rodada competitiva. Exclusão cancelada.");
+      const retained=parsed.filter((item:unknown)=>!keySet.has(String(item)));
+      if(retained.length!==parsed.length)
+        await tx.update(competitionRounds).set({questionIdsJson:JSON.stringify(retained)}).where(eq(competitionRounds.id,round.id));
+    }
     for(const ids of chunks<number>(deletableIds)){
+      const keys=ids.flatMap(id=>[String(id),"central-"+id]);
+      await tx.delete(studyAnswers).where(inArray(studyAnswers.questionId,keys));
+      await tx.delete(studyReviewItems).where(inArray(studyReviewItems.questionKey,keys));
+      await tx.delete(simulationQuestions).where(inArray(simulationQuestions.questionId,ids));
+      await tx.delete(competitionAnswers).where(inArray(competitionAnswers.questionId,ids));
       await tx.delete(reviewQueue).where(and(eq(reviewQueue.itemType,"question"),inArray(reviewQueue.itemId,ids)));
       await tx.delete(questionChangelog).where(inArray(questionChangelog.questionId,ids));
       await tx.delete(questionContentLinks).where(inArray(questionContentLinks.questionId,ids));
@@ -149,12 +165,12 @@ export async function clearManagedDisciplineQuestions(
     }
     await tx.insert(adminAuditLogs).values({
       actorUserId,action:"EXCLUSAO_QUESTOES_DISCIPLINA",
-      detail:"Disciplina "+inspection.shortName+" (#"+disciplineId+"): "+inspection.eligibleIds.length+
-        " questões exclusivas sem uso excluídas; "+inspection.sharedIds.length+
-        " compartilhadas e "+inspection.protectedIds.length+
-        " utilizadas por alunos preservadas. Exclusão confirmada pelo administrador.",
+      detail:"Disciplina "+inspection.shortName+" (#"+disciplineId+"): "+
+        deletableIds.length+" questões excluídas definitivamente, incluindo "+
+        inspection.sharedIds.length+" compartilhadas e "+inspection.protectedIds.length+
+        " utilizadas. Vínculos, respostas e referências históricas dessas questões removidos. Confirmação ROOT.",
     });
-    return {id:disciplineId,deleted:inspection.eligibleIds.length,
-      preservedShared:inspection.sharedIds.length,preservedUsed:inspection.protectedIds.length};
+    return {id:disciplineId,deleted:deletableIds.length,
+      preservedShared:0,preservedUsed:0};
   });
 }
