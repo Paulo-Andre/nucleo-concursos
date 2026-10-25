@@ -10,7 +10,7 @@ export function lessonNumberFromContentTitle(title: string): number | null {
   // O cadastro PCMG usa "PCMG Português - Aula 01 - Parte 01 - AULA 01 - ...".
   // Aceitamos somente prefixos estruturados e exigimos que todas as referências
   // explícitas a aulas usem o MESMO número; "Parte 01" não é número de aula.
-  const prefix = /^(?:(?:(?:pcmg\s+)?(?:portugu[eê]s|língua portuguesa)|módulo\s*\d+)\s*[:|–—-]\s*)?aula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/i.exec(normalized);
+  const prefix = /^(?:(?:(?:pcmg\s+)?(?:portugu[eê]?s|língua portuguesa)|módulo\s*\d+)\s*[:|–—-]\s*)?aula\s*0*(\d{1,3})(?=\s|[-–—.:|]|$)/i.exec(normalized);
   if (!prefix) return null;
   const lesson = Number(prefix[1]);
   if (!Number.isInteger(lesson) || lesson < 1 || lesson > 999) return null;
