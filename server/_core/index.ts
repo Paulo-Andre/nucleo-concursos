@@ -5,7 +5,8 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
-import { createContext } from "./context";
+import { createContext, resolveSessionUser } from "./context";
+import { takePrivateBackupDownload, disposePrivateBackupDownload } from "../privateBackupDownloads";
 import { serveStatic, setupVite } from "./vite";
 import { ensureRootAccount } from "../auth/rootBootstrap";
 import { processMercadoPagoWebhook, resolveMercadoPagoNotificationDataId } from "../mercadoPago";
@@ -35,6 +36,8 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   app.disable("x-powered-by");
+  // Somente proxy local é confiável por padrão; configure TRUST_PROXY para CIDRs explícitos se necessário.
+  app.set("trust proxy", process.env.TRUST_PROXY?.trim() || "loopback");
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     // A prévia ROOT é carregada pela mesma origem; as demais páginas seguem sem poder ser incorporadas.
@@ -46,10 +49,26 @@ async function startServer() {
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     next();
   });
-  // O limite cobre os uploads de imagem permitidos (até 4 MB) sem aceitar cargas desnecessariamente grandes.
-  app.use(express.json({ limit: "8mb" }));
+  // Arquivos PDF de até 10 MB são codificados em base64 (~13,4 MB).
+  // Endpoints administrativos validam autorização, tipo e tamanho real antes de armazenar.
+  app.use(express.json({ limit: "16mb" }));
   app.use(express.urlencoded({ limit: "8mb", extended: true }));
   registerStorageProxy(app);
+  app.get("/api/admin/backups/:token", async (req, res) => {
+    // Downloads exigem sessão ROOT viva, sem cache e com token único de cinco minutos.
+    res.setHeader("Cache-Control", "no-store, private");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    const user = await resolveSessionUser(req);
+    if (!user || user.role !== "admin") return res.sendStatus(403);
+    const backup = takePrivateBackupDownload(req.params.token, user.id);
+    if (!backup) return res.sendStatus(404);
+    res.download(backup.filePath, backup.fileName, {
+      headers: { "Cache-Control": "no-store, private", "Content-Type": "application/json" },
+    }, error => {
+      void disposePrivateBackupDownload(backup).catch(() => {});
+      if (error && !res.headersSent) res.sendStatus(500);
+    });
+  });
   app.post("/api/payments/mercado-pago/webhook", async (req, res) => {
     try {
       const dataId = resolveMercadoPagoNotificationDataId({
@@ -72,6 +91,20 @@ async function startServer() {
   });
   app.post("/api/scheduled/weeklyReset", weeklyResetHandler);
   // tRPC API
+  app.use((req, res, next) => {
+    if (req.method !== "POST" || !req.path.startsWith("/api/trpc")) return next();
+    const source = req.get("origin");
+    const fetchSite = req.get("sec-fetch-site");
+    if (fetchSite === "cross-site") return res.status(403).json({ error: "Origem não autorizada" });
+    if (source) {
+      try {
+        if (new URL(source).host !== req.get("host")) return res.status(403).json({ error: "Origem não autorizada" });
+      } catch {
+        return res.status(403).json({ error: "Origem não autorizada" });
+      }
+    }
+    next();
+  });
   app.use(
     "/api/trpc",
     createExpressMiddleware({

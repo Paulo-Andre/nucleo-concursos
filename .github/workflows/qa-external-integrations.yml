@@ -1,0 +1,35 @@
+name: QA integrações externas (manual, sem cobranças)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  credentials-and-webhooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      MERCADO_PAGO_ACCESS_TOKEN: ${{ secrets.QA_MP_SANDBOX_ACCESS_TOKEN }}
+      MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.QA_MP_SANDBOX_WEBHOOK_SECRET }}
+      RESEND_API_KEY: ${{ secrets.QA_RESEND_API_KEY }}
+      RUN_EXTERNAL_PAYMENTS_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verificar configuração de credenciais de sandbox
+        run: |
+          test -n "$MERCADO_PAGO_ACCESS_TOKEN" || { echo "Falta segredo QA_MP_SANDBOX_ACCESS_TOKEN"; exit 1; }
+          test -n "$MERCADO_PAGO_WEBHOOK_SECRET" || { echo "Falta segredo QA_MP_SANDBOX_WEBHOOK_SECRET"; exit 1; }
+      - name: Consultar conta sandbox e validar assinatura HMAC
+        run: pnpm exec vitest run server/mercado-pago.credentials.test.ts server/mercado-pago.webhook-secret.test.ts server/mercado-pago.webhook-simulation.test.ts server/mercado-pago.webhook.contract.test.ts
+      - name: Validar formato de chave Resend, se autorizada
+        if: env.RESEND_API_KEY != ''
+        run: pnpm exec vitest run server/resend.credentials.test.ts

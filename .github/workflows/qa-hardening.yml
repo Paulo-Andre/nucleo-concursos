@@ -1,0 +1,84 @@
+name: QA segurança e regressão
+
+on:
+  pull_request:
+    branches:
+      - feat/ux-acessibilidade-jornada-aluno
+      - fix/qa-seguranca-aprendizagem-20261019
+  workflow_dispatch:
+
+concurrency:
+  group: qa-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  full-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: qa_root_password_only
+          MYSQL_DATABASE: nucleo_qa
+          MYSQL_USER: qa_user
+          MYSQL_PASSWORD: qa_password_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u qa_user -pqa_password_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=18
+    env:
+      NODE_ENV: test
+      DATABASE_URL: mysql://qa_user:qa_password_only@127.0.0.1:3306/nucleo_qa
+      JWT_SECRET: qa_jwt_secret_unique_for_ci_only_not_production_123
+      ROOT_INITIAL_PASSWORD: qa_root_password_local_ci_only
+      OWNER_OPEN_ID: ""
+      RESEND_API_KEY: ""
+      MERCADO_PAGO_ACCESS_TOKEN: "TEST-ci-only-fake-not-valid-for-api"
+      MERCADO_PAGO_WEBHOOK_SECRET: "qa_webhook_signature_test_only_never_in_production"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - name: Instalar dependências travadas
+        run: pnpm install --frozen-lockfile
+      - name: Validar sintaxe dos scripts de publicação e restauração
+        run: bash -n scripts/deploy-once-selfhost.sh scripts/verify-qa-restore.sh
+      - name: Checar TypeScript
+        run: pnpm check
+      - name: Testar migrações em MySQL limpo
+        run: pnpm db:push
+      - name: Preparar dados exclusivos de QA
+        run: pnpm exec tsx scripts/seed-qa.ts
+      - name: Executar toda a regressão (frontend e servidor)
+        run: pnpm exec vitest run --maxWorkers=1 --minWorkers=1 --no-file-parallelism
+      - name: Restauração real do backup SQL sintético
+        env:
+          QA_RESTORE: "1"
+        run: bash scripts/verify-qa-restore.sh
+      - name: Compilar para produção
+        run: pnpm build
+      - name: Instalar Playwright apenas neste job de QA
+        run: pnpm add -D @playwright/test@1.56.0 --ignore-scripts
+      - name: Instalar Chromium de homologação
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Testar jornadas em navegador real (mobile e desktop)
+        run: pnpm exec playwright test --config=playwright.config.mjs
+      - name: Guardar evidências de falhas do navegador
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-playwright-evidencias
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore

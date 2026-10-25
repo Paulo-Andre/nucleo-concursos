@@ -112,11 +112,11 @@ describe("integração real do banco central de questões", () => {
       const immutableSnapshot = { id: questionId, statement: originalStatement, answer: true, contentIds };
       await caller.study.submitSimulation({
         id: simulationId, total: 1, correct: 1, errors: 0, elapsedSeconds: 12, byDiscipline: {}, byBlock: {},
-        answers: [{ questionId: String(questionId), correct: true }], questionIds: [String(questionId)],
+        answers: [{ questionId: String(questionId), submittedAnswer: true }], questionIds: [String(questionId)],
         persistentAnswers: [{ questionId, correct: true, snapshot: immutableSnapshot }],
       });
       const persistedSnapshot = (await db.select().from(simulationQuestions).where(and(eq(simulationQuestions.simulationId, simulationId), eq(simulationQuestions.questionId, questionId))).limit(1))[0];
-      expect(JSON.parse(persistedSnapshot.snapshotJson)).toEqual(immutableSnapshot);
+      expect(JSON.parse(persistedSnapshot.snapshotJson)).toMatchObject({ id: questionId, statement: originalStatement, answer: true });
 
       const updatedStatement = `__${token}: O ato administrativo vinculado requer os requisitos legais aplicáveis.`;
       await caller.admin.questions.update({ id: questionId, data: {
@@ -124,7 +124,7 @@ describe("integração real do banco central de questões", () => {
         difficulty: "intermediate", source: `teste-${token}`, banca: "E2E", year: 2026, requiresReview: true, status: "approved", contentIds,
       } });
       auditDetails.push(`Questão ${questionId} atualizada sem substituição do identificador.`);
-      expect(JSON.parse((await db.select().from(simulationQuestions).where(eq(simulationQuestions.simulationId, simulationId)).limit(1))[0].snapshotJson)).toEqual(immutableSnapshot);
+      expect(JSON.parse((await db.select().from(simulationQuestions).where(eq(simulationQuestions.simulationId, simulationId)).limit(1))[0].snapshotJson)).toEqual(JSON.parse(persistedSnapshot.snapshotJson));
       expect((await caller.admin.questions.changelog({ id: questionId })).some(change => change.changedField === "statement" && change.oldValue?.includes(originalStatement))).toBe(true);
     } finally {
       await db.delete(simulationQuestions).where(eq(simulationQuestions.simulationId, simulationId));

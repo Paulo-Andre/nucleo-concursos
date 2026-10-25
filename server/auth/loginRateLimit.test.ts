@@ -40,6 +40,12 @@ describe("limitação de tentativas de login", () => {
     expect(isLoginAttemptAllowed(secondary, now)).toBe(false);
   });
 
+  it("não aceita X-Forwarded-For inventado pelo visitante como identidade da origem", () => {
+    const real = loginAttemptKeys({ ip: "198.51.100.40", headers: {} }, "aluno");
+    const spoofed = loginAttemptKeys({ ip: "198.51.100.40", headers: { "x-forwarded-for": "1.2.3.4" } }, "aluno");
+    expect(spoofed).toEqual(real);
+  });
+
   it("normaliza o identificador e separa os contadores por endereço de origem", () => {
     const normalized = loginAttemptKeys(request, "  Aluno@Exemplo.Com  ");
     const equivalent = loginAttemptKeys(request, "aluno@exemplo.com");

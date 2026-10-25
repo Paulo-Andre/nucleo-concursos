@@ -14,9 +14,8 @@ function normalizeIdentifier(identifier: string) {
 }
 
 function requestIp(req: { ip?: string; headers?: Record<string, string | string[] | undefined> }) {
-  const forwarded = req.headers?.["x-forwarded-for"];
-  const firstForwarded = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  return (firstForwarded?.split(",")[0]?.trim() || req.ip || "unknown").slice(0, 120);
+  // Express resolve req.ip com trust proxy restrito; X-Forwarded-For bruto é manipulável.
+  return (req.ip || "unknown").slice(0, 120);
 }
 
 function readRecord(key: string, now: number) {

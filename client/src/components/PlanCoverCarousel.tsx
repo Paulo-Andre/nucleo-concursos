@@ -13,6 +13,6 @@ export function PlanCoverCarousel({ images, planTitle }: PlanCoverCarouselProps)
     <CarouselContent className="-ml-0">
       {validImages.map((url, index) => <CarouselItem key={url} className="pl-0"><img src={url} alt={`Capa ${index + 1} do plano ${planTitle}`} className="aspect-[16/9] w-full object-cover" loading="lazy" /></CarouselItem>)}
     </CarouselContent>
-    {validImages.length > 1 && <><CarouselPrevious className="left-2 border-[#adc8c0] bg-white/95 text-[#173d4a] shadow-sm hover:bg-white" /><CarouselNext className="right-2 border-[#adc8c0] bg-white/95 text-[#173d4a] shadow-sm hover:bg-white" /></>}
+    {validImages.length > 1 && <><CarouselPrevious aria-label="Imagem anterior do curso" className="left-2 size-11 border-[#adc8c0] bg-white/95 text-[#173d4a] shadow-sm hover:bg-white" /><CarouselNext aria-label="Próxima imagem do curso" className="right-2 size-11 border-[#adc8c0] bg-white/95 text-[#173d4a] shadow-sm hover:bg-white" /></>}
   </Carousel>;
 }

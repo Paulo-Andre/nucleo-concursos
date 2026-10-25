@@ -238,17 +238,20 @@ export async function createCommerceOrder(userId: number, planId: string, coupon
   const now = new Date();
   const orderId = crypto.randomUUID();
   const provider = totalCents === 0 ? "coupon" : "manual";
-  await db.insert(commerceOrders).values({
-    id: orderId, userId, planId: plan.id, couponCode: normalizedCoupon, subtotalCents, discountCents, totalCents, provider,
-    expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-  });
-  await db.insert(commerceOrderItems).values({
-    orderId, planId: plan.id, titleSnapshot: plan.title, planTypeSnapshot: plan.planType,
-    accessDurationDaysSnapshot: plan.accessDurationDays, courseIdsSnapshotJson: JSON.stringify(courseIds), unitPriceCents: subtotalCents,
-  });
-  await db.insert(commerceTransactions).values({
-    id: crypto.randomUUID(), orderId, provider, status: totalCents === 0 ? "approved" : "pending", amountCents: totalCents,
-    processedAt: totalCents === 0 ? now : null,
+  // Pedido, itens e transação devem existir juntos ou nenhum deles existir.
+  await db.transaction(async tx => {
+    await tx.insert(commerceOrders).values({
+      id: orderId, userId, planId: plan.id, couponCode: normalizedCoupon, subtotalCents, discountCents, totalCents, provider,
+      expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+    });
+    await tx.insert(commerceOrderItems).values({
+      orderId, planId: plan.id, titleSnapshot: plan.title, planTypeSnapshot: plan.planType,
+      accessDurationDaysSnapshot: plan.accessDurationDays, courseIdsSnapshotJson: JSON.stringify(courseIds), unitPriceCents: subtotalCents,
+    });
+    await tx.insert(commerceTransactions).values({
+      id: crypto.randomUUID(), orderId, provider, status: "pending", amountCents: totalCents,
+      processedAt: null,
+    });
   });
   if (totalCents === 0) await approveCommerceOrder(userId, orderId, "coupon", "Cupom integral");
   const order = (await db.select().from(commerceOrders).where(eq(commerceOrders.id, orderId)).limit(1))[0];
@@ -327,42 +330,57 @@ export async function getCommerceMetrics() {
 export async function approveCommerceOrder(actorUserId: number, orderId: string, provider = "manual", providerReference?: string | null) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const order = (await db.select().from(commerceOrders).where(eq(commerceOrders.id, orderId)).limit(1))[0];
-  if (!order) throw new Error("Pedido não encontrado.");
-  if (order.status === "paid") return serializeOrder(order);
-  if (order.status !== "pending_payment") throw new Error("Somente pedidos aguardando pagamento podem ser aprovados.");
-  const item = (await db.select().from(commerceOrderItems).where(eq(commerceOrderItems.orderId, orderId)).limit(1))[0];
-  if (!item) throw new Error("Item do pedido não encontrado.");
-  const courseIds = parseCourseIds(item.courseIdsSnapshotJson);
-  if (!courseIds.length) throw new Error("O pedido não possui cursos para liberar.");
-  const now = new Date();
-  const durationMs = item.accessDurationDaysSnapshot * 24 * 60 * 60 * 1000;
-  for (const courseId of courseIds) {
-    const enrollment = (await db.select().from(courseEnrollments).where(and(eq(courseEnrollments.userId, order.userId), eq(courseEnrollments.courseId, courseId))).limit(1))[0];
-    if (enrollment && enrollment.status === "active" && enrollment.expiresAt > now) {
-      await db.update(courseEnrollments).set({ expiresAt: new Date(enrollment.expiresAt.getTime() + durationMs), status: "active", revokedAt: null, sourceOrderId: order.id, sourcePlanId: item.planId }).where(eq(courseEnrollments.id, enrollment.id));
-    } else if (enrollment) {
-      await db.update(courseEnrollments).set({ startAt: now, expiresAt: new Date(now.getTime() + durationMs), status: "active", revokedAt: null, sourceOrderId: order.id, sourcePlanId: item.planId }).where(eq(courseEnrollments.id, enrollment.id));
-    } else {
-      await db.insert(courseEnrollments).values({ userId: order.userId, courseId, startAt: now, expiresAt: new Date(now.getTime() + durationMs), status: "active", createdByUserId: actorUserId, sourceOrderId: order.id, sourcePlanId: item.planId });
+
+  const committed = await db.transaction(async tx => {
+    // Serializa confirmações simultâneas (webhook duplicado, clique ROOT e reenvio).
+    await tx.execute(sql`SELECT ${commerceOrders.id} FROM ${commerceOrders} WHERE ${commerceOrders.id} = ${orderId} FOR UPDATE`);
+    const order = (await tx.select().from(commerceOrders).where(eq(commerceOrders.id, orderId)).limit(1))[0];
+    if (!order) throw new Error("Pedido não encontrado.");
+    if (order.status === "paid") return { saved: order, newlyPaid: false as const };
+    if (order.status !== "pending_payment") throw new Error("Somente pedidos aguardando pagamento podem ser aprovados.");
+
+    const item = (await tx.select().from(commerceOrderItems).where(eq(commerceOrderItems.orderId, orderId)).limit(1))[0];
+    if (!item) throw new Error("Item do pedido não encontrado.");
+    const courseIds = parseCourseIds(item.courseIdsSnapshotJson);
+    if (!courseIds.length) throw new Error("O pedido não possui cursos para liberar.");
+    const now = new Date();
+    const durationMs = item.accessDurationDaysSnapshot * 24 * 60 * 60 * 1000;
+
+    for (const courseId of courseIds) {
+      const enrollment = (await tx.select().from(courseEnrollments).where(and(eq(courseEnrollments.userId, order.userId), eq(courseEnrollments.courseId, courseId))).limit(1))[0];
+      if (enrollment && enrollment.status === "active" && enrollment.expiresAt > now) {
+        await tx.update(courseEnrollments).set({ expiresAt: new Date(enrollment.expiresAt.getTime() + durationMs), status: "active", revokedAt: null, sourceOrderId: order.id, sourcePlanId: item.planId }).where(eq(courseEnrollments.id, enrollment.id));
+      } else if (enrollment) {
+        await tx.update(courseEnrollments).set({ startAt: now, expiresAt: new Date(now.getTime() + durationMs), status: "active", revokedAt: null, sourceOrderId: order.id, sourcePlanId: item.planId }).where(eq(courseEnrollments.id, enrollment.id));
+      } else {
+        await tx.insert(courseEnrollments).values({ userId: order.userId, courseId, startAt: now, expiresAt: new Date(now.getTime() + durationMs), status: "active", createdByUserId: actorUserId, sourceOrderId: order.id, sourcePlanId: item.planId });
+      }
     }
+    await tx.update(commerceOrders).set({ status: "paid", provider, providerReference: providerReference || null, paidAt: now, accessGrantedAt: now }).where(eq(commerceOrders.id, orderId));
+    await tx.update(commerceTransactions).set({ status: "approved", provider, providerReference: providerReference || null, processedAt: now }).where(eq(commerceTransactions.orderId, orderId));
+    if (order.couponCode) await tx.update(commerceCoupons).set({ redeemedCount: sql`${commerceCoupons.redeemedCount} + 1` }).where(eq(commerceCoupons.code, order.couponCode));
+    const saved = (await tx.select().from(commerceOrders).where(eq(commerceOrders.id, orderId)).limit(1))[0];
+    if (!saved) throw new Error("Pedido não foi atualizado.");
+    const buyer = (await tx.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, order.userId)).limit(1))[0];
+    return { saved, newlyPaid: true as const, buyer, itemTitle: item.titleSnapshot, courseCount: courseIds.length, expiration: new Date(now.getTime() + durationMs) };
+  });
+
+  if (!committed.newlyPaid) return serializeOrder(committed.saved);
+  // Integrações externas não executam dentro da transação: falhas de e-mail não revertem matrículas.
+  try {
+    await writeAdminAudit(actorUserId, committed.saved.userId, "APROVACAO_DE_PEDIDO_COMERCIAL", `Pedido ${orderId} aprovado; ${committed.courseCount} matrícula(s) concedida(s).`);
+  } catch (error) {
+    console.error("[commerce] Falha ao registrar auditoria da compra", { orderId, message: error instanceof Error ? error.message : "erro desconhecido" });
   }
-  await db.update(commerceOrders).set({ status: "paid", provider, providerReference: providerReference || null, paidAt: now, accessGrantedAt: now }).where(eq(commerceOrders.id, orderId));
-  await db.update(commerceTransactions).set({ status: "approved", provider, providerReference: providerReference || null, processedAt: now }).where(eq(commerceTransactions.orderId, orderId));
-  if (order.couponCode) await db.update(commerceCoupons).set({ redeemedCount: sql`${commerceCoupons.redeemedCount} + 1` }).where(eq(commerceCoupons.code, order.couponCode));
-  await writeAdminAudit(actorUserId, order.userId, "APROVACAO_DE_PEDIDO_COMERCIAL", `Pedido ${order.id} aprovado; ${courseIds.length} matrícula(s) concedida(s).`);
-  const saved = (await db.select().from(commerceOrders).where(eq(commerceOrders.id, orderId)).limit(1))[0];
-  if (!saved) throw new Error("Pedido não foi atualizado.");
-  const buyer = (await db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, order.userId)).limit(1))[0];
-  if (buyer?.email) {
+  if (committed.buyer?.email) {
     void sendPurchaseConfirmation({
-      to: buyer.email,
-      name: buyer.name,
-      planTitle: item.titleSnapshot,
-      accessExpiresAt: new Date(now.getTime() + durationMs),
+      to: committed.buyer.email,
+      name: committed.buyer.name,
+      planTitle: committed.itemTitle,
+      accessExpiresAt: committed.expiration,
     }).catch(error => console.error("[commerce] Falha ao enviar confirmação de compra", { orderId, error: error instanceof Error ? error.message : "erro desconhecido" }));
   }
-  return serializeOrder(saved);
+  return serializeOrder(committed.saved);
 }
 
 export async function cancelCommerceOrder(actorUserId: number, orderId: string) {

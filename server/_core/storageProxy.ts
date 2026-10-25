@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { access } from "node:fs/promises";
 import { ENV } from "./env";
 import { resolveLocalStoragePath } from "../storage";
+import { canAccessStoredContentPdf } from "../db";
+import { resolveSessionUser } from "./context";
 
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
@@ -11,11 +13,24 @@ export function registerStorageProxy(app: Express) {
       return;
     }
 
+    // Revoga URLs antigas de exportações administrativas; esta rota serve somente mídia pública.
+    if (key.replaceAll(String.fromCharCode(92), "/").split("/").filter(Boolean)[0]?.toLowerCase() === "admin-backups") {
+      res.status(404).end();
+      return;
+    }
+
     try {
+      const isPrivatePdf = key.split("/")[0]?.toLowerCase() === "content-pdfs";
+      if (isPrivatePdf) {
+        res.set("Cache-Control", "private, no-store");
+        const user = await resolveSessionUser(req);
+        if (!user) return void res.sendStatus(403);
+        if (user.role !== "admin" && !(await canAccessStoredContentPdf(user.id, `/manus-storage/${key}`))) return void res.sendStatus(403);
+      }
       if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
         const filePath = resolveLocalStoragePath(key);
         await access(filePath);
-        res.set("Cache-Control", "public, max-age=31536000, immutable");
+        if (!isPrivatePdf) res.set("Cache-Control", "public, max-age=31536000, immutable");
         res.sendFile(filePath);
         return;
       }
@@ -42,7 +57,7 @@ export function registerStorageProxy(app: Express) {
         return;
       }
 
-      res.set("Cache-Control", "no-store");
+      res.set("Cache-Control", isPrivatePdf ? "private, no-store" : "no-store");
       res.redirect(307, url);
     } catch (err) {
       console.error("[StorageProxy] failed:", err);
