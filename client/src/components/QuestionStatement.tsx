@@ -19,8 +19,8 @@ export function splitQuestionStatement(raw: string, questionType?: "certo_errado
   return { code, context: match[1], question: match[2] };
 }
 
-export function QuestionStatement({ statement, compact = false, questionType }: { statement: string; compact?: boolean; questionType?: "certo_errado" | "multipla_escolha" }) {
-  const parts = splitQuestionStatement(statement, questionType);
+export function QuestionStatement({ statement, compact = false, questionType, passage }: { statement: string; compact?: boolean; questionType?: "certo_errado" | "multipla_escolha"; passage?: string | null }) {
+  const parts = passage?.trim() ? { code: null, context: passage.trim(), question: statement } : splitQuestionStatement(statement, questionType);
   return <div className={compact ? "space-y-2" : "space-y-4"}>
     {parts.code && <p className="text-[10px] font-semibold tracking-wide text-[#52717d]">QUESTÃO · {parts.code}</p>}
     {parts.context && <div className="rounded-xl border-l-4 border-[#8bc7bc] bg-[#eef6f3] p-3 sm:p-4">
