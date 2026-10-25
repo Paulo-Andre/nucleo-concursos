@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 /** Formata enunciados sem alterar o texto persistido da questão. */
 export function splitQuestionStatement(raw: string) {
   const input = raw.trim();
