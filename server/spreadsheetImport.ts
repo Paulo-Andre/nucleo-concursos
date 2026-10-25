@@ -148,16 +148,16 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
       // do curso informado, sem inventar IDs nem recorrer à primeira correspondência.
       const courseReference=(row.curso_referencia||"").trim();
       if(!courseReference)throw new Error("Informe curso_referencia ao usar aula_referencia, para evitar vínculo em curso incorreto.");
-      const lessonNumber=/^(?:aula\\s*)?(\\d{1,3})$/i.exec(lessonReference)?.[1];
+      const lessonNumber=/^(?:aula\s*)?(\d{1,3})$/i.exec(lessonReference)?.[1];
       if(!lessonNumber)throw new Error("aula_referencia deve conter apenas Aula NN (ex.: Aula 07).");
-      const courseTokens=normalize(courseReference).split(/\\s+/).filter(Boolean);
+      const courseTokens=normalize(courseReference).split(/\s+/).filter(Boolean);
       const found=cs.filter(content=>{
         const title=normalize(content.title);
-        const parts=title.split(/\\s+[-–—]\\s+/);
+        const parts=title.split(/\s+[-–—]\s+/);
         if(parts.length<2)return false;
         const prefix=parts[0];
-        if(!courseTokens.every(token=>prefix.split(/\\s+/).includes(token)))return false;
-        const actual=/\\baula\\s*0*(\\d{1,3})\\b/i.exec(title)?.[1];
+        if(!courseTokens.every(token=>prefix.split(/\s+/).includes(token)))return false;
+        const actual=/\baula\s*0*(\d{1,3})\b/i.exec(title)?.[1];
         return actual!==undefined && Number(actual)===Number(lessonNumber);
       });
       if(!found.length)throw new Error("Nenhum conteúdo do curso e aula informados foi encontrado. Confira curso_referencia e aula_referencia.");
