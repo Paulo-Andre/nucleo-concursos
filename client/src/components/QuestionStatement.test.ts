@@ -27,6 +27,13 @@ describe("apresentação de questões", () => {
       question: "Há concordância correta entre sujeito e locução verbal.",
     });
   });
+  it("mantém duas frases no texto-base e separa a afirmação sobre o pronome", () => {
+    expect(splitQuestionStatement("Marina assinou a ata. Depois, ela arquivou o documento. O pronome “ela” retoma o nome Marina.", "certo_errado")).toEqual({
+      code: null,
+      context: "Marina assinou a ata. Depois, ela arquivou o documento.",
+      question: "O pronome “ela” retoma o nome Marina.",
+    });
+  });
   it("preserva um item de C/E que não pode ser separado com segurança", () => {
     const original = "A concordância verbal deve seguir o núcleo do sujeito.";
     expect(splitQuestionStatement(original, "certo_errado")).toEqual({code: null, context: null, question: original});
