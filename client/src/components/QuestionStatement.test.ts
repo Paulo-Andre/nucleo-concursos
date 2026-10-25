@@ -34,6 +34,13 @@ describe("apresentação de questões", () => {
       question: "O pronome “ela” retoma o nome Marina.",
     });
   });
+  it("separa texto-base e julgamento de vocabulário com No contexto", () => {
+    expect(splitQuestionStatement("O despacho foi proferido de maneira célere. No contexto, “célere” significa lento.", "certo_errado")).toEqual({
+      code: null,
+      context: "O despacho foi proferido de maneira célere.",
+      question: "No contexto, “célere” significa lento.",
+    });
+  });
   it("preserva um item de C/E que não pode ser separado com segurança", () => {
     const original = "A concordância verbal deve seguir o núcleo do sujeito.";
     expect(splitQuestionStatement(original, "certo_errado")).toEqual({code: null, context: null, question: original});
