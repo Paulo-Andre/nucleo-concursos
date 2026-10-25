@@ -366,6 +366,7 @@ export const contents = mysqlTable("contents", {
 export const questions = mysqlTable("questions", {
   id: int("id").autoincrement().primaryKey(),
   statement: text("statement").notNull(),
+  passage: text("passage"),
   questionType: mysqlEnum("questionType", ["certo_errado", "multipla_escolha"]).notNull().default("certo_errado"),
   optionsJson: text("optionsJson"),
   answerJson: text("answerJson").notNull(),
