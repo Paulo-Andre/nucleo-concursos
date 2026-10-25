@@ -1,9 +1,9 @@
-export type AnswerSubmission = { questionId: string; submittedAnswer: boolean };
+export type AnswerSubmission = { questionId: string; submittedAnswer: boolean | string };
 
 export type AuthoritativeQuestion = {
   canonicalKey: string;
   questionId: string;
-  correctAnswer: boolean;
+  correctAnswer: boolean | string;
   discipline: string;
   block: string;
   persistedId?: number;
