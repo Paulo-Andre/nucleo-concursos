@@ -11,7 +11,7 @@ type ContentRow = {
   coverImageUrl:string;videoUrl:string;videoLabel:string;materialUrl:string;materialLabel:string;
 };
 type QuestionRow = {
-  line:number;statement:string;questionType:"certo_errado"|"multipla_escolha";options:string[];
+  line:number;statement:string;passage:string;questionType:"certo_errado"|"multipla_escolha";options:string[];
   answer:boolean|string;explanation:string;difficulty:"basic"|"intermediate"|"advanced";
   source:string;banca:string;year:number|null;contentIds:number[];fallbackDisciplineId?:number;status:Status;requiresReview:boolean;
 };
@@ -168,7 +168,7 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
       if(fallbackDisciplineId===undefined)throw new Error("Vincule um conteúdo por ID/nome ou escolha uma disciplina para questões sem aula.");
       contentIds=[];
     }
-    item={line:entry.line,statement:label.trim(),questionType:questionType as QuestionRow["questionType"],
+    item={line:entry.line,statement:label.trim(),passage:text(row,"texto_base",12000),questionType:questionType as QuestionRow["questionType"],
       options,answer,explanation:text(row,"comentario",12000),
       difficulty:diff as QuestionRow["difficulty"],source:text(row,"fonte",240),
       banca:text(row,"banca",120),year:readYear(row.ano||""),contentIds,fallbackDisciplineId:contentIds.length?undefined:fallbackDisciplineId,status:status(row.status||""),
@@ -243,7 +243,7 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
    }else{
     const r=row as QuestionRow;
     const inserted=await tx.insert(questions).values({
-      statement:r.statement,questionType:r.questionType,
+      statement:r.statement,passage:r.passage||null,questionType:r.questionType,
       optionsJson:r.questionType==="multipla_escolha"?JSON.stringify(r.options):null,
       answerJson:JSON.stringify(r.answer),explanation:r.explanation||null,difficulty:r.difficulty,
       source:r.source||null,banca:r.banca||null,year:r.year,requiresReview:r.requiresReview,status:r.status,
