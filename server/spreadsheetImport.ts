@@ -18,9 +18,24 @@ type QuestionRow = {
 type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];toCreate:number;toUpdate:number;preview:{line:number;label:string;status:Status;action:"create"|"update";existingId?:number}[]};
 type Input = {kind:ImportKind;fileName:string;base64:string};
 const statuses = new Set(["draft","review","approved","published","inactive"]);
-const difficulties = new Set(["basic","intermediate","advanced"]);
+
 export const MAX_SPREADSHEET_IMPORT_ROWS = 1000;
 const normalize=(s:string)=>s.trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");
+/** Converte apenas sinônimos conhecidos; mantém erro para valores desconhecidos. */
+export function normalizeQuestionDifficulty(raw:string):QuestionRow["difficulty"] {
+ const value=normalize(raw);
+ if(!value)return "intermediate";
+ const aliases:Record<string,QuestionRow["difficulty"]>={
+  basic:"basic",basico:"basic",basica:"basic",facil:"basic",
+  intermediate:"intermediate",intermediario:"intermediate",intermediaria:"intermediate",
+  medio:"intermediate",media:"intermediate",
+  advanced:"advanced",avancado:"advanced",avancada:"advanced",dificil:"advanced",
+ };
+ const resolved=aliases[value];
+ if(!resolved)throw new Error("Dificuldade inválida: "+raw+". Use Fácil, Média, Difícil ou basic, intermediate, advanced.");
+ return resolved;
+}
+
 const pieces=(s:string)=>s.split(/[|;,]/).map(x=>x.trim()).filter(Boolean);
 const list=(s:string)=>s.split(/[|;]/).map(x=>x.trim()).filter(Boolean);
 const boolean=(s:string)=>["sim","s","yes","true","1"].includes(normalize(s));
@@ -123,8 +138,7 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
       if(index<0||index>=options.length)throw new Error("Resposta deve ser a letra de uma alternativa cadastrada.");
       answer=options[index];
     }
-    const diff=normalize(row.dificuldade||"intermediate");
-    if(!difficulties.has(diff))throw new Error("Dificuldade inválida.");
+    const diff=normalizeQuestionDifficulty(row.dificuldade||"");
     const contentIds=references(row.conteudo_ids||"",row.conteudos||"",cById,cByName,"conteúdo");
     item={line:entry.line,statement:label.trim(),questionType:questionType as QuestionRow["questionType"],
       options,answer,explanation:text(row,"comentario",12000),
