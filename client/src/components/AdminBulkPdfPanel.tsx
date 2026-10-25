@@ -25,6 +25,8 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
 }) {
   const [disciplineId, setDisciplineId] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [mappingSearch, setMappingSearch] = useState("");
+  const [onlyPending, setOnlyPending] = useState(false);
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
@@ -163,31 +165,47 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       <h5 className="flex items-center gap-2 text-sm font-bold text-[#17644e]"><CheckCircle2 className="h-4 w-4"/>Conferir aula de cada apostila antes de enviar</h5>
       <p className="mt-2 text-xs leading-5">Veja o nome do arquivo, a aula de destino e todos os conteúdos associados. Se precisar corrigir, escolha outra aula e clique em <strong>Revalidar alterações</strong> antes de confirmar.</p>
       <p className="mt-2 text-xs leading-5"><strong>{result.totalFiles} apostila(s)</strong> · <strong>{result.totalAssociations} conteúdo(s) para associar</strong> · {result.totalContentsInDiscipline} conteúdo(s) na disciplina.</p>
-      <div className="mt-3 max-h-[35rem] space-y-3 overflow-y-auto">
-        {result.mappings.map(entry => <div key={entry.fileName} className="rounded-lg border border-[#d0e0da] bg-white p-3">
-          <p className="break-all text-xs font-bold text-[#173d4a]">{entry.fileName}</p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-            <label className="block text-xs font-semibold text-[#315c62]">Aula que receberá a apostila
-              <select aria-label={"Aula de destino de " + entry.fileName} disabled={busy}
-                value={targetLessons[entry.fileName] ?? entry.lesson}
-                onChange={event => { setTargetLessons(current => ({ ...current, [entry.fileName]: Number(event.target.value) })); setNeedsRevalidation(true); setSuccess(""); }}
-                className="filter-control mt-1 w-full">
-                {result.availableLessons.map(lesson => <option value={lesson.lesson} key={lesson.lesson}>Aula {String(lesson.lesson).padStart(2, "0")} — {lesson.contentCount} conteúdo(s)</option>)}
-              </select>
-            </label>
-            <span className="pb-2 text-xs text-[#52666f]">{entry.matchedContents} conteúdo(s) encontrados · {entry.toAssociate} para associar</span>
-          </div>
-          <details className="mt-2 rounded-lg border border-[#e3ebe7] bg-[#f9fcfa] p-2">
-            <summary className="cursor-pointer text-xs font-bold text-[#0e5a70]">Ver exatamente quais conteúdos receberão ou já possuem este PDF</summary>
-            <div className="mt-2 max-h-40 overflow-y-auto">
-              {entry.contents.length === 0 ? <p className="text-xs text-red-700">Nenhuma aula encontrada.</p> :
-                <ul className="space-y-1">{entry.contents.map(content => <li key={content.id} className="flex gap-2 text-xs">
-                  <span className="min-w-0 flex-1">#{content.id} — {content.title}</span>
-                  <span className={content.hasPdf ? "shrink-0 text-amber-700" : "shrink-0 text-[#176a5a]"}>{content.hasPdf ? (replaceExisting ? "Será substituído" : "Já tem PDF") : "Receberá PDF"}</span>
-                </li>)}</ul>}
-            </div>
-          </details>
-        </div>)}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="flex-1 text-xs font-semibold text-[#315c62]">Pesquisar apostila
+          <input value={mappingSearch} onChange={event => setMappingSearch(event.target.value)}
+            placeholder="Ex.: PT_Aula_01.pdf" className="filter-control mt-1 w-full" />
+        </label>
+        <label className="flex items-center gap-2 text-xs font-semibold text-[#315c62]">
+          <input type="checkbox" checked={onlyPending} onChange={event => setOnlyPending(event.target.checked)} />
+          Mostrar apenas sem correspondência
+        </label>
+      </div>
+      <div className="mt-3 max-h-[35rem] overflow-auto rounded-lg border border-[#d0e0da] bg-white">
+        <table className="w-full min-w-[660px] border-collapse text-left text-xs">
+          <thead className="sticky top-0 z-10 bg-[#e9f4ef] text-[#254751]">
+            <tr><th className="p-3">PDF</th><th className="p-3">Aula de destino</th><th className="p-3">Conteúdos</th><th className="p-3">Situação</th><th className="p-3">Detalhes</th></tr>
+          </thead>
+          <tbody className="divide-y divide-[#e3ebe7]">
+            {result.mappings.filter(entry => entry.fileName.toLocaleLowerCase().includes(mappingSearch.trim().toLocaleLowerCase()) && (!onlyPending || entry.matchedContents === 0)).map(entry =>
+              <tr key={entry.fileName} className="align-top hover:bg-[#f9fcfa]">
+                <td className="max-w-52 break-all p-3 font-bold text-[#173d4a]">{entry.fileName}</td>
+                <td className="p-3">
+                  <select aria-label={"Aula de destino de " + entry.fileName} disabled={busy}
+                    value={targetLessons[entry.fileName] ?? entry.lesson}
+                    onChange={event => { setTargetLessons(current => ({ ...current, [entry.fileName]: Number(event.target.value) })); setNeedsRevalidation(true); setSuccess(""); }}
+                    className="filter-control w-full min-w-44">
+                    {entry.matchedContents === 0 && <option value={entry.lesson}>Aula {String(entry.lesson).padStart(2, "0")} (não localizada)</option>}
+                    {result.availableLessons.map(lesson => <option value={lesson.lesson} key={lesson.lesson}>Aula {String(lesson.lesson).padStart(2, "0")} — {lesson.contentCount} conteúdo(s)</option>)}
+                  </select>
+                </td>
+                <td className="whitespace-nowrap p-3">{entry.matchedContents} encontrados<br/>{entry.toAssociate} para associar</td>
+                <td className="p-3 font-semibold">{entry.matchedContents === 0 ? <span className="text-red-700">Sem correspondência</span> : entry.toAssociate === 0 ? <span className="text-amber-700">Já possui PDF</span> : <span className="text-[#17644e]">Identificada</span>}</td>
+                <td className="p-3">
+                  <details><summary className="cursor-pointer font-semibold text-[#0e5a70]">Ver conteúdos</summary>
+                    <ul className="mt-2 max-h-40 min-w-64 space-y-1 overflow-y-auto">
+                      {entry.contents.map(content => <li key={content.id} className="border-b border-[#edf2ef] py-1">#{content.id} — {content.title} <span className="font-semibold">{content.hasPdf ? (replaceExisting ? "• Será substituído" : "• Já possui PDF") : "• Receberá PDF"}</span></li>)}
+                    </ul>
+                  </details>
+                </td>
+              </tr>)}
+          </tbody>
+        </table>
+        {result.mappings.filter(entry => entry.fileName.toLocaleLowerCase().includes(mappingSearch.trim().toLocaleLowerCase()) && (!onlyPending || entry.matchedContents === 0)).length === 0 && <p className="p-4 text-center text-xs text-[#52666f]">Nenhuma apostila corresponde aos filtros.</p>}
       </div>
       {needsRevalidation && <p role="status" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-800">A aula de destino foi alterada. Revalide a associação antes de enviar os PDFs.</p>}
       {result.unmatched.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">Sem correspondência na disciplina: {result.unmatched.join(", ")}. Verifique os títulos das aulas.</p>}
