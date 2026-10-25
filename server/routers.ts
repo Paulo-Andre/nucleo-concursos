@@ -136,7 +136,8 @@ const cpfSchema = z.string().trim().transform(normalizeCpf).refine(isValidCpf, "
 const metricSchema = z.record(z.string(), z.object({ correct: z.number().int().nonnegative(), total: z.number().int().nonnegative() }));
 const studyReviewSnapshotSchema = z.object({
   statement: z.string().trim().min(1).max(12000),
-  answer: z.boolean(),
+  answer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]),
+  options: z.array(z.string().trim().min(1).max(1000)).max(10).optional(),
   explanation: z.string().trim().min(1).max(12000),
   discipline: z.string().trim().min(1).max(160),
   subject: z.string().trim().min(1).max(240),
