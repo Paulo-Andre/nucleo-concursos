@@ -9,6 +9,17 @@ describe("apresentação de questões", () => {
       question: "Qual alternativa explica de modo mais preciso o aspecto destacado na situação apresentada?",
     });
   });
+  it("separa texto-base de pergunta iniciada por No contexto", () => {
+    expect(splitQuestionStatement("O servidor agiu com rapidez para evitar prejuízo. No contexto, qual palavra pode substituir “rapidez” sem alterar substancialmente o sentido?")).toEqual({
+      code: null,
+      context: "O servidor agiu com rapidez para evitar prejuízo.",
+      question: "No contexto, qual palavra pode substituir “rapidez” sem alterar substancialmente o sentido?",
+    });
+  });
+  it("não divide pergunta com duas interrogações", () => {
+    const original = "O gestor falou. Qual é a regra? Como ela funciona?";
+    expect(splitQuestionStatement(original).context).toBeNull();
+  });
   it("não separa uma pergunta sem cenário", () => {
     const result = splitQuestionStatement("Qual é o sujeito da oração?");
     expect(result.context).toBeNull();
