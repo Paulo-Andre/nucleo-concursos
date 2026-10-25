@@ -418,7 +418,7 @@ export const appRouter = router({
     submitSimulation: contestEnrollmentRequiredProcedure.input(z.object({
       id: z.string().min(1).max(64), total: z.number().int().positive(), correct: z.number().int().nonnegative(), errors: z.number().int().nonnegative(), elapsedSeconds: z.number().int().nonnegative(),
       byDiscipline: metricSchema, byBlock: metricSchema,
-      answers: z.array(z.object({ questionId: z.string().min(1).max(80), submittedAnswer: z.boolean() })).min(1).max(250),
+      answers: z.array(z.object({ questionId: z.string().min(1).max(80), submittedAnswer: z.union([z.boolean(), z.string().trim().min(1).max(1000)]) })).min(1).max(250),
       questionIds: z.array(z.string().min(1).max(80)),
       persistentAnswers: z.array(z.object({ questionId: entityIdSchema, correct: z.boolean(), snapshot: z.record(z.string(), z.unknown()) })).optional(),
     })).mutation(({ input, ctx }) => recordSimulation(ctx.user.id, input, ctx.user.role === "admin")),
