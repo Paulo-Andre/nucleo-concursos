@@ -89,7 +89,7 @@ type SimulationInput = {
   elapsedSeconds: number;
   byDiscipline: Record<string, { correct: number; total: number }>;
   byBlock: Record<string, { correct: number; total: number }>;
-  answers: { questionId: string; submittedAnswer: boolean }[];
+  answers: { questionId: string; submittedAnswer: boolean | string }[];
   questionIds: string[];
   persistentAnswers?: { questionId: number; correct: boolean; snapshot: Record<string, unknown> }[];
 };
@@ -1495,11 +1495,11 @@ export async function recordSimulation(userId: number, input: SimulationInput, i
     block: question.block,
   })) : [];
 
-  const published = (await listStudyQuestions(userId, isAdmin)).questions.filter(question => typeof question.answer === "boolean");
+  const published = (await listStudyQuestions(userId, isAdmin)).questions.filter(question => typeof question.answer === "boolean" || (question.questionType === "multipla_escolha" && typeof question.answer === "string" && question.options.includes(question.answer)));
   const canonical = published.flatMap(question => {
     const entry = {
       canonicalKey: `central-${question.id}`,
-      correctAnswer: question.answer as boolean,
+      correctAnswer: question.answer as boolean | string,
       discipline: question.discipline,
       block: "I",
       persistedId: question.id,
