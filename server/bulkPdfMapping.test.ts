@@ -27,6 +27,7 @@ describe("identificação segura de PDFs para o Excel de Português", () => {
 
   it("reconhece os títulos reais da importação PCMG com partes e menções repetidas", () => {
     expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 - Parte 01 - AULA 01 - INTERPRETAÇÃO")).toBe(1);
+    expect(lessonNumberFromContentTitle("PCMG Portugus - Aula 01 - Parte 01 - AULA 01 - INTERPRETAO")).toBe(1);
     expect(lessonNumberFromContentTitle("PCMG Português - Aula 07 - Parte 02 - AULA 07 - Aula 07")).toBe(7);
     expect(lessonNumberFromContentTitle("PCMG Português - Aula 45 - Parte 02 - AULA 45 - REGÊNCIA NOMINAL")).toBe(45);
     expect(lessonNumberFromContentTitle("PCMG Português - Aula 09 - Parte 02 - Continuação dos estudos")).toBe(9);
