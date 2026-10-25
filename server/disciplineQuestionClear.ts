@@ -141,14 +141,13 @@ export async function clearManagedDisciplineQuestions(
     if(!inspection.total)
       throw new Error("Não existem questões nesta disciplina.");
     const deletableIds:number[] = [...inspection.eligibleIds,...inspection.protectedIds,...inspection.sharedIds].sort((a,b)=>a-b);
-    const keySet = new Set(deletableIds.map(id=>String(id)));
     const rounds = await tx.select({id:competitionRounds.id,questionIdsJson:competitionRounds.questionIdsJson}).from(competitionRounds);
     // Nunca deixar IDs eliminados em rodadas competitivas. JSON desconhecido bloqueia a transação.
     for(const round of rounds){
       let parsed:unknown;
       try{parsed=JSON.parse(round.questionIdsJson);}catch{throw new Error("Rodada competitiva com JSON inválido: corrija antes de excluir.");}
       if(!Array.isArray(parsed))throw new Error("Formato inesperado de rodada competitiva. Exclusão cancelada.");
-      const retained=parsed.filter((item:unknown)=>!keySet.has(String(item)));
+      const retained=parsed.filter((item:unknown)=>!hasQuestionId(item,new Set(deletableIds)).length);
       if(retained.length!==parsed.length)
         await tx.update(competitionRounds).set({questionIdsJson:JSON.stringify(retained)}).where(eq(competitionRounds.id,round.id));
     }
