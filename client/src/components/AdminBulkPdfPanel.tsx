@@ -32,19 +32,16 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
   const [progress, setProgress] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
-  const [targetLessons, setTargetLessons] = useState<Record<string, number>>({});
+  const [targetKeys, setTargetKeys] = useState<Record<string, string>>({});
+  const [chosenContents, setChosenContents] = useState<Record<string, number[]>>({});
+  const [editingContentsFor, setEditingContentsFor] = useState<string | null>(null);
+  const [contentFilter, setContentFilter] = useState("");
   const [needsRevalidation, setNeedsRevalidation] = useState(false);
-  const [postTargets, setPostTargets] = useState<Record<string, number>>({});
+  const [postTargets, setPostTargets] = useState<Record<string, string>>({});
   const [allowReplaceTarget, setAllowReplaceTarget] = useState(false);
   const selectedDiscipline = disciplines.find(item => String(item.id) === disciplineId);
-  const isRlm = /^(rl[-_]?mt|rlm)$/i.test(selectedDiscipline?.shortName ?? "");
-  const isPortuguese = /^(pt|port|portugues)$/i.test(selectedDiscipline?.shortName ?? "");
-  const prefix = isRlm ? "RLM" : isPortuguese ? "PT" : (selectedDiscipline?.shortName || "DISC");
-  const pdfExample = prefix + "_Aula_01.pdf";
-  const pdfExample2 = prefix + "_Aula_02.pdf";
-  const mappingHint = isRlm
-    ? "Os PDFs são associados aos conteúdos identificados por RLM 2.1, RLM 2.2 e assim por diante."
-    : "Os PDFs são associados às subdivisões cujos títulos começam por Aula 01, Aula 02, etc.";
+  const pdfExample = (selectedDiscipline?.shortName || "DISC") + "_Aula_01.pdf";
+  const mappingHint = "O nome do PDF é apenas uma sugestão. Se não houver correspondência automática, escolha o grupo ou os conteúdos cadastrados, sem exigir prefixos fixos.";
   const preview = trpc.admin.pdfBatches.preview.useMutation();
   const [plan, setPlan] = useState<Awaited<ReturnType<typeof preview.mutateAsync>> | null>(null);
   const uploadPdf = trpc.admin.contents.uploadPdf.useMutation();
@@ -65,7 +62,10 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       if (!file.size || file.size > MAX_PDF_SIZE) return void setError(`${file.name}: cada PDF precisa ter até 10 MB.`);
     }
     setFiles(chosen);
-    setTargetLessons({});
+    setTargetKeys({});
+    setChosenContents({});
+    setEditingContentsFor(null);
+    setContentFilter("");
   };
   const verify = async () => {
     setError(""); setSuccess(""); setProgress("");
@@ -73,7 +73,11 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
     try {
       const checked = await preview.mutateAsync({
         disciplineId: Number(disciplineId),
-        files: files.map(file => ({ fileName: file.name, targetLesson: targetLessons[file.name] })),
+        files: files.map(file => ({
+          fileName: file.name,
+          targetKey: (chosenContents[file.name]?.length ? undefined : targetKeys[file.name]) || undefined,
+          targetContentIds: chosenContents[file.name]?.length ? chosenContents[file.name] : undefined,
+        })),
         replaceExisting,
       });
       setPlan(checked);
@@ -84,18 +88,24 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
   };
   const associate = async () => {
     const result = plan;
-    if (!result || needsRevalidation || !files.length || result.unmatched.length || !result.totalAssociations || busy) return;
+    if (!result || needsRevalidation || !files.length || result.unmatched.length || result.blockedShared.length || !result.totalAssociations || busy) return;
     setBusy(true); setError(""); setSuccess("");
     try {
       // Primeiro envia os PDFs para armazenamento privado. O banco só é alterado
       // após o último envio, em uma única transação de associações.
-      const uploaded: { fileName: string; targetLesson?: number; url: string }[] = [];
+      const uploaded: { fileName: string; targetKey?: string; targetContentIds?: number[]; expectedContentIds: number[]; url: string }[] = [];
       for (let i = 0; i < files.length; i += 1) {
         const file = files[i];
         setProgress(`Enviando apostila ${i + 1} de ${files.length}: ${file.name}`);
         const base64 = await readPdfAsBase64(file);
         const stored = await uploadPdf.mutateAsync({ fileName: file.name, mimeType: "application/pdf", base64 });
-        uploaded.push({ fileName: file.name, targetLesson: targetLessons[file.name], url: stored.url });
+        uploaded.push({
+          fileName: file.name,
+          targetKey: (chosenContents[file.name]?.length ? undefined : targetKeys[file.name]) || undefined,
+          targetContentIds: chosenContents[file.name]?.length ? chosenContents[file.name] : undefined,
+          expectedContentIds: result.mappings.find(item => item.fileName === file.name)?.contentIds ?? [],
+          url: stored.url,
+        });
       }
       setProgress("Associando apostilas às aulas e registrando auditoria...");
       const saved = await confirm.mutateAsync({
@@ -107,7 +117,8 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       await onImported();
       await savedLinks.refetch();
       preview.reset(); setPlan(null); setNeedsRevalidation(false);
-      setFiles([]); setTargetLessons({});
+      setFiles([]); setTargetKeys({}); setChosenContents({});
+      setEditingContentsFor(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha no envio ou na associação das apostilas.");
       setProgress("");
@@ -117,16 +128,16 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
   };
 
   const result = plan;
-  const valid = Boolean(result && !needsRevalidation && !result.unmatched.length && result.totalAssociations > 0);
-  const correctExisting = async (url: string, contentIds: number[], targetLesson: number) => {
-    if (!disciplineId || !targetLesson || busy) return;
+  const valid = Boolean(result && !needsRevalidation && !result.unmatched.length && !result.blockedShared.length && result.totalAssociations > 0);
+  const correctExisting = async (url: string, contentIds: number[], targetKey: string) => {
+    if (!disciplineId || !targetKey || busy) return;
     setBusy(true); setError(""); setSuccess("");
     try {
       const saved = await move.mutateAsync({
-        disciplineId: Number(disciplineId), sourceUrl: url, targetLesson,
+        disciplineId: Number(disciplineId), sourceUrl: url, targetKey,
         replaceExisting: allowReplaceTarget, expectedSourceContentIds: contentIds,
       });
-      setSuccess(`Apostila realocada para a Aula ${String(saved.targetLesson).padStart(2, "0")}. ${saved.updated} vínculo(s) atualizado(s).`);
+      setSuccess("Apostila realocada para " + saved.targetLabel + ". " + saved.updated + " vínculo(s) atualizado(s).");
       await savedLinks.refetch();
       await onImported();
     } catch (cause) {
@@ -142,9 +153,8 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       <div>
         <h4 className="font-display text-lg font-bold text-[#173d4a]">Importar apostilas PDF em massa</h4>
         <p className="mt-1 text-xs leading-5 text-[#52666f]">
-          Selecione a disciplina e vários PDFs. Use nomes como
-          <strong> {pdfExample}</strong> e <strong> {pdfExample2}</strong>.
-          {" "}{mappingHint}
+          Selecione a disciplina e vários PDFs. Você pode usar <strong> {pdfExample}</strong>
+          ou manter o nome original do arquivo. {" "}{mappingHint}
         </p>
       </div>
     </div>
@@ -171,7 +181,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
     </button>
     {result && <section className="rounded-xl border border-[#c9dfd5] bg-[#f3faf7] p-4" aria-label="Conferência de associação das apostilas">
       <h5 className="flex items-center gap-2 text-sm font-bold text-[#17644e]"><CheckCircle2 className="h-4 w-4"/>Conferir aula de cada apostila antes de enviar</h5>
-      <p className="mt-2 text-xs leading-5">Veja o nome do arquivo, a aula de destino e todos os conteúdos associados. Se precisar corrigir, escolha outra aula e clique em <strong>Revalidar alterações</strong> antes de confirmar.</p>
+      <p className="mt-2 text-xs leading-5">Confira a sugestão automática ou escolha uma aula, um conteúdo específico ou vários conteúdos. Clique em <strong>Revalidar alterações</strong> antes de confirmar.</p>
       <p className="mt-2 text-xs leading-5"><strong>{result.totalFiles} apostila(s)</strong> · <strong>{result.totalAssociations} conteúdo(s) para associar</strong> · {result.totalContentsInDiscipline} conteúdo(s) na disciplina.</p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="flex-1 text-xs font-semibold text-[#315c62]">Pesquisar apostila
@@ -186,23 +196,60 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       <div className="mt-3 max-h-[35rem] overflow-auto rounded-lg border border-[#d0e0da] bg-white">
         <table className="w-full min-w-[660px] border-collapse text-left text-xs">
           <thead className="sticky top-0 z-10 bg-[#e9f4ef] text-[#254751]">
-            <tr><th className="p-3">PDF</th><th className="p-3">Aula de destino</th><th className="p-3">Conteúdos</th><th className="p-3">Situação</th><th className="p-3">Detalhes</th></tr>
+            <tr><th className="p-3">PDF</th><th className="p-3">Aula ou conteúdo de destino</th><th className="p-3">Conteúdos</th><th className="p-3">Situação</th><th className="p-3">Detalhes</th></tr>
           </thead>
           <tbody className="divide-y divide-[#e3ebe7]">
             {result.mappings.filter(entry => entry.fileName.toLocaleLowerCase().includes(mappingSearch.trim().toLocaleLowerCase()) && (!onlyPending || entry.matchedContents === 0)).map(entry =>
               <tr key={entry.fileName} className="align-top hover:bg-[#f9fcfa]">
                 <td className="max-w-52 break-all p-3 font-bold text-[#173d4a]">{entry.fileName}</td>
                 <td className="p-3">
-                  <select aria-label={"Aula de destino de " + entry.fileName} disabled={busy}
-                    value={targetLessons[entry.fileName] ?? entry.lesson}
-                    onChange={event => { setTargetLessons(current => ({ ...current, [entry.fileName]: Number(event.target.value) })); setNeedsRevalidation(true); setSuccess(""); }}
-                    className="filter-control w-full min-w-44">
-                    {entry.matchedContents === 0 && <option value={entry.lesson}>Aula {String(entry.lesson).padStart(2, "0")} (não localizada)</option>}
-                    {result.availableLessons.map(lesson => <option value={lesson.lesson} key={lesson.lesson}>Aula {String(lesson.lesson).padStart(2, "0")} — {lesson.contentCount} conteúdo(s)</option>)}
-                  </select>
+                  <select aria-label={"Aula ou conteúdo de destino de " + entry.fileName} disabled={busy}
+                     value={chosenContents[entry.fileName]?.length ? "" : (targetKeys[entry.fileName] ?? entry.targetKey ?? "")}
+                     onChange={event => {
+                       setTargetKeys(current => ({ ...current, [entry.fileName]: event.target.value }));
+                       setChosenContents(current => ({ ...current, [entry.fileName]: [] }));
+                       setNeedsRevalidation(true); setSuccess("");
+                     }}
+                     className="filter-control w-full min-w-44">
+                     <option value="">Escolha um destino</option>
+                     <optgroup label="Aulas e grupos">
+                       {result.availableTargets.filter(target => target.kind === "group").map(target =>
+                         <option value={target.key} key={target.key}>{target.label} — {target.contentCount} conteúdo(s)</option>)}
+                     </optgroup>
+                     <optgroup label="Conteúdos individuais">
+                       {result.availableTargets.filter(target => target.kind === "content").map(target =>
+                         <option value={target.key} key={target.key}>{target.label}</option>)}
+                     </optgroup>
+                   </select>
+                   <button type="button" disabled={busy}
+                     className="mt-2 text-xs font-semibold text-[#0e5a70] underline"
+                     onClick={() => {setEditingContentsFor(current => current === entry.fileName ? null : entry.fileName); setContentFilter("");}}>
+                     {editingContentsFor === entry.fileName ? "Fechar seleção múltipla" : "Selecionar vários conteúdos"}
+                   </button>
+                   {chosenContents[entry.fileName]?.length ? <p className="mt-1 text-xs text-[#17644e]">{chosenContents[entry.fileName].length} conteúdo(s) selecionado(s)</p> : null}
+                   {editingContentsFor === entry.fileName && <div className="mt-2 max-w-[28rem] rounded-lg border border-[#bedbd0] bg-[#f9fcfa] p-2">
+                     <input value={contentFilter} onChange={event => setContentFilter(event.target.value)}
+                       placeholder="Pesquisar conteúdo pelo título" className="filter-control mb-2 w-full" />
+                     <div className="max-h-48 space-y-1 overflow-y-auto">
+                       {result.availableContents.filter(item =>
+                         item.title.toLocaleLowerCase("pt-BR").includes(contentFilter.trim().toLocaleLowerCase("pt-BR"))
+                       ).map(item => <label key={item.id} className="flex items-start gap-2 text-[11px]">
+                         <input type="checkbox" checked={Boolean(chosenContents[entry.fileName]?.includes(item.id))}
+                           onChange={event => {
+                             setChosenContents(current => {
+                               const before = current[entry.fileName] ?? [];
+                               const updated = event.target.checked ? [...before, item.id] : before.filter(id => id !== item.id);
+                               return { ...current, [entry.fileName]: updated };
+                             });
+                             setNeedsRevalidation(true); setSuccess("");
+                           }} />
+                         <span>#{item.id} — {item.title}{item.hasPdf ? " (já possui PDF)" : ""}</span>
+                       </label>)}
+                     </div>
+                   </div>}
                 </td>
                 <td className="whitespace-nowrap p-3">{entry.matchedContents} encontrados<br/>{entry.toAssociate} para associar</td>
-                <td className="p-3 font-semibold">{entry.matchedContents === 0 ? <span className="text-red-700">Sem correspondência</span> : entry.toAssociate === 0 ? <span className="text-amber-700">Já possui PDF</span> : <span className="text-[#17644e]">Identificada</span>}</td>
+                <td className="p-3 font-semibold">{entry.matchedContents === 0 ? <span className="text-red-700">{entry.reason ?? "Sem correspondência"}</span> : entry.toAssociate === 0 ? <span className="text-amber-700">Já possui PDF</span> : <span className="text-[#17644e]">{entry.matchMode === "automatic" ? "Sugestão automática" : "Escolha manual"}</span>}</td>
                 <td className="p-3">
                   <details><summary className="cursor-pointer font-semibold text-[#0e5a70]">Ver conteúdos</summary>
                     <ul className="mt-2 max-h-40 min-w-64 space-y-1 overflow-y-auto">
@@ -216,7 +263,13 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
         {result.mappings.filter(entry => entry.fileName.toLocaleLowerCase().includes(mappingSearch.trim().toLocaleLowerCase()) && (!onlyPending || entry.matchedContents === 0)).length === 0 && <p className="p-4 text-center text-xs text-[#52666f]">Nenhuma apostila corresponde aos filtros.</p>}
       </div>
       {needsRevalidation && <p role="status" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-800">A aula de destino foi alterada. Revalide a associação antes de enviar os PDFs.</p>}
-      {result.unmatched.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">Sem correspondência na disciplina: {result.unmatched.join(", ")}. Verifique os títulos das aulas.</p>}
+      {result.unmatched.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">
+         {result.unmatched.length} arquivo(s) sem destino. Selecione a aula ou os conteúdos na tabela e revalide: {result.unmatched.join(", ")}.
+       </p>}
+       {result.blockedShared.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">
+         Os conteúdos #{result.blockedShared.join(", #")} são compartilhados com outra disciplina.
+         Cadastre conteúdos exclusivos para esta disciplina antes de importar, evitando alterações em outra matéria.
+       </p>}
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void verify()} disabled={busy || preview.isPending} className="ghost-button min-h-11 disabled:opacity-50">{needsRevalidation ? "Revalidar alterações" : "Conferir novamente"}</button>
         {valid && <button type="button" disabled={busy} onClick={() => void associate()} className="action-button min-h-11 disabled:opacity-50">
@@ -235,7 +288,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       {savedLinks.data?.groups.length === 0 && <p className="mt-3 text-xs text-[#667c7b]">Ainda não existem apostilas PDF vinculadas a esta disciplina.</p>}
       <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto">
         {savedLinks.data?.groups.map(group => {
-          const selected = postTargets[group.url] ?? (group.lessons.length === 1 ? group.lessons[0] : 0);
+          const selected = postTargets[group.url] ?? (group.targetKeys.length === 1 ? group.targetKeys[0] : "");
           return <article key={group.url} className="rounded-lg border border-[#d1e0d9] bg-[#fbfdfa] p-3">
             <p className="break-all text-xs font-bold text-[#173d4a]">{group.label}</p>
             <p className="mt-1 text-xs text-[#52666f]">Aula(s) atual(is): {group.lessons.map((n: number) => String(n).padStart(2, "0")).join(", ") || "Sem identificação"} · {group.contents.length} conteúdo(s)</p>
@@ -247,12 +300,14 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
             </details>
             <div className="mt-3 flex flex-wrap items-end gap-2">
               <label className="min-w-48 flex-1 text-xs font-semibold text-[#315c62]">Mover PDF para
-                <select className="filter-control mt-1 w-full" value={selected} disabled={busy} onChange={event => setPostTargets(current => ({ ...current, [group.url]: Number(event.target.value) }))}>
-                  <option value={0}>Selecione uma aula</option>
-                  {savedLinks.data?.availableLessons.map(entry => <option key={entry.lesson} value={entry.lesson}>Aula {String(entry.lesson).padStart(2, "0")} — {entry.contentCount} conteúdo(s)</option>)}
+                <select className="filter-control mt-1 w-full" value={selected} disabled={busy} onChange={event => setPostTargets(current => ({ ...current, [group.url]: event.target.value }))}>
+                  <option value="">Selecione aula ou conteúdo</option>
+                   {savedLinks.data?.availableTargets.map(target => <option key={target.key} value={target.key}>
+                     {target.label} — {target.contentCount} conteúdo(s)
+                   </option>)}
                 </select>
               </label>
-              <button type="button" disabled={busy || !selected || (group.lessons.length === 1 && selected === group.lessons[0])} className="ghost-button min-h-10 disabled:opacity-50"
+              <button type="button" disabled={busy || !selected || (group.targetKeys.length === 1 && selected === group.targetKeys[0])} className="ghost-button min-h-10 disabled:opacity-50"
                 onClick={() => void correctExisting(group.url, group.contentIds, selected)}>Salvar nova associação</button>
             </div>
           </article>;
