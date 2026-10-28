@@ -649,6 +649,8 @@ export const appRouter = router({
         files: z.array(z.object({
           fileName: z.string().trim().min(5).max(180),
           targetLesson: z.number().int().min(1).max(999).optional(),
+          targetKey: z.string().trim().min(3).max(180).optional(),
+          targetContentIds: z.array(entityIdSchema).min(1).max(1000).optional(),
         })).min(1).max(100),
         replaceExisting: z.boolean().default(false),
       })).mutation(({ input }) => previewBulkPdfAssociation(input.disciplineId, input.files, input.replaceExisting)),
@@ -657,7 +659,8 @@ export const appRouter = router({
       move: adminProcedure.input(z.object({
         disciplineId: entityIdSchema,
         sourceUrl: z.string().trim().min(20).max(320),
-        targetLesson: z.number().int().min(1).max(999),
+        targetLesson: z.number().int().min(1).max(999).optional(),
+        targetKey: z.string().trim().min(3).max(180).optional(),
         replaceExisting: z.boolean(),
         expectedSourceContentIds: z.array(entityIdSchema).min(1).max(1000),
       })).mutation(({ input, ctx }) => moveBulkPdfAssociation(ctx.user.id, input)),
@@ -666,6 +669,9 @@ export const appRouter = router({
         files: z.array(z.object({
           fileName: z.string().trim().min(5).max(180),
           targetLesson: z.number().int().min(1).max(999).optional(),
+          targetKey: z.string().trim().min(3).max(180).optional(),
+          targetContentIds: z.array(entityIdSchema).min(1).max(1000).optional(),
+          expectedContentIds: z.array(entityIdSchema).max(1000).optional(),
           url: z.string().min(15).max(320),
         })).min(1).max(100),
         replaceExisting: z.boolean(),
