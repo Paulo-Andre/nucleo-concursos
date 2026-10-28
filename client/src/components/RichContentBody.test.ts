@@ -76,6 +76,16 @@ describe("formatação didática de conteúdos", () => {
     expect(html).not.toContain("<script>");
   });
 
+
+  it("renderiza a tabela HTML legada como tabela real, nunca como texto com tags", () => {
+    const body = "### Quadro ou figura\n\n<table><tbody><tr><td>p</td><td>q</td></tr><tr><td>V</td><td>F</td></tr></tbody></table>";
+    const markup = renderToStaticMarkup(createElement(RichContentBody, { body }));
+    expect(markup).toMatch(/<table\b/);
+    expect(markup).toMatch(/<td\b/);
+    expect(markup).not.toContain("&lt;table");
+    expect(markup).not.toContain("<tbody>&lt;");
+  });
+
   it("apresenta os comandos de destaque e fórmula no editor ROOT", () => {
     const markup = renderToStaticMarkup(createElement(ContentBodyEditor, { value: "", onChange: () => undefined }));
     expect(markup).toContain("Destacar seleção");
