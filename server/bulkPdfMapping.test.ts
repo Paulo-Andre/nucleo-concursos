@@ -1,147 +1,133 @@
 import { describe, expect, it } from "vitest";
-import { lessonNumberFromContentTitle, lessonNumberFromPdfName, mapPdfFilesToContents } from "./bulkPdfMapping";
+import {
+  groupKeyFromContentTitle, lessonNumberFromContentTitle,
+  lessonNumberFromPdfName, mapPdfFilesToContents,
+} from "./bulkPdfMapping";
 
-const contents = [
+const pt = [
   { id: 1, title: "Aula 01 - 01 - Interpretação de texto", materialUrl: null },
   { id: 2, title: "Aula 01 - 02 - Ideia central", materialUrl: null },
-  { id: 3, title: "Aula 02 - Texto narrativo - Capítulo 1", materialUrl: "/manus-storage/content-pdfs/1/old.pdf" },
+  { id: 3, title: "Aula 02 - Texto narrativo", materialUrl: "/manus-storage/content-pdfs/1/existing.pdf" },
   { id: 4, title: "Aula 03 — 01. O que é descrever?", materialUrl: null },
-  { id: 5, title: "Revisão geral", materialUrl: null },
-  { id: 6, title: "Aula 45 - 10 - Glossário", materialUrl: null },
 ];
+const rlm = [
+  { id: 11, title: "RLM 2.1 · 01 — Proposição", materialUrl: null },
+  { id: 12, title: "RLM 2.1 · 02 — Conectivos", materialUrl: null },
+  { id: 13, title: "RLM 2.2 · 01 — Conjuntos", materialUrl: null },
+  { id: 14, title: "RLM 2.10 · 08 — Matrizes", materialUrl: null },
+];
+const future = [
+  { id: 21, title: "Geometria Plana", materialUrl: null },
+  { id: 22, title: "História do Brasil", materialUrl: null },
+  { id: 23, title: "Lei Orgânica", materialUrl: null },
+];
+const ptParams = { contents: pt, replaceExisting: false, disciplineShortName: "PT", disciplineName: "Língua Portuguesa" };
+const rlmParams = { contents: rlm, replaceExisting: false, disciplineShortName: "RL-MT", disciplineName: "Raciocínio Lógico-Matemático" };
 
-describe("identificação segura de PDFs para o Excel de Português", () => {
-  it("reconhece 45 aulas independentemente do travessão e do formato de capítulo", () => {
-    expect(lessonNumberFromContentTitle(contents[0].title)).toBe(1);
-    expect(lessonNumberFromContentTitle(contents[2].title)).toBe(2);
-    expect(lessonNumberFromContentTitle(contents[3].title)).toBe(3);
-    expect(lessonNumberFromContentTitle(contents[5].title)).toBe(45);
-    expect(lessonNumberFromContentTitle("Revisão geral")).toBeNull();
+describe("associação universal de apostilas PDF", () => {
+  it("preserva as 45 aulas de Português e seus capítulos", () => {
+    expect(lessonNumberFromContentTitle(pt[0].title)).toBe(1);
     expect(lessonNumberFromContentTitle("Português — Aula 01 - Interpretação")).toBe(1);
-    expect(lessonNumberFromContentTitle("Módulo 2 | Aula 45: Revisão")).toBe(45);
+    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 - Parte 01 - AULA 01")).toBe(1);
     expect(lessonNumberFromContentTitle("Aula 01 e Aula 02")).toBeNull();
-    expect(lessonNumberFromContentTitle("PT-M01-A01 — Revisão")).toBeNull();
+    expect(lessonNumberFromContentTitle("Capítulo 01 da Aula 01")).toBeNull();
     expect(lessonNumberFromPdfName("PT_Aula_01.pdf")).toBe(1);
     expect(lessonNumberFromPdfName("PT_Aula_45.PDF")).toBe(45);
-  });
-
-  it("reconhece os títulos reais da importação PCMG com partes e menções repetidas", () => {
-    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 - Parte 01 - AULA 01 - INTERPRETAÇÃO")).toBe(1);
-    expect(lessonNumberFromContentTitle("PCMG Portugus - Aula 01 - Parte 01 - AULA 01 - INTERPRETAO")).toBe(1);
-    expect(lessonNumberFromContentTitle("PCMG Português - Aula 07 - Parte 02 - AULA 07 - Aula 07")).toBe(7);
-    expect(lessonNumberFromContentTitle("PCMG Português - Aula 45 - Parte 02 - AULA 45 - REGÊNCIA NOMINAL")).toBe(45);
-    expect(lessonNumberFromContentTitle("PCMG Português - Aula 09 - Parte 02 - Continuação dos estudos")).toBe(9);
-    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 - Parte 02 - AULA 02 - Conteúdo incorreto")).toBeNull();
-    expect(lessonNumberFromContentTitle("PCMG Português - Aula 01 e Aula 02")).toBeNull();
-    const result = mapPdfFilesToContents({
-      files: [{ fileName: "PT_Aula_01.pdf" }, { fileName: "PT_Aula_45.pdf" }],
-      contents: [
-        { id: 597, title: "PCMG Português - Aula 01 - Parte 01 - AULA 01 - INTERPRETAÇÃO", materialUrl: null },
-        { id: 598, title: "PCMG Português - Aula 01 - Parte 02 - AULA 01 - INTERPRETAÇÃO", materialUrl: null },
-        { id: 700, title: "PCMG Português - Aula 45 - Parte 02 - AULA 45 - REGÊNCIA NOMINAL", materialUrl: null },
-      ], replaceExisting: false,
-    });
-    expect(result.unmatched).toEqual([]);
-    expect(result.totalAssociations).toBe(3);
-    expect(result.availableLessons.map(item => item.lesson)).toEqual([1, 45]);
-  });
-
-  it("associa um PDF a todas as subdivisões da aula correspondente", () => {
-    const result = mapPdfFilesToContents({
+    const preview = mapPdfFilesToContents({
+      ...ptParams,
       files: [{ fileName: "PT_Aula_01.pdf" }, { fileName: "PT_Aula_03.pdf" }],
-      contents,
-      replaceExisting: false,
     });
-    expect(result.totalFiles).toBe(2);
-    expect(result.totalAssociations).toBe(3);
-    expect(result.mappings[0].contentIds).toEqual([1, 2]);
-    expect(result.mappings[1].contentIds).toEqual([4]);
+    expect(preview.unmatched).toEqual([]);
+    expect(preview.mappings[0].contentIds).toEqual([1, 2]);
+    expect(preview.mappings[1].contentIds).toEqual([4]);
   });
 
-  it("não sobrescreve apostilas anteriores sem autorização", () => {
-    const locked = mapPdfFilesToContents({
-      files: [{ fileName: "PT_Aula_02.pdf" }], contents, replaceExisting: false,
-    });
-    expect(locked.totalAssociations).toBe(0);
+  it("mantém PDFs existentes salvo substituição explícita", () => {
+    const locked = mapPdfFilesToContents({ ...ptParams, files: [{ fileName: "PT_Aula_02.pdf" }] });
     expect(locked.mappings[0].alreadyHasPdf).toBe(1);
-    const replace = mapPdfFilesToContents({
-      files: [{ fileName: "PT_Aula_02.pdf" }], contents, replaceExisting: true,
+    expect(locked.totalAssociations).toBe(0);
+    const replacing = mapPdfFilesToContents({ ...ptParams, replaceExisting: true, files: [{ fileName: "PT_Aula_02.pdf" }] });
+    expect(replacing.mappings[0].contentIds).toEqual([3]);
+  });
+
+  it("associa RLM pelo tópico completo e não mistura 2.1 com 2.10", () => {
+    expect(groupKeyFromContentTitle(rlm[0].title)).toBe("tema:rlm:2.1");
+    expect(groupKeyFromContentTitle(rlm[3].title)).toBe("tema:rlm:2.10");
+    const preview = mapPdfFilesToContents({ ...rlmParams,
+      files: [{ fileName: "RLM_Aula_01.pdf" }, { fileName: "RLM_Aula_10.pdf" }] });
+    expect(preview.mappings[0].contentIds).toEqual([11, 12]);
+    expect(preview.mappings[1].contentIds).toEqual([14]);
+  });
+
+  it("funciona com disciplina futura e nome de PDF sem nenhuma sigla", () => {
+    const preview = mapPdfFilesToContents({
+      contents: future, replaceExisting: false,
+      disciplineShortName: "GEO-2027", disciplineName: "Geografia e História",
+      files: [{ fileName: "Geometria Plana.pdf" }, { fileName: "apostila especial.pdf" }],
     });
-    expect(replace.totalAssociations).toBe(1);
-    expect(replace.mappings[0].contentIds).toEqual([3]);
-  });
-
-  it("recusa ambiguidades, formatos incorretos e duplicações", () => {
-    for (const name of ["Aula_02_gabarito.pdf", "virus.exe", "../PT_Aula_01.pdf"]) {
-      expect(() => mapPdfFilesToContents({
-        files: [{ fileName: name }], contents, replaceExisting: true,
-      })).toThrow(/nome de PDF/i);
-    }
-    expect(() => mapPdfFilesToContents({
-      files: [{ fileName: "PT_Aula_01.pdf" }, { fileName: "Aula_1.pdf" }], contents, replaceExisting: true,
-    })).toThrow(/mais de um pdf/i);
-    const miss = mapPdfFilesToContents({ files: [{fileName:"PT_Aula_12.pdf"}], contents, replaceExisting:false });
-    expect(miss.unmatched).toEqual(["PT_Aula_12.pdf"]);
-  });
-
-  it("permite corrigir manualmente a aula de destino antes de enviar o PDF", () => {
-    const result = mapPdfFilesToContents({
-      files: [{ fileName: "PT_Aula_01.pdf", targetLesson: 3 }],
-      contents,
-      replaceExisting: false,
+    expect(preview.mappings[0].contentIds).toEqual([21]);
+    expect(preview.mappings[1].matchedContents).toBe(0);
+    expect(preview.unmatched).toEqual(["apostila especial.pdf"]);
+    expect(preview.availableTargets.some(target => target.key === "content:22")).toBe(true);
+    const manuallySelected = mapPdfFilesToContents({
+      contents: future, replaceExisting: false, disciplineShortName: "GEO-2027",
+      files: [{ fileName: "apostila especial.pdf", targetKey: "content:22" }],
     });
-    expect(result.mappings[0].lesson).toBe(3);
-    expect(result.mappings[0].contentIds).toEqual([4]);
-    expect(result.mappings[0].contents).toEqual([
-      { id: 4, title: "Aula 03 — 01. O que é descrever?", hasPdf: false },
-    ]);
-    expect(result.availableLessons.map(item => item.lesson)).toEqual([1, 2, 3, 45]);
-    expect(() => mapPdfFilesToContents({
-      files: [{ fileName: "PT_Aula_01.pdf", targetLesson: 2 }, { fileName: "PT_Aula_03.pdf", targetLesson: 2 }],
-      contents, replaceExisting: true,
-    })).toThrow(/Mais de um PDF para a Aula 2/);
+    expect(manuallySelected.mappings[0].contentIds).toEqual([22]);
+    expect(manuallySelected.mappings[0].matchMode).toBe("manual");
   });
 
-  it("não anexa por números que aparecem no meio de outros títulos", () => {
-    expect(lessonNumberFromContentTitle("Capítulo 01 da Aula 01")).toBeNull();
-    expect(lessonNumberFromContentTitle("Aula 0100 - conteúdo")).toBe(100);
-    expect(lessonNumberFromPdfName("PT_Aula_100.pdf")).toBe(100);
-  });
-});
-
-describe("apostilas RLM usam prefixo da própria disciplina", () => {
-  const rlm = [
-    { id: 101, title: "RLM 2.1 · 01 — Proposição e valor lógico", materialUrl: null },
-    { id: 102, title: "RLM 2.1 - Lógica proposicional, conectivos e quantificadores", materialUrl: null },
-    { id: 103, title: "RLM 2.2 · 02 — União e interseção", materialUrl: null },
-    { id: 104, title: "RLM 2.10 · 08 — Problemas matriciais", materialUrl: null },
-  ];
-  it("reconhece códigos RLM 2.1, 2.2 e 2.10, sem confundir temas", () => {
-    expect(lessonNumberFromContentTitle(rlm[0].title)).toBe(1);
-    expect(lessonNumberFromContentTitle(rlm[2].title)).toBe(2);
-    expect(lessonNumberFromContentTitle(rlm[3].title)).toBe(10);
-    expect(lessonNumberFromContentTitle("RLM 2.1 e RLM 2.2")).toBeNull();
-  });
-  it("aceita os 14 PDFs RLM e conserva a regra de Português", () => {
-    for (let i = 1; i <= 14; i++) {
-      expect(lessonNumberFromPdfName("RLM_Aula_" + String(i).padStart(2,"0") + ".pdf", "RL-MT")).toBe(i);
-    }
-    expect(lessonNumberFromPdfName("PT_Aula_01.pdf", "PT")).toBe(1);
-    expect(lessonNumberFromPdfName("PT_Aula_01.pdf", "RL-MT")).toBeNull();
-    expect(lessonNumberFromPdfName("RLM_Aula_01.pdf", "PT")).toBeNull();
-  });
-  it("associa apenas as subdivisões do respectivo tema", () => {
-    const result = mapPdfFilesToContents({
-      files: [{fileName:"RLM_Aula_01.pdf"},{fileName:"RLM_Aula_10.pdf"}],
-      contents: rlm, replaceExisting:false, disciplineShortName:"RL-MT",
+  it("permite selecionar vários conteúdos avulsos sem padrão de título", () => {
+    const preview = mapPdfFilesToContents({
+      contents: future, replaceExisting: false,
+      files: [{ fileName: "material2027.pdf", targetContentIds: [21, 23] }],
     });
-    expect(result.mappings[0].contentIds).toEqual([101,102]);
-    expect(result.mappings[1].contentIds).toEqual([104]);
+    expect(preview.mappings[0].contentIds).toEqual([21, 23]);
+    expect(preview.totalAssociations).toBe(2);
   });
-  it("bloqueia prefixos de outra disciplina mesmo com destino manual", () => {
-    expect(() => mapPdfFilesToContents({
-      files:[{fileName:"PT_Aula_01.pdf",targetLesson:1}],
-      contents:rlm,replaceExisting:false,disciplineShortName:"RL-MT",
-    })).toThrow(/prefixo/i);
+
+  it("evita associação automática quando prefixo pertence a outra disciplina", () => {
+    const preview = mapPdfFilesToContents({ ...rlmParams,
+      files: [{ fileName: "PT_Aula_01.pdf" }] });
+    expect(preview.unmatched).toEqual(["PT_Aula_01.pdf"]);
+    expect(preview.mappings[0].reason).toMatch(/prefixo/i);
+    // Confirmação explícita continua possível, sem depender do nome do arquivo.
+    const manual = mapPdfFilesToContents({ ...rlmParams,
+      files: [{ fileName: "PT_Aula_01.pdf", targetKey: "tema:rlm:2.1" }] });
+    expect(manual.mappings[0].contentIds).toEqual([11, 12]);
+  });
+
+  it("distingue dois módulos com a mesma numeração de aula", () => {
+    const contents = [
+      { id: 31, title: "HIS 2.1 - Tema X", materialUrl: null },
+      { id: 32, title: "HIS 3.1 - Tema Y", materialUrl: null },
+    ];
+    const ambiguous = mapPdfFilesToContents({ files: [{ fileName: "Aula_01.pdf" }], contents, replaceExisting: false });
+    expect(ambiguous.unmatched).toEqual(["Aula_01.pdf"]);
+    const explicit = mapPdfFilesToContents({ files: [{ fileName: "Aula_01.pdf", targetKey: "tema:his:3.1" }], contents, replaceExisting: false });
+    expect(explicit.mappings[0].contentIds).toEqual([32]);
+  });
+
+  it("não tenta associar automaticamente arquivos de gabarito", () => {
+    const preview = mapPdfFilesToContents({ ...ptParams, files: [{ fileName: "Aula 01 - gabarito.pdf" }] });
+    expect(preview.unmatched).toEqual(["Aula 01 - gabarito.pdf"]);
+  });
+
+  it("bloqueia colisões, arquivos duplicados, caminhos e IDs de outra disciplina", () => {
+    expect(() => mapPdfFilesToContents({ ...ptParams,
+      files: [{ fileName: "PT_Aula_01.pdf" }, { fileName: "Aula_01.pdf" }],
+    })).toThrow(/mesmo conteúdo/i);
+    expect(() => mapPdfFilesToContents({ ...ptParams,
+      files: [{ fileName: "Aula_01.pdf" }, { fileName: "aula_01.PDF" }],
+    })).toThrow(/duplicado/i);
+    expect(() => mapPdfFilesToContents({ ...ptParams,
+      files: [{ fileName: "../Aula_01.pdf" }],
+    })).toThrow(/inválido/i);
+    expect(() => mapPdfFilesToContents({ ...ptParams,
+      files: [{ fileName: "qualquer.pdf", targetContentIds: [9999] }],
+    })).toThrow(/fora da disciplina/i);
+    expect(() => mapPdfFilesToContents({ ...ptParams,
+      files: [{ fileName: "qualquer.pdf", targetKey: "content:9999" }],
+    })).toThrow(/não encontrado/i);
   });
 });
