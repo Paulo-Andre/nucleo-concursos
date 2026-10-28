@@ -108,3 +108,40 @@ describe("identificação segura de PDFs para o Excel de Português", () => {
     expect(lessonNumberFromPdfName("PT_Aula_100.pdf")).toBe(100);
   });
 });
+
+describe("apostilas RLM usam prefixo da própria disciplina", () => {
+  const rlm = [
+    { id: 101, title: "RLM 2.1 · 01 — Proposição e valor lógico", materialUrl: null },
+    { id: 102, title: "RLM 2.1 - Lógica proposicional, conectivos e quantificadores", materialUrl: null },
+    { id: 103, title: "RLM 2.2 · 02 — União e interseção", materialUrl: null },
+    { id: 104, title: "RLM 2.10 · 08 — Problemas matriciais", materialUrl: null },
+  ];
+  it("reconhece códigos RLM 2.1, 2.2 e 2.10, sem confundir temas", () => {
+    expect(lessonNumberFromContentTitle(rlm[0].title)).toBe(1);
+    expect(lessonNumberFromContentTitle(rlm[2].title)).toBe(2);
+    expect(lessonNumberFromContentTitle(rlm[3].title)).toBe(10);
+    expect(lessonNumberFromContentTitle("RLM 2.1 e RLM 2.2")).toBeNull();
+  });
+  it("aceita os 14 PDFs RLM e conserva a regra de Português", () => {
+    for (let i = 1; i <= 14; i++) {
+      expect(lessonNumberFromPdfName("RLM_Aula_" + String(i).padStart(2,"0") + ".pdf", "RL-MT")).toBe(i);
+    }
+    expect(lessonNumberFromPdfName("PT_Aula_01.pdf", "PT")).toBe(1);
+    expect(lessonNumberFromPdfName("PT_Aula_01.pdf", "RL-MT")).toBeNull();
+    expect(lessonNumberFromPdfName("RLM_Aula_01.pdf", "PT")).toBeNull();
+  });
+  it("associa apenas as subdivisões do respectivo tema", () => {
+    const result = mapPdfFilesToContents({
+      files: [{fileName:"RLM_Aula_01.pdf"},{fileName:"RLM_Aula_10.pdf"}],
+      contents: rlm, replaceExisting:false, disciplineShortName:"RL-MT",
+    });
+    expect(result.mappings[0].contentIds).toEqual([101,102]);
+    expect(result.mappings[1].contentIds).toEqual([104]);
+  });
+  it("bloqueia prefixos de outra disciplina mesmo com destino manual", () => {
+    expect(() => mapPdfFilesToContents({
+      files:[{fileName:"PT_Aula_01.pdf",targetLesson:1}],
+      contents:rlm,replaceExisting:false,disciplineShortName:"RL-MT",
+    })).toThrow(/prefixo/i);
+  });
+});
