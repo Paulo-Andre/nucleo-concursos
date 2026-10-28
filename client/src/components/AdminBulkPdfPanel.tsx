@@ -269,7 +269,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
        {result.blockedShared.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">
          Os conteúdos #{result.blockedShared.join(", #")} são compartilhados com outra disciplina.
          Separe esses conteúdos ou associe PDFs individualmente para não alterar outra matéria.
-       </p>
+       </p>}
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void verify()} disabled={busy || preview.isPending} className="ghost-button min-h-11 disabled:opacity-50">{needsRevalidation ? "Revalidar alterações" : "Conferir novamente"}</button>
         {valid && <button type="button" disabled={busy} onClick={() => void associate()} className="action-button min-h-11 disabled:opacity-50">
@@ -288,7 +288,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       {savedLinks.data?.groups.length === 0 && <p className="mt-3 text-xs text-[#667c7b]">Ainda não existem apostilas PDF vinculadas a esta disciplina.</p>}
       <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto">
         {savedLinks.data?.groups.map(group => {
-          const selected = postTargets[group.url] ?? (group.lessons.length === 1 ? group.lessons[0] : 0);
+          const selected = postTargets[group.url] ?? (group.targetKeys.length === 1 ? group.targetKeys[0] : "");
           return <article key={group.url} className="rounded-lg border border-[#d1e0d9] bg-[#fbfdfa] p-3">
             <p className="break-all text-xs font-bold text-[#173d4a]">{group.label}</p>
             <p className="mt-1 text-xs text-[#52666f]">Aula(s) atual(is): {group.lessons.map((n: number) => String(n).padStart(2, "0")).join(", ") || "Sem identificação"} · {group.contents.length} conteúdo(s)</p>
@@ -300,12 +300,14 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
             </details>
             <div className="mt-3 flex flex-wrap items-end gap-2">
               <label className="min-w-48 flex-1 text-xs font-semibold text-[#315c62]">Mover PDF para
-                <select className="filter-control mt-1 w-full" value={selected} disabled={busy} onChange={event => setPostTargets(current => ({ ...current, [group.url]: Number(event.target.value) }))}>
-                  <option value={0}>Selecione uma aula</option>
-                  {savedLinks.data?.availableLessons.map(entry => <option key={entry.lesson} value={entry.lesson}>Aula {String(entry.lesson).padStart(2, "0")} — {entry.contentCount} conteúdo(s)</option>)}
+                <select className="filter-control mt-1 w-full" value={selected} disabled={busy} onChange={event => setPostTargets(current => ({ ...current, [group.url]: event.target.value }))}>
+                  <option value="">Selecione aula ou conteúdo</option>
+                   {savedLinks.data?.availableTargets.map(target => <option key={target.key} value={target.key}>
+                     {target.label} — {target.contentCount} conteúdo(s)
+                   </option>)}
                 </select>
               </label>
-              <button type="button" disabled={busy || !selected || (group.lessons.length === 1 && selected === group.lessons[0])} className="ghost-button min-h-10 disabled:opacity-50"
+              <button type="button" disabled={busy || !selected || (group.targetKeys.length === 1 && selected === group.targetKeys[0])} className="ghost-button min-h-10 disabled:opacity-50"
                 onClick={() => void correctExisting(group.url, group.contentIds, selected)}>Salvar nova associação</button>
             </div>
           </article>;
