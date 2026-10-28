@@ -36,6 +36,15 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
   const [needsRevalidation, setNeedsRevalidation] = useState(false);
   const [postTargets, setPostTargets] = useState<Record<string, number>>({});
   const [allowReplaceTarget, setAllowReplaceTarget] = useState(false);
+  const selectedDiscipline = disciplines.find(item => String(item.id) === disciplineId);
+  const isRlm = /^(rl[-_]?mt|rlm)$/i.test(selectedDiscipline?.shortName ?? "");
+  const isPortuguese = /^(pt|port|portugues)$/i.test(selectedDiscipline?.shortName ?? "");
+  const prefix = isRlm ? "RLM" : isPortuguese ? "PT" : (selectedDiscipline?.shortName || "DISC");
+  const pdfExample = prefix + "_Aula_01.pdf";
+  const pdfExample2 = prefix + "_Aula_02.pdf";
+  const mappingHint = isRlm
+    ? "Os PDFs são associados aos conteúdos identificados por RLM 2.1, RLM 2.2 e assim por diante."
+    : "Os PDFs são associados às subdivisões cujos títulos começam por Aula 01, Aula 02, etc.";
   const preview = trpc.admin.pdfBatches.preview.useMutation();
   const [plan, setPlan] = useState<Awaited<ReturnType<typeof preview.mutateAsync>> | null>(null);
   const uploadPdf = trpc.admin.contents.uploadPdf.useMutation();
@@ -133,10 +142,9 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       <div>
         <h4 className="font-display text-lg font-bold text-[#173d4a]">Importar apostilas PDF em massa</h4>
         <p className="mt-1 text-xs leading-5 text-[#52666f]">
-          Selecione a disciplina e vários PDFs. O sistema identifica arquivos como
-          <strong> PT_Aula_01.pdf</strong>, <strong> PT_Aula_02.pdf</strong> e relaciona cada um
-          com os conteúdos cujos títulos começam por Aula 01, Aula 02, etc.
-          Funciona com a planilha de 45 aulas e suas 417 divisões.
+          Selecione a disciplina e vários PDFs. Use nomes como
+          <strong> {pdfExample}</strong> e <strong> {pdfExample2}</strong>.
+          {" "}{mappingHint}
         </p>
       </div>
     </div>
@@ -168,7 +176,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="flex-1 text-xs font-semibold text-[#315c62]">Pesquisar apostila
           <input value={mappingSearch} onChange={event => setMappingSearch(event.target.value)}
-            placeholder="Ex.: PT_Aula_01.pdf" className="filter-control mt-1 w-full" />
+            placeholder={`Ex.: ${pdfExample}`} className="filter-control mt-1 w-full" />
         </label>
         <label className="flex items-center gap-2 text-xs font-semibold text-[#315c62]">
           <input type="checkbox" checked={onlyPending} onChange={event => setOnlyPending(event.target.checked)} />

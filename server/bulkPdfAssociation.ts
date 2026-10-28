@@ -4,6 +4,15 @@ import { getDb } from "./db";
 import { lessonNumberFromContentTitle, mapPdfFilesToContents, type PdfMappingFile } from "./bulkPdfMapping";
 
 /** Apenas conteúdos vinculados à disciplina escolhida podem receber os PDFs. */
+async function shortNameForPdfDiscipline(disciplineId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  const [discipline] = await db.select({ shortName: disciplines.shortName })
+    .from(disciplines).where(eq(disciplines.id, disciplineId)).limit(1);
+  if (!discipline) throw new Error("Disciplina não encontrada.");
+  return discipline.shortName;
+}
+
 async function contentsForDiscipline(disciplineId: number) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível.");
@@ -16,7 +25,8 @@ async function contentsForDiscipline(disciplineId: number) {
 
 export async function previewBulkPdfAssociation(disciplineId: number, files: Pick<PdfMappingFile, "fileName" | "targetLesson">[], replaceExisting: boolean) {
   const rows = await contentsForDiscipline(disciplineId);
-  const mapping = mapPdfFilesToContents({ contents: rows, files, replaceExisting });
+  const disciplineShortName = await shortNameForPdfDiscipline(disciplineId);
+  const mapping = mapPdfFilesToContents({ contents: rows, files, replaceExisting, disciplineShortName });
   return { ...mapping, disciplineId, totalContentsInDiscipline: rows.length };
 }
 
@@ -29,7 +39,8 @@ export async function confirmBulkPdfAssociation(actorUserId: number, input: {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível.");
   const rows = await contentsForDiscipline(input.disciplineId);
-  const plan = mapPdfFilesToContents({ contents: rows, files: input.files, replaceExisting: input.replaceExisting });
+  const disciplineShortName = await shortNameForPdfDiscipline(input.disciplineId);
+  const plan = mapPdfFilesToContents({ contents: rows, files: input.files, replaceExisting: input.replaceExisting, disciplineShortName });
   if (plan.unmatched.length) throw new Error("Algumas apostilas não correspondem a nenhuma aula da disciplina. Revise os nomes.");
   if (!plan.totalAssociations) throw new Error("Nenhum conteúdo disponível para associar. Confira as aulas e a opção de substituir PDFs existentes.");
   if (plan.totalAssociations !== input.expectedCount) throw new Error("As aulas mudaram desde a prévia. Faça uma nova conferência antes de salvar.");
