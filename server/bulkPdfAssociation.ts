@@ -72,7 +72,7 @@ export async function confirmBulkPdfAssociation(actorUserId: number, input: {
       throw new Error("Os destinos mudaram desde a conferência de " + file.fileName + ". Revalide antes de salvar.");
   }
   const blockedShared = await findSharedPdfContents(input.disciplineId, plan.mappings.flatMap(item => item.contentIds));
-  if (blockedShared.length) throw new Error("Existem conteúdos reutilizados em outras disciplinas (IDs: " + blockedShared.join(", ") + "). Associe o PDF individualmente ou separe os conteúdos para não alterar outras matérias.");
+  if (blockedShared.length) throw new Error("Existem conteúdos reutilizados em outras disciplinas (IDs: " + blockedShared.join(", ") + "). Cadastre conteúdos exclusivos para esta disciplina antes de importar os PDFs.");
 
   const byId = new Map(rows.map(row => [row.id, row]));
   const fileByName = new Map<string, { url: string; fileName: string }>();
