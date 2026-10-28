@@ -36,7 +36,7 @@ describe("associação de apostilas por disciplina, em lote", () => {
         { disciplineId: base + 1, contentId: first + 2, linkedByUserId: admin.id },
         { disciplineId: base, contentId: first + 3, linkedByUserId: admin.id },
       ]);
-      const fileName = "PT_Aula_01.pdf";
+      const fileName = "pl" + code + "_Aula_01.pdf";
       const preview = await previewBulkPdfAssociation(base, [{ fileName }], false);
       expect(preview).toMatchObject({ totalFiles: 1, totalAssociations: 2, unmatched: [] });
       const url = `/manus-storage/content-pdfs/${admin.id}/${crypto.randomUUID()}_abcdef12.pdf`;
@@ -46,7 +46,7 @@ describe("associação de apostilas por disciplina, em lote", () => {
       expect(saved).toEqual({ associated: 2, uploaded: 1 });
       const rows = await db.select().from(contents).where(inArray(contents.id, inserted));
       expect(rows.find(x => x.id === first)).toMatchObject({materialUrl: url, body: "Corpo preservado", status: "draft"});
-      expect(rows.find(x => x.id === first + 1)?.materialLabel).toContain("PT_Aula_01.pdf");
+      expect(rows.find(x => x.id === first + 1)?.materialLabel).toContain(fileName);
       expect(rows.find(x => x.id === first + 2)?.materialUrl).toBeNull();
 
       await expect(confirmBulkPdfAssociation(admin.id, {
@@ -69,7 +69,7 @@ describe("associação de apostilas por disciplina, em lote", () => {
         disciplineId: base, sourceUrl: url, targetLesson: 2, replaceExisting: false,
         expectedSourceContentIds: [first, first + 1],
       });
-      expect(moved).toEqual({ updated: 3, targetLesson: 2 });
+      expect(moved).toMatchObject({ updated: 3, targetLesson: 2, targetKey: "aula:2" });
       const movedContents = await db.select().from(contents).where(inArray(contents.id, inserted));
       expect(movedContents.find(row => row.id === first)?.materialUrl).toBeNull();
       expect(movedContents.find(row => row.id === first + 1)?.materialUrl).toBeNull();
