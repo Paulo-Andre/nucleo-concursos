@@ -203,16 +203,53 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
               <tr key={entry.fileName} className="align-top hover:bg-[#f9fcfa]">
                 <td className="max-w-52 break-all p-3 font-bold text-[#173d4a]">{entry.fileName}</td>
                 <td className="p-3">
-                  <select aria-label={"Aula de destino de " + entry.fileName} disabled={busy}
-                    value={targetLessons[entry.fileName] ?? entry.lesson}
-                    onChange={event => { setTargetLessons(current => ({ ...current, [entry.fileName]: Number(event.target.value) })); setNeedsRevalidation(true); setSuccess(""); }}
-                    className="filter-control w-full min-w-44">
-                    {entry.matchedContents === 0 && <option value={entry.lesson}>Aula {String(entry.lesson).padStart(2, "0")} (não localizada)</option>}
-                    {result.availableLessons.map(lesson => <option value={lesson.lesson} key={lesson.lesson}>Aula {String(lesson.lesson).padStart(2, "0")} — {lesson.contentCount} conteúdo(s)</option>)}
-                  </select>
+                  <select aria-label={"Aula ou conteúdo de destino de " + entry.fileName} disabled={busy}
+                     value={chosenContents[entry.fileName]?.length ? "" : (targetKeys[entry.fileName] ?? entry.targetKey ?? "")}
+                     onChange={event => {
+                       setTargetKeys(current => ({ ...current, [entry.fileName]: event.target.value }));
+                       setChosenContents(current => ({ ...current, [entry.fileName]: [] }));
+                       setNeedsRevalidation(true); setSuccess("");
+                     }}
+                     className="filter-control w-full min-w-44">
+                     <option value="">Escolha um destino</option>
+                     <optgroup label="Aulas e grupos">
+                       {result.availableTargets.filter(target => target.kind === "group").map(target =>
+                         <option value={target.key} key={target.key}>{target.label} — {target.contentCount} conteúdo(s)</option>)}
+                     </optgroup>
+                     <optgroup label="Conteúdos individuais">
+                       {result.availableTargets.filter(target => target.kind === "content").map(target =>
+                         <option value={target.key} key={target.key}>{target.label}</option>)}
+                     </optgroup>
+                   </select>
+                   <button type="button" disabled={busy}
+                     className="mt-2 text-xs font-semibold text-[#0e5a70] underline"
+                     onClick={() => {setEditingContentsFor(current => current === entry.fileName ? null : entry.fileName); setContentFilter("");}}>
+                     {editingContentsFor === entry.fileName ? "Fechar seleção múltipla" : "Selecionar vários conteúdos"}
+                   </button>
+                   {chosenContents[entry.fileName]?.length ? <p className="mt-1 text-xs text-[#17644e]">{chosenContents[entry.fileName].length} conteúdo(s) selecionado(s)</p> : null}
+                   {editingContentsFor === entry.fileName && <div className="mt-2 max-w-[28rem] rounded-lg border border-[#bedbd0] bg-[#f9fcfa] p-2">
+                     <input value={contentFilter} onChange={event => setContentFilter(event.target.value)}
+                       placeholder="Pesquisar conteúdo pelo título" className="filter-control mb-2 w-full" />
+                     <div className="max-h-48 space-y-1 overflow-y-auto">
+                       {result.availableContents.filter(item =>
+                         item.title.toLocaleLowerCase("pt-BR").includes(contentFilter.trim().toLocaleLowerCase("pt-BR"))
+                       ).map(item => <label key={item.id} className="flex items-start gap-2 text-[11px]">
+                         <input type="checkbox" checked={Boolean(chosenContents[entry.fileName]?.includes(item.id))}
+                           onChange={event => {
+                             setChosenContents(current => {
+                               const before = current[entry.fileName] ?? [];
+                               const updated = event.target.checked ? [...before, item.id] : before.filter(id => id !== item.id);
+                               return { ...current, [entry.fileName]: updated };
+                             });
+                             setNeedsRevalidation(true); setSuccess("");
+                           }} />
+                         <span>#{item.id} — {item.title}{item.hasPdf ? " (já possui PDF)" : ""}</span>
+                       </label>)}
+                     </div>
+                   </div>}
                 </td>
                 <td className="whitespace-nowrap p-3">{entry.matchedContents} encontrados<br/>{entry.toAssociate} para associar</td>
-                <td className="p-3 font-semibold">{entry.matchedContents === 0 ? <span className="text-red-700">Sem correspondência</span> : entry.toAssociate === 0 ? <span className="text-amber-700">Já possui PDF</span> : <span className="text-[#17644e]">Identificada</span>}</td>
+                <td className="p-3 font-semibold">{entry.matchedContents === 0 ? <span className="text-red-700">{entry.reason ?? "Sem correspondência"}</span> : entry.toAssociate === 0 ? <span className="text-amber-700">Já possui PDF</span> : <span className="text-[#17644e]">{entry.matchMode === "automatic" ? "Sugestão automática" : "Escolha manual"}</span>}</td>
                 <td className="p-3">
                   <details><summary className="cursor-pointer font-semibold text-[#0e5a70]">Ver conteúdos</summary>
                     <ul className="mt-2 max-h-40 min-w-64 space-y-1 overflow-y-auto">
@@ -226,7 +263,13 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
         {result.mappings.filter(entry => entry.fileName.toLocaleLowerCase().includes(mappingSearch.trim().toLocaleLowerCase()) && (!onlyPending || entry.matchedContents === 0)).length === 0 && <p className="p-4 text-center text-xs text-[#52666f]">Nenhuma apostila corresponde aos filtros.</p>}
       </div>
       {needsRevalidation && <p role="status" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-800">A aula de destino foi alterada. Revalide a associação antes de enviar os PDFs.</p>}
-      {result.unmatched.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">Sem correspondência na disciplina: {result.unmatched.join(", ")}. Verifique os títulos das aulas.</p>}
+      {result.unmatched.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">
+         {result.unmatched.length} arquivo(s) sem destino. Selecione a aula ou os conteúdos na tabela e revalide: {result.unmatched.join(", ")}.
+       </p>}
+       {result.blockedShared.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">
+         Os conteúdos #{result.blockedShared.join(", #")} são compartilhados com outra disciplina.
+         Separe esses conteúdos ou associe PDFs individualmente para não alterar outra matéria.
+       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void verify()} disabled={busy || preview.isPending} className="ghost-button min-h-11 disabled:opacity-50">{needsRevalidation ? "Revalidar alterações" : "Conferir novamente"}</button>
         {valid && <button type="button" disabled={busy} onClick={() => void associate()} className="action-button min-h-11 disabled:opacity-50">
