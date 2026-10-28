@@ -616,6 +616,7 @@ export type CompetitionMonthlyGoalInput = {
 type CompetitionQuestion = {
   id: number;
   statement: string;
+  passage: string | null;
   questionType: "certo_errado" | "multipla_escolha";
   options: string[];
   difficulty: "basic" | "intermediate" | "advanced";
