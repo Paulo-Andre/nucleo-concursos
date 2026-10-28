@@ -268,7 +268,7 @@ export function AdminBulkPdfPanel({ disciplines, onImported }: {
        </p>}
        {result.blockedShared.length > 0 && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">
          Os conteúdos #{result.blockedShared.join(", #")} são compartilhados com outra disciplina.
-         Separe esses conteúdos ou associe PDFs individualmente para não alterar outra matéria.
+         Cadastre conteúdos exclusivos para esta disciplina antes de importar, evitando alterações em outra matéria.
        </p>}
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void verify()} disabled={busy || preview.isPending} className="ghost-button min-h-11 disabled:opacity-50">{needsRevalidation ? "Revalidar alterações" : "Conferir novamente"}</button>
