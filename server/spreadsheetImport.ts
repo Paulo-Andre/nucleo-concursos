@@ -15,7 +15,12 @@ type QuestionRow = {
   answer:boolean|string;explanation:string;difficulty:"basic"|"intermediate"|"advanced";
   source:string;banca:string;year:number|null;contentIds:number[];fallbackDisciplineId?:number;status:Status;requiresReview:boolean;
 };
-type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];toCreate:number;toUpdate:number;toLink:number;preview:{line:number;label:string;status:Status;action:"create"|"update"|"link";existingId?:number}[]};
+type Parsed = {
+ kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];
+ toCreate:number;toUpdate:number;toLink:number;
+ duplicateAudit:{alreadyInSelected:number;inOtherOnly:number;noDiscipline:number};
+ preview:{line:number;label:string;status:Status;action:"create"|"update"|"link";existingId?:number;existingDisciplines?:string[]}[];
+};
 type Input = {kind:ImportKind;fileName:string;base64:string;fallbackDisciplineId?:number;questionDuplicateMode?:"reject"|"link"};
 const statuses = new Set(["draft","review","approved","published","inactive"]);
 
@@ -118,7 +123,7 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
   }
  }
  const inFile=new Set<string>();
- const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],toCreate:0,toUpdate:0,toLink:0,preview:[]};
+ const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],toCreate:0,toUpdate:0,toLink:0,duplicateAudit:{alreadyInSelected:0,inOtherOnly:0,noDiscipline:0},preview:[]};
  for(const entry of sheet){
   const row=entry.values;
   const label=input.kind==="contents"?row.titulo:row.enunciado;
@@ -222,13 +227,38 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
    parsed.preview.push({line:entry.line,label:label.slice(0,140),status:item.status,action,existingId});
   }catch(error){parsed.errorMessages.push(`Linha ${entry.line}: ${error instanceof Error?error.message:"Dados inválidos"}`);}
  }
+ if(parsed.toLink>0){
+  const reused=parsed.data.filter((row):row is QuestionRow=>input.kind==="questions"&&"existingId" in row&&row.existingId!==undefined);
+  const reusedIds=reused.map(row=>row.existingId!);
+  const ownership=await db.select({
+    questionId:questionContentLinks.questionId,disciplineId:disciplineContents.disciplineId,name:disciplines.name,
+   }).from(questionContentLinks)
+   .leftJoin(disciplineContents,eq(disciplineContents.contentId,questionContentLinks.contentId))
+   .leftJoin(disciplines,eq(disciplines.id,disciplineContents.disciplineId))
+   .where(inArray(questionContentLinks.questionId,reusedIds));
+  const byQuestion=new Map<number,Map<number,string>>();
+  for(const item of ownership){
+    if(item.disciplineId===null||item.name===null)continue;
+    if(!byQuestion.has(item.questionId))byQuestion.set(item.questionId,new Map());
+    byQuestion.get(item.questionId)!.set(item.disciplineId,item.name);
+  }
+  for(const line of parsed.preview){
+    if(line.action!=="link"||line.existingId===undefined)continue;
+    const membership=byQuestion.get(line.existingId);
+    line.existingDisciplines=[...(membership?.values()??[])].sort();
+    if(!membership?.size)parsed.duplicateAudit.noDiscipline++;
+    else if(input.fallbackDisciplineId!==undefined&&membership.has(input.fallbackDisciplineId))
+      parsed.duplicateAudit.alreadyInSelected++;
+    else parsed.duplicateAudit.inOtherOnly++;
+  }
+ }
  if(!parsed.data.length&&!parsed.errorMessages.length)parsed.errorMessages.push("Nenhuma linha válida encontrada.");
  return parsed;
 }
 
 export async function importSpreadsheet(actorUserId:number,input:Input,expectedCount:number,checkOnly:boolean,mode:"create"|"upsert"="create",expectedUpdates?:number,expectedLinks?:number) {
  const prepared=await prepareSpreadsheetImport(input,mode);
- if(checkOnly||prepared.errorMessages.length) return {valid:!prepared.errorMessages.length,count:prepared.data.length,errors:prepared.errorMessages,preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,toLink:prepared.toLink,created:0,updated:0,linked:0};
+ if(checkOnly||prepared.errorMessages.length) return {valid:!prepared.errorMessages.length,count:prepared.data.length,errors:prepared.errorMessages,preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,toLink:prepared.toLink,duplicateAudit:prepared.duplicateAudit,created:0,updated:0,linked:0};
  if(prepared.data.length!==expectedCount||(expectedUpdates!==undefined&&prepared.toUpdate!==expectedUpdates)||(expectedLinks!==undefined&&prepared.toLink!==expectedLinks))throw new Error("Os registros ou vínculos mudaram desde a prévia. Revise e confirme novamente.");
  const db=await getDb();if(!db)throw new Error("Banco indisponível.");
  // Todas as criações, relações e logs são uma operação ACID. Uma falha cancela todo o lote.
@@ -332,5 +362,5 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
   }
   await tx.insert(adminAuditLogs).values({actorUserId,action:"IMPORTACAO_EM_LOTE",detail:`Planilha ${input.kind}: ${prepared.toCreate} novos, ${prepared.toUpdate} conteúdos atualizados, ${prepared.toLink} questões existentes reaproveitadas (${linked} novos vínculos). IDs canônicos preservados.`});
  });
- return {valid:true,count:prepared.data.length,errors:[],preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,toLink:prepared.toLink,created:prepared.toCreate,updated:prepared.toUpdate,linked};
+ return {valid:true,count:prepared.data.length,errors:[],preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,toLink:prepared.toLink,duplicateAudit:prepared.duplicateAudit,created:prepared.toCreate,updated:prepared.toUpdate,linked};
 }
