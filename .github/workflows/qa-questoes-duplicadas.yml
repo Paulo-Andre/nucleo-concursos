@@ -1,0 +1,53 @@
+name: QA - questoes duplicadas e vinculos de disciplina
+
+on:
+  push:
+    branches:
+      - fix/questoes-duplicadas-revincular-20261029
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: qa_root_password_only
+          MYSQL_DATABASE: nucleo_qa
+          MYSQL_USER: qa_user
+          MYSQL_PASSWORD: qa_password_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u qa_user -pqa_password_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=18
+    env:
+      CI: "true"
+      NODE_ENV: test
+      DATABASE_URL: mysql://qa_user:qa_password_only@127.0.0.1:3306/nucleo_qa
+      JWT_SECRET: qa_jwt_secret_unique_for_ci_only_not_production_123
+      ROOT_INITIAL_PASSWORD: qa_root_password_local_ci_only
+      OWNER_OPEN_ID: ""
+      RESEND_API_KEY: ""
+      MERCADO_PAGO_ACCESS_TOKEN: "TEST-ci-only-fake-not-valid-for-api"
+      MERCADO_PAGO_WEBHOOK_SECRET: "qa_webhook_signature_test_only_never_in_production"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm db:push
+      - run: pnpm exec tsx scripts/seed-qa.ts
+      - run: pnpm exec vitest run server/spreadsheetImport.duplicate-link.test.ts server/spreadsheetImport.duplicate-link.integration.test.ts server/spreadsheetImport.integration.test.ts server/discipline-question-clear.integration.test.ts --maxWorkers=1 --minWorkers=1 --no-file-parallelism
+      - run: pnpm build
