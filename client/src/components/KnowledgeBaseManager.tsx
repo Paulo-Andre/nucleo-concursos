@@ -197,7 +197,7 @@ function ClearDisciplineQuestionsDialog({impact,typed,onTyped,pending,onCancel,o
         <p><b>{impact.protected}</b> questões já utilizadas também serão excluídas, juntamente com suas respostas e referências históricas.</p>
       </div>
       <p className="mt-2 text-xs leading-5 text-[#52666f]">A operação mantém cursos, disciplinas e aulas, mas remove definitivamente as questões selecionadas e os registros relacionados. Indicadores de desempenho anteriores podem mudar. Faça backup do banco antes de excluir.</p>
-      {!impact.canClear?<p role="alert" className="mt-3 rounded border border-[#e5b6a8] bg-[#fff0ec] p-3 text-xs font-bold text-[#924131]">Nenhuma questão está vinculada aos conteúdos desta disciplina.</p>:
+      {!impact.canClear?<p role="alert" className="mt-3 rounded border border-[#e5b6a8] bg-[#fff0ec] p-3 text-xs font-bold text-[#924131]">Nenhuma questão está vinculada aos conteúdos desta disciplina. A importação verifica enunciados iguais em toda a biblioteca e pode encontrar registros existentes em outras disciplinas ou sem vínculo. Não é seguro excluí-los por este botão. Para aproveitar questões idênticas nesta disciplina, use Importar questões → Reutilizar existentes e criar somente vínculos ausentes.</p>:
         <label className="mt-4 block text-xs font-semibold text-[#254751]">Digite exatamente <strong className="break-all text-[#9d4438]">{confirmation}</strong> para confirmar:
           <Input value={typed} onChange={event=>onTyped(event.target.value)} className="mt-2 bg-white"/>
         </label>}
