@@ -18,7 +18,8 @@ export function AdminSpreadsheetImportPanel({onImported}:{onImported:()=>Promise
  const [confirmed,setConfirmed]=useState(false);
  const preview=trpc.admin.spreadsheets.preview.useMutation();
  const confirm=trpc.admin.spreadsheets.confirm.useMutation({onSuccess:async data=>{
-  if(data.created>0||data.updated>0||data.linked>0){setConfirmed(true);await onImported();}
+  setConfirmed(true);
+  if(data.created>0||data.updated>0||data.linked>0)await onImported();
  }});
  const clear=()=>{setFile(null);setError("");setConfirmed(false);preview.reset();confirm.reset();};
  const choose=async(selected:File|undefined)=>{
