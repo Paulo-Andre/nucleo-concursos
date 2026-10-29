@@ -18,7 +18,7 @@ type QuestionRow = {
 type Parsed = {
  kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];
  toCreate:number;toUpdate:number;toLink:number;
- duplicateAudit:{alreadyInSelected:number;inOtherOnly:number;noDiscipline:number};
+ duplicateAudit:{alreadyInSelected:number;inOtherOnly:number;noDiscipline:number;unpublished:number};
  preview:{line:number;label:string;status:Status;action:"create"|"update"|"link";existingId?:number;existingDisciplines?:string[]}[];
 };
 type Input = {kind:ImportKind;fileName:string;base64:string;fallbackDisciplineId?:number;questionDuplicateMode?:"reject"|"link"};
@@ -81,7 +81,7 @@ function readYear(raw:string):number|null {
  return n;
 }
 
-type ExistingQuestionForImport = { id:number; statement:string; passage:string|null; questionType:"certo_errado"|"multipla_escolha"; optionsJson:string|null; answerJson:string };
+type ExistingQuestionForImport = { id:number; statement:string; passage:string|null; questionType:"certo_errado"|"multipla_escolha"; optionsJson:string|null; answerJson:string; status?:Status };
 /** O mesmo enunciado não garante identidade: o tipo, texto-base, alternativas e gabarito devem corresponder. */
 export function isIdenticalQuestionForLink(existing:ExistingQuestionForImport,candidate:Pick<QuestionRow,"statement"|"passage"|"questionType"|"options"|"answer">):boolean {
  if(normalize(existing.statement)!==normalize(candidate.statement)||existing.questionType!==candidate.questionType)return false;
@@ -99,7 +99,7 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
  const [ds,cs,qs]=await Promise.all([
   db.select({id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName}).from(disciplines),
   db.select({id:contents.id,title:contents.title}).from(contents),
-  input.kind==="questions"?db.select({id:questions.id,statement:questions.statement,passage:questions.passage,questionType:questions.questionType,optionsJson:questions.optionsJson,answerJson:questions.answerJson}).from(questions):Promise.resolve([]),
+  input.kind==="questions"?db.select({id:questions.id,statement:questions.statement,passage:questions.passage,questionType:questions.questionType,optionsJson:questions.optionsJson,answerJson:questions.answerJson,status:questions.status}).from(questions):Promise.resolve([]),
  ]);
  const allowedContentIds=input.kind==="questions"&&input.fallbackDisciplineId!==undefined
   ? new Set((await db.select({contentId:disciplineContents.contentId}).from(disciplineContents)
@@ -123,7 +123,7 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
   }
  }
  const inFile=new Set<string>();
- const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],toCreate:0,toUpdate:0,toLink:0,duplicateAudit:{alreadyInSelected:0,inOtherOnly:0,noDiscipline:0},preview:[]};
+ const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],toCreate:0,toUpdate:0,toLink:0,duplicateAudit:{alreadyInSelected:0,inOtherOnly:0,noDiscipline:0,unpublished:0},preview:[]};
  for(const entry of sheet){
   const row=entry.values;
   const label=input.kind==="contents"?row.titulo:row.enunciado;
@@ -224,7 +224,9 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
    const action=existingId?(input.kind==="questions"?"link":"update"):"create";
    if(action==="update")parsed.toUpdate++;else if(action==="link")parsed.toLink++;else parsed.toCreate++;
    parsed.data.push(item);
-   parsed.preview.push({line:entry.line,label:label.slice(0,140),status:item.status,action,existingId});
+   const recordedStatus=action==="link"?questionsByStatement.get(key)?.[0]?.status:item.status;
+   parsed.preview.push({line:entry.line,label:label.slice(0,140),status:recordedStatus??item.status,action,existingId});
+   if(action==="link"&&recordedStatus!=="published")parsed.duplicateAudit.unpublished++;
   }catch(error){parsed.errorMessages.push(`Linha ${entry.line}: ${error instanceof Error?error.message:"Dados inválidos"}`);}
  }
  if(parsed.toLink>0){
