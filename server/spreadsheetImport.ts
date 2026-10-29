@@ -11,12 +11,12 @@ type ContentRow = {
   coverImageUrl:string;videoUrl:string;videoLabel:string;materialUrl:string;materialLabel:string;
 };
 type QuestionRow = {
-  line:number;statement:string;passage:string;questionType:"certo_errado"|"multipla_escolha";options:string[];
+  line:number;statement:string;passage:string;questionType:"certo_errado"|"multipla_escolha";options:string[];existingId?:number;
   answer:boolean|string;explanation:string;difficulty:"basic"|"intermediate"|"advanced";
   source:string;banca:string;year:number|null;contentIds:number[];fallbackDisciplineId?:number;status:Status;requiresReview:boolean;
 };
-type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];toCreate:number;toUpdate:number;preview:{line:number;label:string;status:Status;action:"create"|"update";existingId?:number}[]};
-type Input = {kind:ImportKind;fileName:string;base64:string;fallbackDisciplineId?:number};
+type Parsed = {kind:ImportKind;errorMessages:string[];data:(ContentRow|QuestionRow)[];toCreate:number;toUpdate:number;toLink:number;preview:{line:number;label:string;status:Status;action:"create"|"update"|"link";existingId?:number}[]};
+type Input = {kind:ImportKind;fileName:string;base64:string;fallbackDisciplineId?:number;questionDuplicateMode?:"reject"|"link"};
 const statuses = new Set(["draft","review","approved","published","inactive"]);
 
 export const MAX_SPREADSHEET_IMPORT_ROWS = 1000;
@@ -76,6 +76,16 @@ function readYear(raw:string):number|null {
  return n;
 }
 
+type ExistingQuestionForImport = { id:number; statement:string; passage:string|null; questionType:"certo_errado"|"multipla_escolha"; optionsJson:string|null; answerJson:string };
+/** O mesmo enunciado não garante identidade: o tipo, texto-base, alternativas e gabarito devem corresponder. */
+export function isIdenticalQuestionForLink(existing:ExistingQuestionForImport,candidate:Pick<QuestionRow,"statement"|"passage"|"questionType"|"options"|"answer">):boolean {
+ if(normalize(existing.statement)!==normalize(candidate.statement)||existing.questionType!==candidate.questionType)return false;
+ if(normalize(existing.passage??"")!==normalize(candidate.passage))return false;
+ const existingOptions=existing.optionsJson ? JSON.parse(existing.optionsJson) : [];
+ if(!Array.isArray(existingOptions)||JSON.stringify(existingOptions)!==JSON.stringify(candidate.questionType==="multipla_escolha"?candidate.options:[]))return false;
+ try{return JSON.stringify(JSON.parse(existing.answerJson))===JSON.stringify(candidate.answer);}catch{return false;}
+}
+
 export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert"="create"):Promise<Parsed> {
  if(mode==="upsert"&&input.kind!=="contents")throw new Error("Atualização de registros existentes está disponível somente para conteúdos/aulas.");
  const db=await getDb();if(!db)throw new Error("Banco indisponível.");
@@ -84,7 +94,7 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
  const [ds,cs,qs]=await Promise.all([
   db.select({id:disciplines.id,name:disciplines.name,shortName:disciplines.shortName}).from(disciplines),
   db.select({id:contents.id,title:contents.title}).from(contents),
-  input.kind==="questions"?db.select({statement:questions.statement}).from(questions):Promise.resolve([]),
+  input.kind==="questions"?db.select({id:questions.id,statement:questions.statement,passage:questions.passage,questionType:questions.questionType,optionsJson:questions.optionsJson,answerJson:questions.answerJson}).from(questions):Promise.resolve([]),
  ]);
  const dById=new Map(ds.map(x=>[x.id,x]));
  const dByName=new Map(ds.flatMap(x=>[[normalize(x.name),x.id],[normalize(x.shortName),x.id]] as [string,number][]));
@@ -96,8 +106,15 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
   contentMatches.set(key,[...(contentMatches.get(key)||[]),content.id]);
  }
  const existing=new Set(input.kind==="contents"?cs.map(x=>normalize(x.title)):qs.map(x=>normalize(x.statement)));
+ const questionsByStatement=new Map<string,ExistingQuestionForImport[]>();
+ if(input.kind==="questions"){
+  for(const question of qs as ExistingQuestionForImport[]){
+   const key=normalize(question.statement);
+   questionsByStatement.set(key,[...(questionsByStatement.get(key)??[]),question]);
+  }
+ }
  const inFile=new Set<string>();
- const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],toCreate:0,toUpdate:0,preview:[]};
+ const parsed:Parsed={kind:input.kind,errorMessages:[],data:[],toCreate:0,toUpdate:0,toLink:0,preview:[]};
  for(const entry of sheet){
   const row=entry.values;
   const label=input.kind==="contents"?row.titulo:row.enunciado;
@@ -181,23 +198,35 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
     const matches=contentMatches.get(key)??[];
     if(matches.length>1)throw new Error("Há mais de um conteúdo no banco com este título. Resolva a ambiguidade antes de atualizar.");
     if(matches.length===1)(item as ContentRow).existingId=matches[0];
+   }else if(input.kind==="questions"&&existing.has(key)){
+    if(input.questionDuplicateMode!=="link")throw new Error("Registro duplicado no banco. Escolha 'Reutilizar questões existentes' para conferir e vincular sem duplicar.");
+    const duplicates=questionsByStatement.get(key)??[];
+    if(duplicates.length!==1)throw new Error("Há mais de uma questão com este enunciado no banco. Revise manualmente antes de vincular.");
+    const candidate=item as QuestionRow;
+    let identical=false;
+    try{identical=isIdenticalQuestionForLink(duplicates[0],candidate);}
+    catch{identical=false;}
+    if(!identical)throw new Error("Enunciado duplicado, mas texto-base, tipo, alternativas ou gabarito são diferentes. A associação automática foi bloqueada.");
+    candidate.existingId=duplicates[0].id;
    }else if(existing.has(key))throw new Error("Registro duplicado no banco.");
-   const existingId=input.kind==="contents"?(item as ContentRow).existingId:undefined;
-   if(existingId)parsed.toUpdate++;else parsed.toCreate++;
+   const existingId=(item as ContentRow|QuestionRow).existingId;
+   const action=existingId?(input.kind==="questions"?"link":"update"):"create";
+   if(action==="update")parsed.toUpdate++;else if(action==="link")parsed.toLink++;else parsed.toCreate++;
    parsed.data.push(item);
-   parsed.preview.push({line:entry.line,label:label.slice(0,140),status:item.status,action:existingId?"update":"create",existingId});
+   parsed.preview.push({line:entry.line,label:label.slice(0,140),status:item.status,action,existingId});
   }catch(error){parsed.errorMessages.push(`Linha ${entry.line}: ${error instanceof Error?error.message:"Dados inválidos"}`);}
  }
  if(!parsed.data.length&&!parsed.errorMessages.length)parsed.errorMessages.push("Nenhuma linha válida encontrada.");
  return parsed;
 }
 
-export async function importSpreadsheet(actorUserId:number,input:Input,expectedCount:number,checkOnly:boolean,mode:"create"|"upsert"="create",expectedUpdates?:number) {
+export async function importSpreadsheet(actorUserId:number,input:Input,expectedCount:number,checkOnly:boolean,mode:"create"|"upsert"="create",expectedUpdates?:number,expectedLinks?:number) {
  const prepared=await prepareSpreadsheetImport(input,mode);
- if(checkOnly||prepared.errorMessages.length) return {valid:!prepared.errorMessages.length,count:prepared.data.length,errors:prepared.errorMessages,preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,created:0,updated:0};
- if(prepared.data.length!==expectedCount||(expectedUpdates!==undefined&&prepared.toUpdate!==expectedUpdates))throw new Error("Os registros mudaram desde a prévia. Revise e confirme novamente.");
+ if(checkOnly||prepared.errorMessages.length) return {valid:!prepared.errorMessages.length,count:prepared.data.length,errors:prepared.errorMessages,preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,toLink:prepared.toLink,created:0,updated:0,linked:0};
+ if(prepared.data.length!==expectedCount||(expectedUpdates!==undefined&&prepared.toUpdate!==expectedUpdates)||(expectedLinks!==undefined&&prepared.toLink!==expectedLinks))throw new Error("Os registros ou vínculos mudaram desde a prévia. Revise e confirme novamente.");
  const db=await getDb();if(!db)throw new Error("Banco indisponível.");
  // Todas as criações, relações e logs são uma operação ACID. Uma falha cancela todo o lote.
+ let linked=0;
  await db.transaction(async tx=>{
   for(const row of prepared.data){
    if(prepared.kind==="contents"){
@@ -236,13 +265,15 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
       noticeActivatedAt:r.noticeKind?new Date():null,requiresReview:r.requiresReview,status:r.status,
       createdByUserId:actorUserId,updatedByUserId:actorUserId,
     });
-    const id=Number(inserted[0].insertId);
+    const id=r.existingId??Number(inserted![0].insertId);
     await tx.insert(disciplineContents).values(r.disciplineIds.map(disciplineId=>({disciplineId,contentId:id,linkedByUserId:actorUserId})));
     await tx.insert(contentChangelog).values({contentId:id,actorUserId,changedField:"created",newValue:JSON.stringify({title:r.title})});
     if(r.status==="review")await tx.insert(reviewQueue).values({itemType:"content",itemId:id,status:"pending",submittedByUserId:actorUserId});
    }else{
     const r=row as QuestionRow;
-    const inserted=await tx.insert(questions).values({
+    // O modo de reaproveitamento somente adiciona vínculos, sem sobrescrever
+    // o enunciado, gabarito, status ou o histórico da questão original.
+    const inserted=r.existingId ? null : await tx.insert(questions).values({
       statement:r.statement,passage:r.passage||null,questionType:r.questionType,
       optionsJson:r.questionType==="multipla_escolha"?JSON.stringify(r.options):null,
       answerJson:JSON.stringify(r.answer),explanation:r.explanation||null,difficulty:r.difficulty,
@@ -272,12 +303,28 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
       }
       resolvedContentIds=[bucketId];
     }
-    await tx.insert(questionContentLinks).values(resolvedContentIds.map(contentId=>({questionId:id,contentId,linkedByUserId:actorUserId})));
-    await tx.insert(questionChangelog).values({questionId:id,actorUserId,changedField:"created",newValue:JSON.stringify({statement:r.statement})});
-    if(r.status==="review")await tx.insert(reviewQueue).values({itemType:"question",itemId:id,status:"pending",submittedByUserId:actorUserId});
+    if(r.existingId){
+      const [canonical]=await tx.select({
+       id:questions.id,statement:questions.statement,passage:questions.passage,questionType:questions.questionType,
+       optionsJson:questions.optionsJson,answerJson:questions.answerJson,
+      }).from(questions).where(eq(questions.id,id)).limit(1);
+      if(!canonical||!isIdenticalQuestionForLink(canonical,r))
+       throw new Error("Questão #"+id+" mudou após a conferência. Nenhum vínculo foi gravado.");
+    }
+    for(const contentId of resolvedContentIds){
+      const found=await tx.select({id:questionContentLinks.id}).from(questionContentLinks)
+       .where(and(eq(questionContentLinks.questionId,id),eq(questionContentLinks.contentId,contentId))).limit(1);
+      if(found.length)continue;
+      await tx.insert(questionContentLinks).values({questionId:id,contentId,linkedByUserId:actorUserId});
+      if(r.existingId)linked++;
+    }
+    await tx.insert(questionChangelog).values({questionId:id,actorUserId,
+      changedField:r.existingId?"spreadsheet_link":"created",
+      newValue:JSON.stringify({statement:r.statement,contentIds:resolvedContentIds})});
+    if(!r.existingId&&r.status==="review")await tx.insert(reviewQueue).values({itemType:"question",itemId:id,status:"pending",submittedByUserId:actorUserId});
    }
   }
-  await tx.insert(adminAuditLogs).values({actorUserId,action:"IMPORTACAO_EM_LOTE",detail:`Planilha ${input.kind}: ${prepared.toCreate} novos e ${prepared.toUpdate} conteúdos atualizados sem alteração dos IDs.`});
+  await tx.insert(adminAuditLogs).values({actorUserId,action:"IMPORTACAO_EM_LOTE",detail:`Planilha ${input.kind}: ${prepared.toCreate} novos, ${prepared.toUpdate} conteúdos atualizados, ${prepared.toLink} questões existentes reaproveitadas (${linked} novos vínculos). IDs canônicos preservados.`});
  });
- return {valid:true,count:prepared.data.length,errors:[],preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,created:prepared.toCreate,updated:prepared.toUpdate};
+ return {valid:true,count:prepared.data.length,errors:[],preview:prepared.preview.slice(0,30),toCreate:prepared.toCreate,toUpdate:prepared.toUpdate,toLink:prepared.toLink,created:prepared.toCreate,updated:prepared.toUpdate,linked};
 }
