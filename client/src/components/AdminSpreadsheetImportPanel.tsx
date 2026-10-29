@@ -89,6 +89,7 @@ export function AdminSpreadsheetImportPanel({onImported}:{onImported:()=>Promise
    {kind==="questions"&&questionDuplicateMode==="link"&&result.toLink>0&&<div className="mt-3 rounded-xl border border-[#bad7ce] bg-[#f1f9f6] p-3 text-xs leading-5 text-[#315b62]">
     <p className="font-bold">Auditoria de origem das {result.toLink} questões já existentes</p>
     <p>{result.duplicateAudit.alreadyInSelected} vinculadas à disciplina selecionada · {result.duplicateAudit.inOtherOnly} vinculadas somente a outras disciplinas · {result.duplicateAudit.noDiscipline} sem disciplina identificável.</p>
+    {result.duplicateAudit.unpublished>0&&<p className="mt-2 font-bold text-[#965b2a]">Atenção: {result.duplicateAudit.unpublished} questão(ões) existentes ainda não estão publicadas. A opção de reutilização preserva o status atual, mesmo que a planilha indique published.</p>}
     <p>Se aparecerem questões de outras disciplinas, confirme que deseja compartilhar o mesmo cadastro antes de vinculá-las. O sistema não fará exclusão nem alterará o gabarito.</p>
    </div>}
    {result.errors.length>0&&<div role="alert" className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-4"><p className="font-semibold text-[#895a22]"><AlertTriangle className="mr-1 inline h-4 w-4"/>Corrija os erros antes de importar</p><ul className="mt-2 max-h-60 list-inside list-disc space-y-1 overflow-y-auto text-sm text-[#895a22]">{result.errors.map((e,i)=><li key={i}>{e}</li>)}</ul></div>}
