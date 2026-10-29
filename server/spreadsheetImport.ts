@@ -96,6 +96,10 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
   db.select({id:contents.id,title:contents.title}).from(contents),
   input.kind==="questions"?db.select({id:questions.id,statement:questions.statement,passage:questions.passage,questionType:questions.questionType,optionsJson:questions.optionsJson,answerJson:questions.answerJson}).from(questions):Promise.resolve([]),
  ]);
+ const allowedContentIds=input.kind==="questions"&&input.fallbackDisciplineId!==undefined
+  ? new Set((await db.select({contentId:disciplineContents.contentId}).from(disciplineContents)
+   .where(eq(disciplineContents.disciplineId,input.fallbackDisciplineId))).map(link=>link.contentId))
+  : null;
  const dById=new Map(ds.map(x=>[x.id,x]));
  const dByName=new Map(ds.flatMap(x=>[[normalize(x.name),x.id],[normalize(x.shortName),x.id]] as [string,number][]));
  const cById=new Map(cs.map(x=>[x.id,x]));
@@ -185,6 +189,8 @@ export async function prepareSpreadsheetImport(input:Input,mode:"create"|"upsert
       if(fallbackDisciplineId===undefined)throw new Error("Vincule um conteúdo por ID/nome ou escolha uma disciplina para questões sem aula.");
       contentIds=[];
     }
+    if(allowedContentIds&&contentIds.some(contentId=>!allowedContentIds.has(contentId)))
+      throw new Error("O conteúdo escolhido pertence a outra disciplina. Confira a disciplina e os vínculos informados na planilha.");
     item={line:entry.line,statement:label.trim(),passage:text(row,"texto_base",12000),questionType:questionType as QuestionRow["questionType"],
       options,answer,explanation:text(row,"comentario",12000),
       difficulty:diff as QuestionRow["difficulty"],source:text(row,"fonte",240),
