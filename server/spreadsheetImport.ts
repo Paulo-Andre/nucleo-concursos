@@ -271,7 +271,7 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
       noticeActivatedAt:r.noticeKind?new Date():null,requiresReview:r.requiresReview,status:r.status,
       createdByUserId:actorUserId,updatedByUserId:actorUserId,
     });
-    const id=r.existingId??Number(inserted![0].insertId);
+    const id=Number(inserted[0].insertId);
     await tx.insert(disciplineContents).values(r.disciplineIds.map(disciplineId=>({disciplineId,contentId:id,linkedByUserId:actorUserId})));
     await tx.insert(contentChangelog).values({contentId:id,actorUserId,changedField:"created",newValue:JSON.stringify({title:r.title})});
     if(r.status==="review")await tx.insert(reviewQueue).values({itemType:"content",itemId:id,status:"pending",submittedByUserId:actorUserId});
@@ -286,7 +286,7 @@ export async function importSpreadsheet(actorUserId:number,input:Input,expectedC
       source:r.source||null,banca:r.banca||null,year:r.year,requiresReview:r.requiresReview,status:r.status,
       createdByUserId:actorUserId,updatedByUserId:actorUserId,
     });
-    const id=Number(inserted[0].insertId);
+    const id=r.existingId??Number(inserted![0].insertId);
     let resolvedContentIds=r.contentIds;
     if(!resolvedContentIds.length){
       if(!r.fallbackDisciplineId)throw new Error("Disciplina obrigatória para questão avulsa.");
